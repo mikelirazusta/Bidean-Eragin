@@ -86,6 +86,7 @@ interface AppContextType {
     behatzailea: string;
   }) => Promise<boolean>;
   deleteNeurketa: (id: string) => Promise<boolean>;
+  deleteEragilea: (id: string) => Promise<boolean>;
   markNudgeRead: (id: string) => Promise<void>;
   createAdminNudge: (data: {
     eragile_id: string;
@@ -576,6 +577,25 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
     return false;
   };
 
+  const deleteEragilea = async (id: string) => {
+    try {
+      const res = await fetch(`/api/eragileak?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      const json = await res.json();
+      if (json.success) {
+        if (currentEragileId === id) {
+          setCurrentEragileId("");
+        }
+        await refreshData();
+        return true;
+      }
+    } catch (e) {
+      console.error("Errorea eragilea ezabatzean:", e);
+    }
+    return false;
+  };
+
   const markNudgeRead = async (id: string) => {
     try {
       await fetch("/api/nudges", {
@@ -617,6 +637,12 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
     try {
       setIsLoading(true);
       await fetch("/api/reset-demo", { method: "POST" });
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(PENDING_NEURKETAK_KEY);
+        localStorage.removeItem(BOOTSTRAP_CACHE_KEY);
+      }
+      setPendingSyncCount(0);
+      setCurrentEragileId("");
       await refreshData();
       if (currentUser?.role === "admin") {
         setActiveTab("admin");
@@ -661,6 +687,7 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
         createQuickPostua,
         saveNeurketa,
         deleteNeurketa,
+        deleteEragilea,
         markNudgeRead,
         createAdminNudge,
         resetDemoData,

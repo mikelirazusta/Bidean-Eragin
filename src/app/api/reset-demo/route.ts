@@ -8,6 +8,7 @@ export async function POST() {
     db.prepare("DELETE FROM esperimentuak").run();
     db.prepare("DELETE FROM nudges").run();
     db.prepare("DELETE FROM eragileak").run();
+    db.prepare("DELETE FROM users WHERE role = 'eragilea'").run();
 
     return NextResponse.json({
       success: true,

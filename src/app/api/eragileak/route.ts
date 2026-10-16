@@ -83,3 +83,40 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: "Zentroaren IDa beharrezkoa da" },
+        { status: 400 }
+      );
+    }
+
+    // Find experiments belonging to this eragile and delete their measurements
+    const exps = db.prepare("SELECT id FROM esperimentuak WHERE eragile_id = ?").all(id) as { id: string }[];
+    for (const exp of exps) {
+      db.prepare("DELETE FROM neurketak WHERE esperimentu_id = ?").run(exp.id);
+    }
+
+    db.prepare("DELETE FROM esperimentuak WHERE eragile_id = ?").run(id);
+    db.prepare("DELETE FROM nudges WHERE eragile_id = ?").run(id);
+    db.prepare("DELETE FROM users WHERE eragile_id = ?").run(id);
+    db.prepare("DELETE FROM eragileak WHERE id = ?").run(id);
+
+    return NextResponse.json({
+      success: true,
+      message: "Saltokia eta bere proba-datu guztiak ezabatu dira.",
+    });
+  } catch (error) {
+    console.error("Errorea eragilea ezabatzean:", error);
+    return NextResponse.json(
+      { success: false, error: "Ezin izan da saltokia ezabatu" },
+      { status: 500 }
+    );
+  }
+}
+

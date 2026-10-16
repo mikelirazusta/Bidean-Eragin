@@ -191,7 +191,10 @@ function createFallbackStore() {
           }
           return undefined;
         },
-        all: (..._params: any[]): any[] => {
+        all: (...params: any[]): any[] => {
+          if (q.includes("FROM esperimentuak WHERE eragile_id = ?")) {
+            return store.esperimentuak.filter((e) => e.eragile_id === params[0]);
+          }
           if (q.includes("FROM pilotuak")) {
             return [...store.pilotuak];
           }
@@ -232,6 +235,17 @@ function createFallbackStore() {
             save();
             return { changes: 1 };
           }
+          if (q === "DELETE FROM users WHERE role = 'eragilea'") {
+            store.users = store.users.filter((u) => u.role !== "eragilea");
+            save();
+            return { changes: 1 };
+          }
+          if (q.startsWith("DELETE FROM users WHERE eragile_id = ?")) {
+            const [eragileId] = params;
+            store.users = store.users.filter((u) => u.eragile_id !== eragileId || u.role === "admin");
+            save();
+            return { changes: 1 };
+          }
           if (q.startsWith("DELETE FROM users WHERE role = 'eragilea'")) {
             const validEragileIds = new Set(store.eragileak.map((e) => e.id));
             store.users = store.users.filter(
@@ -243,6 +257,12 @@ function createFallbackStore() {
           if (q.startsWith("INSERT INTO eragileak")) {
             const [id, izena, mota, arduraduna, email, erronka_nagusia, sortze_data] = params;
             store.eragileak.push({ id, izena, mota, arduraduna, email, erronka_nagusia, sortze_data });
+            save();
+            return { changes: 1 };
+          }
+          if (q.startsWith("DELETE FROM eragileak WHERE id = ?")) {
+            const [id] = params;
+            store.eragileak = store.eragileak.filter((e) => e.id !== id);
             save();
             return { changes: 1 };
           }
@@ -265,9 +285,21 @@ function createFallbackStore() {
             save();
             return { changes: 1 };
           }
+          if (q.startsWith("DELETE FROM esperimentuak WHERE eragile_id = ?")) {
+            const [eragileId] = params;
+            store.esperimentuak = store.esperimentuak.filter((e) => e.eragile_id !== eragileId);
+            save();
+            return { changes: 1 };
+          }
           if (q.startsWith("INSERT INTO neurketak")) {
             const [id, esperimentu_id, unea, euskaraz_count, erdaraz_count, elebi_count, iraupena_segundotan, data_ordu, oharrak, behatzailea] = params;
             store.neurketak.push({ id, esperimentu_id, unea, euskaraz_count, erdaraz_count, elebi_count, iraupena_segundotan, data_ordu, oharrak, behatzailea });
+            save();
+            return { changes: 1 };
+          }
+          if (q.startsWith("DELETE FROM neurketak WHERE esperimentu_id = ?")) {
+            const [expId] = params;
+            store.neurketak = store.neurketak.filter((n) => n.esperimentu_id !== expId);
             save();
             return { changes: 1 };
           }
@@ -287,6 +319,12 @@ function createFallbackStore() {
             const [id] = params;
             const nd = store.nudges.find((n) => n.id === id);
             if (nd) nd.irakurria = 1;
+            save();
+            return { changes: 1 };
+          }
+          if (q.startsWith("DELETE FROM nudges WHERE eragile_id = ?")) {
+            const [eragileId] = params;
+            store.nudges = store.nudges.filter((n) => n.eragile_id !== eragileId);
             save();
             return { changes: 1 };
           }
