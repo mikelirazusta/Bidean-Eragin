@@ -94,58 +94,94 @@ export default function Navbar() {
 
           {/* Nav Links (Desktop) */}
           <nav className="hidden lg:flex items-center gap-1">
-            <button
-              onClick={() => setActiveTab("panela")}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition cursor-pointer ${
-                activeTab === "panela"
-                  ? "bg-slate-100 text-sky-700 shadow-xs"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-              }`}
-            >
-              <LayoutDashboard className="w-4 h-4" />
-              Panela
-            </button>
+            {isAdmin ? (
+              <>
+                <button
+                  onClick={() => setActiveTab("admin")}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-bold transition cursor-pointer ${
+                    activeTab === "admin"
+                      ? "bg-indigo-600 text-white shadow-xs"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                  }`}
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  Admin Koadroa
+                </button>
 
-            <button
-              onClick={() => setActiveTab("katalogoa")}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition cursor-pointer ${
-                activeTab === "katalogoa"
-                  ? "bg-slate-100 text-sky-700 shadow-xs"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-              }`}
-            >
-              <BookOpen className="w-4 h-4" />
-              Pilotuak
-            </button>
+                <button
+                  onClick={() => setActiveTab("behaketa")}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-bold transition cursor-pointer ${
+                    activeTab === "behaketa"
+                      ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
+                      : "bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+                  }`}
+                >
+                  <Timer className="w-4 h-4" />
+                  Behatzaile Itsua (Neurtu)
+                </button>
 
-            <button
-              onClick={() => setActiveTab("behaketa")}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-semibold transition cursor-pointer ${
-                activeTab === "behaketa"
-                  ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
-                  : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-              }`}
-            >
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              <Timer className="w-4 h-4" />
-              Behatzaile Itsua
-            </button>
+                <button
+                  onClick={() => setActiveTab("panela")}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition cursor-pointer ${
+                    activeTab === "panela"
+                      ? "bg-slate-100 text-sky-700 shadow-xs"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                  }`}
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  Saltokiaren Panela
+                </button>
 
-            {isAdmin && (
-              <button
-                onClick={() => setActiveTab("admin")}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition cursor-pointer ${
-                  activeTab === "admin"
-                    ? "bg-indigo-600 text-white shadow-xs"
-                    : "bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
-                }`}
-              >
-                <ShieldCheck className="w-4 h-4" />
-                Admin Koadroa
-              </button>
+                <button
+                  onClick={() => setActiveTab("katalogoa")}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition cursor-pointer ${
+                    activeTab === "katalogoa"
+                      ? "bg-slate-100 text-sky-700 shadow-xs"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                  }`}
+                >
+                  <BookOpen className="w-4 h-4" />
+                  Pilotuak
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => setActiveTab("panela")}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition cursor-pointer ${
+                    activeTab === "panela"
+                      ? "bg-slate-100 text-sky-700 shadow-xs"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                  }`}
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  Panela
+                </button>
+
+                <button
+                  onClick={() => setActiveTab("behaketa")}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-semibold transition cursor-pointer ${
+                    activeTab === "behaketa"
+                      ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
+                      : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                  }`}
+                >
+                  <Timer className="w-4 h-4" />
+                  Behatzaile Itsua
+                </button>
+
+                <button
+                  onClick={() => setActiveTab("katalogoa")}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition cursor-pointer ${
+                    activeTab === "katalogoa"
+                      ? "bg-slate-100 text-sky-700 shadow-xs"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                  }`}
+                >
+                  <BookOpen className="w-4 h-4" />
+                  Pilotuak
+                </button>
+              </>
             )}
           </nav>
 
@@ -166,85 +202,14 @@ export default function Navbar() {
               </div>
             )}
 
-            {/* If Admin: Role Switcher & Center Selector */}
+            {/* If Admin: Clear Badge */}
             {isAdmin && (
-              <>
-                <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200">
-                  <button
-                    onClick={() => {
-                      setUserRole("eragilea");
-                      if (activeTab === "admin") setActiveTab("panela");
-                    }}
-                    className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
-                      userRole === "eragilea"
-                        ? "bg-white text-sky-700 shadow-xs"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                    title="Zentroko kidearen ikuspegia"
-                  >
-                    <span>Zentroa</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setUserRole("admin");
-                      setActiveTab("admin");
-                    }}
-                    className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
-                      userRole === "admin"
-                        ? "bg-indigo-600 text-white shadow-xs"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                    title="Bagera / Mikel Admin koadroa"
-                  >
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>Admin</span>
-                  </button>
-                </div>
-
-                <div className="relative">
-                  <button
-                    onClick={() => setShowCenterMenu(!showCenterMenu)}
-                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 transition cursor-pointer max-w-[150px] sm:max-w-[180px]"
-                  >
-                    {activeEragilea && getMotaIcon(activeEragilea.mota)}
-                    <span className="truncate">
-                      {activeEragilea ? activeEragilea.izena : "Hautatu zentroa"}
-                    </span>
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  </button>
-
-                  {showCenterMenu && (
-                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50">
-                      <div className="px-3 py-1.5 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                        Aukeratu Zentroa (Admin)
-                      </div>
-                      {eragileak.map((e) => (
-                        <button
-                          key={e.id}
-                          onClick={() => {
-                            setCurrentEragileId(e.id);
-                            setShowCenterMenu(false);
-                          }}
-                          className={`w-full px-3 py-2 text-left text-xs flex items-center justify-between hover:bg-slate-50 transition cursor-pointer ${
-                            e.id === currentEragileId
-                              ? "bg-sky-50 font-semibold text-sky-800"
-                              : "text-slate-700"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 truncate">
-                            {getMotaIcon(e.mota)}
-                            <span className="truncate">{e.izena}</span>
-                          </div>
-                          <span className="text-[10px] text-slate-400 capitalize">
-                            {e.mota}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 border border-indigo-200 text-xs font-bold text-indigo-900">
+                <ShieldCheck className="w-4 h-4 text-indigo-600" />
+                <span className="hidden sm:inline">Bagera Admin</span>
+              </div>
             )}
+
 
             {/* Offline Status Badge */}
             {!isOnline && (

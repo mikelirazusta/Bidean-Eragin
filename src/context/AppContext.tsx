@@ -68,7 +68,13 @@ interface AppContextType {
     pertsonak: string;
     gunea: string;
     xede_portzentajea: number;
+    eragile_id?: string;
   }) => Promise<Esperimentua | null>;
+  createQuickPostua: (data: {
+    izena: string;
+    arduraduna?: string;
+    xede_portzentajea?: number;
+  }) => Promise<{ eragilea: Eragilea; esperimentua: Esperimentua } | null>;
   saveNeurketa: (data: {
     esperimentu_id: string;
     unea: "T0" | "T1" | "T2";
@@ -393,9 +399,10 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
     pertsonak: string;
     gunea: string;
     xede_portzentajea: number;
+    eragile_id?: string;
   }) => {
     try {
-      const targetId = effectiveEragileId || (currentUser?.eragile_id || "");
+      const targetId = data.eragile_id || effectiveEragileId || (currentUser?.eragile_id || "");
       const res = await fetch("/api/esperimentuak", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -416,6 +423,61 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
       console.error("Errorea esperimentua sortzean:", e);
     }
     return null;
+  };
+
+  const createQuickPostua = async (data: {
+    izena: string;
+    arduraduna?: string;
+    xede_portzentajea?: number;
+  }) => {
+    try {
+      // 1. Create eragilea (merkataritza)
+      const resEragile = await fetch("/api/eragileak", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          izena: data.izena.trim(),
+          mota: "merkataritza",
+          arduraduna: data.arduraduna?.trim() || "Arduraduna",
+          email: `komertzioa-${Date.now().toString(36)}@bideaneragin.eus`,
+          erronka_nagusia: "Dendan lehen hitza eta elkarrizketa euskaraz piztea, txapak erabilita.",
+        }),
+      });
+      const jsonEragile = await resEragile.json();
+      if (!jsonEragile.success || !jsonEragile.data) {
+        throw new Error("Ezin izan da eragilea sortu");
+      }
+      const newEragilea = jsonEragile.data as Eragilea;
+
+      // 2. Create experiment with 'barra-barra-txapak' pilot
+      const resExp = await fetch("/api/esperimentuak", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eragile_id: newEragilea.id,
+          pilotu_id: "barra-barra-txapak",
+          hipotesia: "Langileek txapa eramanda, bezeroen lehen hitza eta elkarrizketak euskaraz %25 igoko dira.",
+          taldea: "Saltokiko lantaldea",
+          pertsonak: "Bezeroak eta langileak",
+          gunea: "Saltokiaren mostradorea",
+          xede_portzentajea: data.xede_portzentajea || 60,
+        }),
+      });
+      const jsonExp = await resExp.json();
+      if (!jsonExp.success || !jsonExp.data) {
+        throw new Error("Ezin izan da esperimentua sortu");
+      }
+      const newExp = jsonExp.data as Esperimentua;
+
+      await refreshData();
+      setCurrentEragileId(newEragilea.id);
+      setObservationConfig({ expId: newExp.id, phase: "T0" });
+      triggerConfetti();
+      return { eragilea: newEragilea, esperimentua: newExp };
+    } catch (e) {
+      console.error("Errorea saltoki azkarra sortzean:", e);
+      return null;
+    }
   };
 
   const syncOfflineData = async () => {
@@ -596,6 +658,7 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
         registerEragilea,
         createPilotua,
         createEsperimentua,
+        createQuickPostua,
         saveNeurketa,
         deleteNeurketa,
         markNudgeRead,

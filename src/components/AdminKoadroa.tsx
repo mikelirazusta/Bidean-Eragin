@@ -19,6 +19,10 @@ import {
   Star,
   Flame,
   MessageCircleHeart,
+  Timer,
+  Store,
+  X,
+  BadgeCheck,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { Eragilea } from "@/lib/db";
@@ -30,6 +34,8 @@ export default function AdminKoadroa() {
     neurketak,
     pilotuak,
     createAdminNudge,
+    createQuickPostua,
+    setObservationConfig,
     setCurrentEragileId,
     setActiveTab,
   } = useApp();
@@ -37,6 +43,32 @@ export default function AdminKoadroa() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterMota, setFilterMota] = useState("all");
   const [selectedEragileForNudge, setSelectedEragileForNudge] = useState<Eragilea | null>(null);
+
+  // New Post/Shop Modal State
+  const [showNewPostModal, setShowNewPostModal] = useState(false);
+  const [postName, setPostName] = useState("");
+  const [postManager, setPostManager] = useState("");
+  const [postTargetPct, setPostTargetPct] = useState(60);
+  const [isCreatingPost, setIsCreatingPost] = useState(false);
+
+  const handleCreatePostSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!postName.trim()) return;
+
+    setIsCreatingPost(true);
+    const created = await createQuickPostua({
+      izena: postName.trim(),
+      arduraduna: postManager.trim() || undefined,
+      xede_portzentajea: postTargetPct,
+    });
+    setIsCreatingPost(false);
+
+    if (created) {
+      setPostName("");
+      setPostManager("");
+      setShowNewPostModal(false);
+    }
+  };
 
   // New custom nudge form
   const [nudgeTitle, setNudgeTitle] = useState("");
@@ -180,13 +212,23 @@ export default function AdminKoadroa() {
           </p>
         </div>
 
-        <button
-          onClick={handleExportCSV}
-          className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-2 shadow-md transition cursor-pointer self-start md:self-auto"
-        >
-          <Download className="w-4 h-4 text-slate-300" />
-          <span>Esportatu Neurketak (CSV)</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
+          <button
+            onClick={() => setShowNewPostModal(true)}
+            className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>+ Saltoki / Postu Berria Gehitu</span>
+          </button>
+
+          <button
+            onClick={handleExportCSV}
+            className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-2 shadow-md transition cursor-pointer"
+          >
+            <Download className="w-4 h-4 text-slate-300" />
+            <span>Esportatu (CSV)</span>
+          </button>
+        </div>
       </div>
 
       {/* Global KPIs Cards */}
@@ -444,7 +486,23 @@ export default function AdminKoadroa() {
                       </div>
                     </td>
 
-                    <td className="py-3.5 text-right space-x-2">
+                    <td className="py-3.5 text-right space-x-2 whitespace-nowrap">
+                      {exp && (
+                        <button
+                          onClick={() => {
+                            const nextPhase = t0List.length === 0 ? "T0" : t1List.length === 0 ? "T1" : "T2";
+                            setObservationConfig({ expId: exp.id, phase: nextPhase });
+                            setCurrentEragileId(eragile.id);
+                            setActiveTab("behaketa");
+                          }}
+                          className="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs inline-flex items-center gap-1 transition cursor-pointer"
+                          title="Neurtu postu hau zuzenean"
+                        >
+                          <Timer className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Neurtu ({t0List.length === 0 ? "T0" : t1List.length === 0 ? "T1" : "T2"})</span>
+                        </button>
+                      )}
+
                       <button
                         onClick={() => {
                           setCurrentEragileId(eragile.id);
@@ -489,6 +547,26 @@ export default function AdminKoadroa() {
               })}
             </tbody>
           </table>
+
+          {filteredEragileak.length === 0 && (
+            <div className="text-center py-12 px-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 my-4">
+              <Store className="w-10 h-10 text-slate-400 mx-auto mb-2" />
+              <h4 className="font-bold text-slate-800 text-sm mb-1">
+                Oraindik ez dago saltokirik zerrendan
+              </h4>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4">
+                Gaur bi saltokitara bazoazte T0 neurtzera, sortu hemen biak segundu gutxitan eta zuzenean neurtzen hasi:
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowNewPostModal(true)}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm inline-flex items-center gap-2 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>+ Gehitu 1. Saltokia / Postua</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -592,6 +670,110 @@ export default function AdminKoadroa() {
                 </div>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* New Post / Shop Modal */}
+      {showNewPostModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-200">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 bg-emerald-100 text-emerald-800 rounded-2xl">
+                  <Store className="w-5 h-5 text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base">
+                    Saltoki edo Postu Berria Gehitu
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Gaurko behaketa itsua (T0) prestatzeko
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowNewPostModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreatePostSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Saltokiaren edo Postuaren Izena *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Adib: Bretxako 1. postua - Harategia"
+                  value={postName}
+                  onChange={(e) => setPostName(e.target.value)}
+                  className="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Arduradunaren Izena (hautazkoa)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Adib: Miren / Koldo"
+                  value={postManager}
+                  onChange={(e) => setPostManager(e.target.value)}
+                  className="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Euskararen Xede-Helburua (%):
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="range"
+                    min="30"
+                    max="90"
+                    step="5"
+                    value={postTargetPct}
+                    onChange={(e) => setPostTargetPct(Number(e.target.value))}
+                    className="flex-1 accent-emerald-600"
+                  />
+                  <span className="font-extrabold text-sm text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                    %{postTargetPct}
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-emerald-50 rounded-2xl p-3 border border-emerald-200 text-xs text-emerald-900 flex items-start gap-2">
+                <BadgeCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold">Euskaraz barra-barra txapak</span> pilotua automatikoki esleituko zaio, eta <span className="font-bold">T0 neurketa itsua</span> prest geratuko da berehala neurtzeko.
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowNewPostModal(false)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                >
+                  Utzi
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreatingPost || !postName.trim()}
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  {isCreatingPost ? "Sortzen..." : "Sortu Postua & Esperimentua →"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -61,26 +61,6 @@ function MainContent() {
           </div>
 
           <div className="flex items-center gap-4">
-            {currentUser.role === "admin" && (
-              <>
-                <button
-                  onClick={() => {
-                    if (userRole === "eragilea") {
-                      setUserRole("admin");
-                      setActiveTab("admin");
-                    } else {
-                      setUserRole("eragilea");
-                      setActiveTab("panela");
-                    }
-                  }}
-                  className="text-indigo-700 hover:underline font-semibold cursor-pointer"
-                >
-                  Aldatu ikuspegia ({userRole === "eragilea" ? "Admin koadroa" : "Zentroko kidea"})
-                </button>
-                <span>•</span>
-              </>
-            )}
-
             <button
               onClick={logout}
               className="text-rose-600 hover:text-rose-800 font-semibold flex items-center gap-1 cursor-pointer"

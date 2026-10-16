@@ -51,14 +51,15 @@ const ERRONKA_AUKERAK = [
 export default function AuthPortal() {
   const { login, register } = useApp();
 
+  const [portalRole, setPortalRole] = useState<"admin" | "eragilea">("admin");
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Login form state
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
+  const [loginEmail, setLoginEmail] = useState("admin@bagera.eus");
+  const [loginPassword, setLoginPassword] = useState("bagera2026");
 
   // Register form state
   const [regStep, setRegStep] = useState<1 | 2>(1);
@@ -171,36 +172,43 @@ export default function AuthPortal() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-lg px-4">
         <div className="bg-white py-8 px-6 sm:px-10 shadow-xl shadow-slate-200/60 rounded-3xl border border-slate-200/80">
           
-          {/* Tabs Switcher: Saioa Hasi vs Kontua Sortu */}
-          <div className="flex bg-slate-100 p-1.5 rounded-2xl mb-6">
+          {/* Main Role Selector: Bagera Admin vs Eragileak */}
+          <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1.5 rounded-2xl mb-6">
             <button
               type="button"
               onClick={() => {
+                setPortalRole("admin");
+                setLoginEmail("admin@bagera.eus");
+                setLoginPassword("bagera2026");
+                setErrorMessage("");
+              }}
+              className={`py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer ${
+                portalRole === "admin"
+                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Bagera (Admin)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setPortalRole("eragilea");
+                setLoginEmail("");
+                setLoginPassword("");
                 setActiveTab("login");
                 setErrorMessage("");
               }}
-              className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition cursor-pointer ${
-                activeTab === "login"
+              className={`py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer ${
+                portalRole === "eragilea"
                   ? "bg-white text-slate-900 shadow-sm"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              Saioa Hasi
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab("register");
-                setErrorMessage("");
-                setRegStep(1);
-              }}
-              className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition cursor-pointer ${
-                activeTab === "register"
-                  ? "bg-emerald-600 text-white shadow-sm"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              Kontua Sortu (Eragile Berria)
+              <Store className="w-4 h-4 text-emerald-600" />
+              <span>Eragileak (Dendak)</span>
             </button>
           </div>
 
@@ -212,105 +220,188 @@ export default function AuthPortal() {
             </div>
           )}
 
-          {/* ===================== TAB 1: SAIOA HASI ===================== */}
-          {activeTab === "login" && (
-            <form onSubmit={handleLoginSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Helbide elektronikoa
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <Mail className="w-4 h-4" />
-                  </div>
-                  <input
-                    type="email"
-                    required
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    placeholder="adib. mikel@ikastola.eus"
-                    className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-sky-500 text-sm transition"
-                  />
+          {/* ===================== MODE 1: BAGERA ADMIN ===================== */}
+          {portalRole === "admin" && (
+            <div>
+              <div className="bg-indigo-50/70 border border-indigo-100 rounded-2xl p-4 mb-5 text-xs text-indigo-900">
+                <div className="font-bold text-indigo-950 flex items-center gap-1.5 mb-1">
+                  <ShieldCheck className="w-4 h-4 text-indigo-600" />
+                  <span>Bagera Koordinazio Gunea</span>
                 </div>
+                <p className="text-indigo-800 leading-relaxed">
+                  Bagerako lantaldeak komertzio guztiak gainbegiratu, postu berriak gehitu eta gaurko T0 neurketa itsuak zuzenean egiteko sarbidea.
+                </p>
               </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+              <form onSubmit={handleLoginSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Admin Helbidea
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <Mail className="w-4 h-4" />
+                    </div>
+                    <input
+                      type="email"
+                      required
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      placeholder="admin@bagera.eus"
+                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 text-sm transition"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                     Pasahitza
                   </label>
-                </div>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <Lock className="w-4 h-4" />
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <Lock className="w-4 h-4" />
+                    </div>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 text-sm transition"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    required
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-sky-500 text-sm transition"
-                  />
+                </div>
+
+                <div className="pt-2">
                   <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-600/25 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {isSubmitting ? (
+                      <span>Saioa hasten...</span>
+                    ) : (
+                      <>
+                        <ShieldCheck className="w-4 h-4" />
+                        <span>Sartu Bagera Koordinaziora</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
                   </button>
                 </div>
-              </div>
+              </form>
+            </div>
+          )}
 
-              <div className="pt-2">
+          {/* ===================== MODE 2: ERAGILEAK ===================== */}
+          {portalRole === "eragilea" && (
+            <div>
+              {/* Tabs Switcher: Saioa Hasi vs Kontua Sortu */}
+              <div className="flex bg-slate-100 p-1.5 rounded-2xl mb-6">
                 <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-sky-600 to-teal-600 hover:from-sky-700 hover:to-teal-700 text-white font-bold text-sm shadow-md shadow-sky-600/25 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  type="button"
+                  onClick={() => {
+                    setActiveTab("login");
+                    setErrorMessage("");
+                  }}
+                  className={`flex-1 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
+                    activeTab === "login"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
                 >
-                  {isSubmitting ? (
-                    <span>Saioa hasten...</span>
-                  ) : (
-                    <>
-                      <span>Sartu aplikazioan</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
+                  Saioa Hasi (Dendaria)
                 </button>
-              </div>
-
-              {/* Quick switch to register */}
-              <div className="text-center pt-2">
                 <button
                   type="button"
                   onClick={() => {
                     setActiveTab("register");
                     setErrorMessage("");
+                    setRegStep(1);
                   }}
-                  className="text-xs text-sky-700 hover:underline font-semibold cursor-pointer"
+                  className={`flex-1 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
+                    activeTab === "register"
+                      ? "bg-emerald-600 text-white shadow-sm"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
                 >
-                  Ez daukazu konturik oraindik? Sortu zure zentroaren kontua hemen →
+                  Kontua Sortu (Eragile Berria)
                 </button>
               </div>
 
-              {/* Admin quick access helper */}
-              <div className="mt-6 pt-5 border-t border-slate-100">
-                <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 flex items-center justify-between gap-3 text-xs">
-                  <div className="flex items-center gap-2 text-slate-600">
-                    <ShieldCheck className="w-4 h-4 text-indigo-600 shrink-0" />
-                    <span>Bagera / Mikel koordinatzailea?</span>
+              {activeTab === "login" && (
+                <form onSubmit={handleLoginSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Saltokiaren Helbide Elektronikoa
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <Mail className="w-4 h-4" />
+                      </div>
+                      <input
+                        type="email"
+                        required
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
+                        placeholder="adib. denda@merkatua.eus"
+                        className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 text-sm transition"
+                      />
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleQuickAdminLogin}
-                    disabled={isSubmitting}
-                    className="px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold hover:bg-indigo-100 transition cursor-pointer text-[11px]"
-                  >
-                    Admin gisa sartu
-                  </button>
-                </div>
-              </div>
-            </form>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      Pasahitza
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <Lock className="w-4 h-4" />
+                      </div>
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        required
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 text-sm transition"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-sm shadow-md shadow-emerald-600/25 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                    >
+                      {isSubmitting ? (
+                        <span>Saioa hasten...</span>
+                      ) : (
+                        <>
+                          <span>Sartu Zure Saltokian</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
           )}
 
           {/* ===================== TAB 2: KONTUA SORTU ===================== */}

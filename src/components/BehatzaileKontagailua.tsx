@@ -15,6 +15,10 @@ import {
   Sparkles,
   TrendingUp,
   Clock,
+  Store,
+  Plus,
+  X,
+  BadgeCheck,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { playCounterClick } from "@/lib/audio";
@@ -27,6 +31,9 @@ export default function BehatzaileKontagailua() {
     observationConfig,
     setObservationConfig,
     saveNeurketa,
+    createQuickPostua,
+    currentUser,
+    setCurrentEragileId,
     setActiveTab,
     isOnline,
   } = useApp();
@@ -71,6 +78,50 @@ export default function BehatzaileKontagailua() {
   const [notes, setNotes] = useState<string>("");
   const [behatzailea, setBehatzailea] = useState<string>("Behatzaile Itsua");
   const [isSaving, setIsSaving] = useState<boolean>(false);
+
+  // Quick Stand Modal state
+  const [showNewStandModal, setShowNewStandModal] = useState<boolean>(false);
+  const [newStandName, setNewStandName] = useState<string>("");
+  const [newStandManager, setNewStandManager] = useState<string>("");
+  const [isCreatingStand, setIsCreatingStand] = useState<boolean>(false);
+
+  // Restore and persist observer name
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("bidean_behatzaile_izena");
+      if (saved) {
+        setBehatzailea(saved);
+      } else if (currentUser?.name && !currentUser.name.includes("Admin")) {
+        setBehatzailea(currentUser.name);
+      }
+    } catch {}
+  }, [currentUser]);
+
+  const handleBehatzaileaChange = (val: string) => {
+    setBehatzailea(val);
+    try {
+      localStorage.setItem("bidean_behatzaile_izena", val);
+    } catch {}
+  };
+
+  const handleCreateStandSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newStandName.trim()) return;
+
+    setIsCreatingStand(true);
+    const created = await createQuickPostua({
+      izena: newStandName.trim(),
+      arduraduna: newStandManager.trim() || undefined,
+    });
+    setIsCreatingStand(false);
+
+    if (created) {
+      setNewStandName("");
+      setNewStandManager("");
+      setShowNewStandModal(false);
+      setPhase("T0");
+    }
+  };
 
   // Timer reference
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -213,6 +264,83 @@ export default function BehatzaileKontagailua() {
   return (
     <div className="max-w-xl mx-auto px-4 py-6 sm:py-8">
       
+      {/* Stand & Observer Selector Card */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white rounded-3xl p-5 shadow-lg mb-4 border border-slate-700/80">
+        <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-700/60">
+          <div className="flex items-center gap-2">
+            <Store className="w-4 h-4 text-emerald-400" />
+            <span className="text-xs font-bold text-slate-200 uppercase tracking-wider">
+              Gaurko Neurketaren Saltokia & Behatzailea
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowNewStandModal(true)}
+            disabled={sessionActive}
+            className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer disabled:opacity-50 transition"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>+ Gehitu Postu Berria</span>
+          </button>
+        </div>
+
+        {esperimentuak.length === 0 ? (
+          <div className="bg-slate-800/80 rounded-2xl p-4 border border-slate-700 text-center">
+            <p className="text-xs text-slate-300 mb-3">
+              Oraindik ez dago posturik sortuta sisteman. Sortu gaur neurtuko duzuen lehen postua:
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowNewStandModal(true)}
+              className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs rounded-xl transition shadow-md flex items-center gap-2 mx-auto cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>+ Sortu 1. Postua Orain</span>
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                📍 Zein komertzio / postutan zaude?
+              </label>
+              <select
+                value={currentExp?.id || ""}
+                disabled={sessionActive}
+                onChange={(e) => {
+                  const exp = esperimentuak.find((x) => x.id === e.target.value);
+                  if (exp) {
+                    setObservationConfig({ expId: exp.id, phase });
+                    if (exp.eragile_id) setCurrentEragileId(exp.eragile_id);
+                  }
+                }}
+                className="w-full bg-slate-800 border border-slate-600 text-white rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-hidden cursor-pointer disabled:opacity-50"
+              >
+                {esperimentuak.map((exp) => (
+                  <option key={exp.id} value={exp.id}>
+                    {exp.eragile_izena || "Saltokia"} ({exp.gunea || exp.taldea || "Komertzioa"})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                👤 Behatzailearen izena (nor zara?):
+              </label>
+              <input
+                type="text"
+                value={behatzailea}
+                disabled={sessionActive}
+                onChange={(e) => handleBehatzaileaChange(e.target.value)}
+                placeholder="Adibidez: Mikel / Ane..."
+                className="w-full bg-slate-800 border border-slate-600 text-white rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-hidden disabled:opacity-50 placeholder:text-slate-500"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Top Header Card */}
       <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-md border border-slate-200 mb-5">
         <div className="flex items-center justify-between mb-3">
@@ -705,6 +833,90 @@ export default function BehatzaileKontagailua() {
                 </span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Stand Modal */}
+      {showNewStandModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-200">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 bg-emerald-100 text-emerald-800 rounded-2xl">
+                  <Store className="w-5 h-5 text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base">
+                    Gehitu Saltokia / Postua
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Gaurko neurketarako postu berria
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowNewStandModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateStandSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Saltokiaren edo Postuaren Izena *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Adib: Bretxako 1. postua - Harategia"
+                  value={newStandName}
+                  onChange={(e) => setNewStandName(e.target.value)}
+                  className="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Arduradunaren izena (hautazkoa)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Adib: Miren / Koldo"
+                  value={newStandManager}
+                  onChange={(e) => setNewStandManager(e.target.value)}
+                  className="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
+              </div>
+
+              <div className="bg-emerald-50 rounded-2xl p-3 border border-emerald-200 text-xs text-emerald-900 flex items-start gap-2">
+                <BadgeCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold">Euskaraz barra-barra txapak</span> pilotua automatikoki lotuko zaio, eta <span className="font-bold">T0 neurketa itsua</span> prest geratuko da.
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowNewStandModal(false)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                >
+                  Utzi
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreatingStand || !newStandName.trim()}
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  {isCreatingStand ? "Sortzen..." : "Sortu eta hasi T0 neurtzen →"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
