@@ -84,3 +84,109 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export async function PATCH(request: Request) {
+  try {
+    await syncDbFromCloud();
+
+    const body = await request.json();
+    const {
+      id,
+      izena,
+      azpititulua,
+      deskribapena,
+      mota,
+      adibidea,
+      urratsak,
+      ikonoa,
+      kolorea,
+    } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: "Pilotuaren IDa beharrezkoa da." },
+        { status: 400 }
+      );
+    }
+
+    const existing = db.prepare("SELECT * FROM pilotuak WHERE id = ?").get(id) as Pilotua | undefined;
+    if (!existing) {
+      return NextResponse.json(
+        { success: false, error: "Pilotua ez da aurkitu." },
+        { status: 404 }
+      );
+    }
+
+    const updatedIzena = izena !== undefined ? String(izena).trim() : existing.izena;
+    const updatedAzpititulua = azpititulua !== undefined ? String(azpititulua).trim() : existing.azpititulua;
+    const updatedDeskribapena = deskribapena !== undefined ? String(deskribapena).trim() : existing.deskribapena;
+    const updatedMota = mota !== undefined ? String(mota).trim() : existing.mota;
+    const updatedAdibidea = adibidea !== undefined ? String(adibidea).trim() : existing.adibidea;
+    const updatedUrratsakJson =
+      Array.isArray(urratsak) && urratsak.length > 0
+        ? JSON.stringify(urratsak)
+        : existing.urratsak_json;
+    const updatedIkonoa = ikonoa !== undefined ? String(ikonoa).trim() : existing.ikonoa;
+    const updatedKolorea = kolorea !== undefined ? String(kolorea).trim() : existing.kolorea;
+
+    db.prepare(
+      "UPDATE pilotuak SET izena = ?, azpititulua = ?, deskribapena = ?, mota = ?, adibidea = ?, urratsak_json = ?, ikonoa = ?, kolorea = ? WHERE id = ?"
+    ).run(
+      updatedIzena,
+      updatedAzpititulua,
+      updatedDeskribapena,
+      updatedMota,
+      updatedAdibidea,
+      updatedUrratsakJson,
+      updatedIkonoa,
+      updatedKolorea,
+      id
+    );
+
+    const updated = db.prepare("SELECT * FROM pilotuak WHERE id = ?").get(id) as Pilotua;
+
+    await syncDbToCloud();
+
+    return NextResponse.json({
+      success: true,
+      data: updated,
+    });
+  } catch (error) {
+    console.error("Errorea pilotua eguneratzean:", error);
+    return NextResponse.json(
+      { success: false, error: "Ezin izan da pilotua eguneratu." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    await syncDbFromCloud();
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: "Pilotuaren IDa beharrezkoa da." },
+        { status: 400 }
+      );
+    }
+
+    db.prepare("DELETE FROM pilotuak WHERE id = ?").run(id);
+
+    await syncDbToCloud();
+
+    return NextResponse.json({
+      success: true,
+      message: "Pilotua katalogotik ezabatu da.",
+    });
+  } catch (error) {
+    console.error("Errorea pilotua ezabatzean:", error);
+    return NextResponse.json(
+      { success: false, error: "Ezin izan da pilotua ezabatu." },
+      { status: 500 }
+    );
+  }
+}

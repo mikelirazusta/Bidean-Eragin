@@ -361,27 +361,31 @@ export default function Navbar() {
             </button>
           </div>
 
-          <div className="flex items-center gap-1.5 text-[11px]">
+          <div className="flex items-center gap-2 text-[11px]">
             {isAdmin ? (
-              <>
-                <span className="text-slate-400 font-semibold mr-1">Zentroak:</span>
-                {eragileak.map((e) => (
-                  <button
-                    key={e.id}
-                    onClick={() => {
-                      setCurrentEragileId(e.id);
-                      setActiveTab("panela");
+              eragileak.length > 0 ? (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-slate-400 font-semibold">Saltoki aktiboa:</span>
+                  <select
+                    value={activeEragilea?.id || ""}
+                    onChange={(e) => {
+                      setCurrentEragileId(e.target.value);
+                      if (activeTab === "admin") {
+                        setActiveTab("panela");
+                      }
                     }}
-                    className={`px-2 py-0.5 rounded-md border font-bold transition cursor-pointer truncate max-w-[130px] ${
-                      currentEragileId === e.id
-                        ? "bg-sky-100 border-sky-400 text-sky-800 shadow-2xs"
-                        : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                    }`}
+                    className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-800 font-bold text-xs focus:ring-2 focus:ring-sky-500 focus:outline-hidden cursor-pointer max-w-[220px]"
                   >
-                    {e.izena}
-                  </button>
-                ))}
-              </>
+                    {eragileak.map((e) => (
+                      <option key={e.id} value={e.id}>
+                        {e.izena}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <span className="text-slate-400 italic">Saltokirik ez</span>
+              )
             ) : activeEragilea ? (
               <span className="text-slate-700 font-bold bg-white border border-slate-200 px-3 py-1 rounded-lg flex items-center gap-1.5 shadow-2xs">
                 {getMotaIcon(activeEragilea.mota)}
@@ -390,55 +394,55 @@ export default function Navbar() {
             ) : null}
           </div>
         </div>
+      </div>
 
-        {/* Mobile Bottom Navigation Bar */}
-        <div className="lg:hidden border-t border-slate-200 py-2 flex items-center justify-around">
+      {/* Mobile Fixed Bottom Navigation Bar */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200 py-2 px-2 flex items-center justify-around shadow-lg">
+        <button
+          onClick={() => setActiveTab("panela")}
+          className={`flex flex-col items-center gap-0.5 text-[11px] font-medium py-1 px-2.5 rounded-xl cursor-pointer ${
+            activeTab === "panela" ? "text-sky-700 font-bold bg-sky-50" : "text-slate-500"
+          }`}
+        >
+          <LayoutDashboard className="w-5 h-5" />
+          <span>Panela</span>
+        </button>
+        <button
+          onClick={() => setActiveTab("katalogoa")}
+          className={`flex flex-col items-center gap-0.5 text-[11px] font-medium py-1 px-2.5 rounded-xl cursor-pointer ${
+            activeTab === "katalogoa" ? "text-sky-700 font-bold bg-sky-50" : "text-slate-500"
+          }`}
+        >
+          <BookOpen className="w-5 h-5" />
+          <span>Pilotuak</span>
+        </button>
+        <button
+          onClick={() => setActiveTab("behaketa")}
+          className={`flex flex-col items-center gap-0.5 text-[11px] font-bold py-1.5 px-3.5 rounded-xl bg-emerald-600 text-white shadow-md shadow-emerald-600/30 cursor-pointer ${
+            activeTab === "behaketa" ? "ring-2 ring-emerald-300" : ""
+          }`}
+        >
+          <Timer className="w-5 h-5" />
+          <span>Neurtu</span>
+        </button>
+        {isAdmin && (
           <button
-            onClick={() => setActiveTab("panela")}
-            className={`flex flex-col items-center gap-1 text-[11px] font-medium py-1 px-2 rounded-lg cursor-pointer ${
-              activeTab === "panela" ? "text-sky-700 font-bold" : "text-slate-500"
+            onClick={() => setActiveTab("admin")}
+            className={`flex flex-col items-center gap-0.5 text-[11px] font-medium py-1 px-2.5 rounded-xl cursor-pointer ${
+              activeTab === "admin" ? "text-indigo-700 font-bold bg-indigo-50" : "text-slate-500"
             }`}
           >
-            <LayoutDashboard className="w-5 h-5" />
-            Panela
+            <ShieldCheck className="w-5 h-5" />
+            <span>Admin</span>
           </button>
-          <button
-            onClick={() => setActiveTab("katalogoa")}
-            className={`flex flex-col items-center gap-1 text-[11px] font-medium py-1 px-2 rounded-lg cursor-pointer ${
-              activeTab === "katalogoa" ? "text-sky-700 font-bold" : "text-slate-500"
-            }`}
-          >
-            <BookOpen className="w-5 h-5" />
-            Pilotuak
-          </button>
-          <button
-            onClick={() => setActiveTab("behaketa")}
-            className={`flex flex-col items-center gap-1 text-[11px] font-bold py-1 px-3 rounded-xl bg-emerald-600 text-white shadow-md shadow-emerald-600/30 cursor-pointer ${
-              activeTab === "behaketa" ? "scale-105" : ""
-            }`}
-          >
-            <Timer className="w-5 h-5" />
-            Kontagailua
-          </button>
-          {isAdmin && (
-            <button
-              onClick={() => setActiveTab("admin")}
-              className={`flex flex-col items-center gap-1 text-[11px] font-medium py-1 px-2 rounded-lg cursor-pointer ${
-                activeTab === "admin" ? "text-indigo-600 font-bold" : "text-slate-500"
-              }`}
-            >
-              <ShieldCheck className="w-5 h-5" />
-              Admin
-            </button>
-          )}
-          <button
-            onClick={logout}
-            className="flex flex-col items-center gap-1 text-[11px] font-medium py-1 px-2 rounded-lg text-rose-600 hover:text-rose-800 cursor-pointer"
-          >
-            <LogOut className="w-5 h-5" />
-            Itxi
-          </button>
-        </div>
+        )}
+        <button
+          onClick={logout}
+          className="flex flex-col items-center gap-0.5 text-[11px] font-medium py-1 px-2 rounded-xl text-rose-600 hover:text-rose-800 cursor-pointer"
+        >
+          <LogOut className="w-5 h-5" />
+          <span>Itxi</span>
+        </button>
       </div>
     </header>
   );

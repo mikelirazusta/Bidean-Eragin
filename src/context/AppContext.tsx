@@ -90,7 +90,20 @@ interface AppContextType {
     arduraduna?: string;
     email?: string;
     erronka_nagusia?: string;
+    password?: string;
   }) => Promise<Eragilea | null>;
+  updatePilotua: (data: {
+    id: string;
+    izena?: string;
+    azpititulua?: string;
+    deskribapena?: string;
+    mota?: string;
+    adibidea?: string;
+    urratsak?: string[];
+    ikonoa?: string;
+    kolorea?: string;
+  }) => Promise<Pilotua | null>;
+  deletePilotua: (id: string) => Promise<boolean>;
   updateEsperimentua: (data: {
     id: string;
     pilotu_id?: string;
@@ -586,6 +599,7 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
     arduraduna?: string;
     email?: string;
     erronka_nagusia?: string;
+    password?: string;
   }) => {
     try {
       const res = await fetch("/api/eragileak", {
@@ -602,6 +616,50 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
       console.error("Errorea eragilea eguneratzean:", e);
     }
     return null;
+  };
+
+  const updatePilotua = async (data: {
+    id: string;
+    izena?: string;
+    azpititulua?: string;
+    deskribapena?: string;
+    mota?: string;
+    adibidea?: string;
+    urratsak?: string[];
+    ikonoa?: string;
+    kolorea?: string;
+  }) => {
+    try {
+      const res = await fetch("/api/pilotuak", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        await refreshData();
+        return json.data as Pilotua;
+      }
+    } catch (e) {
+      console.error("Errorea pilotua eguneratzean:", e);
+    }
+    return null;
+  };
+
+  const deletePilotua = async (id: string) => {
+    try {
+      const res = await fetch(`/api/pilotuak?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      const json = await res.json();
+      if (json.success) {
+        await refreshData();
+        return true;
+      }
+    } catch (e) {
+      console.error("Errorea pilotua ezabatzean:", e);
+    }
+    return false;
   };
 
   const updateEsperimentua = async (data: {
@@ -857,6 +915,8 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
         logout,
         registerEragilea,
         createPilotua,
+        updatePilotua,
+        deletePilotua,
         createEsperimentua,
         createQuickPostua,
         updateEragilea,

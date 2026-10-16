@@ -22,6 +22,8 @@ import {
   HelpCircle,
   Shield,
   Tag,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { Pilotua } from "@/lib/db";
@@ -46,12 +48,22 @@ const AVAILABLE_COLORS = [
 ];
 
 export default function PilotuenKatalogoa() {
-  const { pilotuak, activeEragilea, createPilotua } = useApp();
+  const {
+    pilotuak,
+    esperimentuak,
+    activeEragilea,
+    currentUser,
+    createPilotua,
+    updatePilotua,
+    deletePilotua,
+  } = useApp();
   const [selectedPilot, setSelectedPilot] = useState<Pilotua | null>(null);
   const [showMaterialsPilot, setShowMaterialsPilot] = useState<Pilotua | null>(null);
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+  const [editingPilotId, setEditingPilotId] = useState<string | null>(null);
+  const [deletingPilotId, setDeletingPilotId] = useState<string | null>(null);
 
-  // Create pilot modal form state
+  // Create/Edit pilot modal form state
   const [newIzena, setNewIzena] = useState("");
   const [newAzpititulua, setNewAzpititulua] = useState("");
   const [newMota, setNewMota] = useState("Merkataritza eta ostalaritza");
@@ -67,6 +79,56 @@ export default function PilotuenKatalogoa() {
     "5. T2 neurketa egin 14-21 egunera (ohitura finkatu dela neurtzeko).",
   ]);
   const [isSubmittingPilot, setIsSubmittingPilot] = useState(false);
+
+  const handleOpenCreateModal = () => {
+    setEditingPilotId(null);
+    setNewIzena("");
+    setNewAzpititulua("");
+    setNewMota("Merkataritza eta ostalaritza");
+    setNewDeskribapena("");
+    setNewAdibidea("");
+    setNewIkonoa("BadgeCheck");
+    setNewKolorea("emerald");
+    setNewUrratsak([
+      "1. Lantaldearekin erronka adostu eta materialak prestatu.",
+      "2. T0 neurketa itsua egin (esku-hartzea hasi aurretik).",
+      "3. Pilotua espazioan aktibatu.",
+      "4. T1 neurketa egin (lehen asteko eragina jasotzeko).",
+      "5. T2 neurketa egin 14-21 egunera (ohitura finkatu dela neurtzeko).",
+    ]);
+    setShowCreateModal(true);
+  };
+
+  const handleOpenEditPilot = (pilotu: Pilotua) => {
+    setEditingPilotId(pilotu.id);
+    setNewIzena(pilotu.izena);
+    setNewAzpititulua(pilotu.azpititulua);
+    setNewMota(pilotu.mota);
+    setNewDeskribapena(pilotu.deskribapena);
+    setNewAdibidea(pilotu.adibidea);
+    setNewIkonoa(pilotu.ikonoa || "BadgeCheck");
+    setNewKolorea(pilotu.kolorea || "emerald");
+    try {
+      const parsed = JSON.parse(pilotu.urratsak_json || "[]");
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        setNewUrratsak(parsed);
+      }
+    } catch {}
+    setShowCreateModal(true);
+  };
+
+  const handleDeletePilot = async (pilotu: Pilotua) => {
+    if (
+      !window.confirm(
+        `Ziur zaude "${pilotu.izena}" pilotua katalogotik ezabatu nahi duzula?`
+      )
+    ) {
+      return;
+    }
+    setDeletingPilotId(pilotu.id);
+    await deletePilotua(pilotu.id);
+    setDeletingPilotId(null);
+  };
 
   const getPilotTheme = (kolorea: string, ikonoa: string, id: string) => {
     // Resolve icon
@@ -134,21 +196,37 @@ export default function PilotuenKatalogoa() {
     if (!newIzena.trim() || !newAzpititulua.trim() || !newDeskribapena.trim()) return;
 
     setIsSubmittingPilot(true);
-    const created = await createPilotua({
-      izena: newIzena.trim(),
-      azpititulua: newAzpititulua.trim(),
-      deskribapena: newDeskribapena.trim(),
-      mota: newMota.trim(),
-      adibidea: newAdibidea.trim() || `"${newIzena}" dinamika espazioan aktibatuta`,
-      urratsak: newUrratsak.filter((u) => u.trim().length > 0),
-      ikonoa: newIkonoa,
-      kolorea: newKolorea,
-    });
+    let savedPilot: Pilotua | null = null;
+
+    if (editingPilotId) {
+      savedPilot = await updatePilotua({
+        id: editingPilotId,
+        izena: newIzena.trim(),
+        azpititulua: newAzpititulua.trim(),
+        deskribapena: newDeskribapena.trim(),
+        mota: newMota.trim(),
+        adibidea: newAdibidea.trim() || `"${newIzena}" dinamika espazioan aktibatuta`,
+        urratsak: newUrratsak.filter((u) => u.trim().length > 0),
+        ikonoa: newIkonoa,
+        kolorea: newKolorea,
+      });
+    } else {
+      savedPilot = await createPilotua({
+        izena: newIzena.trim(),
+        azpititulua: newAzpititulua.trim(),
+        deskribapena: newDeskribapena.trim(),
+        mota: newMota.trim(),
+        adibidea: newAdibidea.trim() || `"${newIzena}" dinamika espazioan aktibatuta`,
+        urratsak: newUrratsak.filter((u) => u.trim().length > 0),
+        ikonoa: newIkonoa,
+        kolorea: newKolorea,
+      });
+    }
 
     setIsSubmittingPilot(false);
-    if (created) {
+    if (savedPilot) {
       setShowCreateModal(false);
-      // Reset form
+      setEditingPilotId(null);
       setNewIzena("");
       setNewAzpititulua("");
       setNewDeskribapena("");
@@ -184,7 +262,7 @@ export default function PilotuenKatalogoa() {
         {/* Create Pilot Button */}
         <div className="shrink-0">
           <button
-            onClick={() => setShowCreateModal(true)}
+            onClick={handleOpenCreateModal}
             className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-sm shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 transition cursor-pointer hover:scale-102"
           >
             <PlusCircle className="w-4 h-4" />
@@ -199,6 +277,9 @@ export default function PilotuenKatalogoa() {
           const theme = getPilotTheme(pilotu.kolorea, pilotu.ikonoa, pilotu.id);
           const Icon = theme.icon;
           const urratsak: string[] = JSON.parse(pilotu.urratsak_json || "[]");
+          const activeExpCount = esperimentuak.filter(
+            (e) => e.pilotu_id === pilotu.id
+          ).length;
 
           return (
             <div
@@ -213,17 +294,49 @@ export default function PilotuenKatalogoa() {
                   >
                     <Icon className="w-7 h-7" />
                   </div>
-                  <span
-                    className={`px-3 py-1 text-xs font-bold rounded-full border ${theme.badgeColor}`}
-                  >
-                    {pilotu.mota}
-                  </span>
+                  <div className="flex flex-col items-end gap-1.5">
+                    <span
+                      className={`px-3 py-1 text-xs font-bold rounded-full border ${theme.badgeColor}`}
+                    >
+                      {pilotu.mota}
+                    </span>
+                    <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full">
+                      {activeExpCount > 0
+                        ? `🔥 ${activeExpCount} saltokitan martxan`
+                        : "🌱 Prest abiatzeko"}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Title & Subtitle */}
-                <h3 className="text-xl font-bold text-slate-900 group-hover:text-emerald-800 transition">
-                  {pilotu.izena}
-                </h3>
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="text-xl font-bold text-slate-900 group-hover:text-emerald-800 transition">
+                    {pilotu.izena}
+                  </h3>
+                  {currentUser?.role === "admin" && (
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditPilot(pilotu)}
+                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-700 transition cursor-pointer"
+                        title="Editatu pilotua"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      {pilotu.id !== "barra-barra-txapak" && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePilot(pilotu)}
+                          disabled={deletingPilotId === pilotu.id}
+                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-700 transition cursor-pointer disabled:opacity-50"
+                          title="Ezabatu pilotua"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
                 <p className="text-xs font-semibold text-slate-500 mt-1 mb-3">
                   {pilotu.azpititulua}
                 </p>
@@ -327,15 +440,22 @@ export default function PilotuenKatalogoa() {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 text-lg">
-                    Sortu Pilotu Berria (Errezetak)
+                    {editingPilotId
+                      ? "Editatu Pilotua"
+                      : "Sortu Pilotu Berria (Errezetak)"}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Definitu zure zentrorako esku-hartze berritzaile bat
+                    {editingPilotId
+                      ? "Aldatu pilotuaren izena, deskribapena edo urratsak"
+                      : "Definitu zure zentrorako esku-hartze berritzaile bat"}
                   </p>
                 </div>
               </div>
               <button
-                onClick={() => setShowCreateModal(false)}
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setEditingPilotId(null);
+                }}
                 className="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
@@ -490,7 +610,10 @@ export default function PilotuenKatalogoa() {
               <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
                 <button
                   type="button"
-                  onClick={() => setShowCreateModal(false)}
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    setEditingPilotId(null);
+                  }}
                   className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
                 >
                   Utzi
@@ -500,7 +623,11 @@ export default function PilotuenKatalogoa() {
                   disabled={isSubmittingPilot}
                   className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/30 flex items-center gap-2 transition cursor-pointer disabled:opacity-50"
                 >
-                  {isSubmittingPilot ? "Gordetzen..." : "Gorde eta Argitaratu Pilotua"}
+                  {isSubmittingPilot
+                    ? "Gordetzen..."
+                    : editingPilotId
+                    ? "Gorde Aldaketak"
+                    : "Gorde eta Argitaratu Pilotua"}
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>

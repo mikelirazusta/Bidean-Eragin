@@ -22,6 +22,7 @@ import {
   Pencil,
   Save,
   X,
+  Printer,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { Esperimentua, Neurketa } from "@/lib/db";
@@ -250,7 +251,17 @@ export default function ZentroDashboard() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
+            title="Inprimatu edo gorde PDF gisa saltokiaren txostena"
+          >
+            <Printer className="w-4 h-4 text-slate-600" />
+            <span>Inprimatu Txostena (PDF)</span>
+          </button>
+
           <button
             onClick={() => setActiveTab("katalogoa")}
             className="px-4 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition cursor-pointer"

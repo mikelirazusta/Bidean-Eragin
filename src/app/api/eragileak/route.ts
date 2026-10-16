@@ -93,7 +93,7 @@ export async function PATCH(request: Request) {
     await syncDbFromCloud();
 
     const body = await request.json();
-    const { id, izena, mota, arduraduna, email, erronka_nagusia } = body;
+    const { id, izena, mota, arduraduna, email, erronka_nagusia, password } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -119,6 +119,46 @@ export async function PATCH(request: Request) {
     db.prepare(
       "UPDATE eragileak SET izena = ?, mota = ?, arduraduna = ?, email = ?, erronka_nagusia = ? WHERE id = ?"
     ).run(updatedIzena, updatedMota, updatedArduraduna, updatedEmail, updatedErronka, id);
+
+    // Sync or create shop user account if email is set
+    if (updatedEmail) {
+      const cleanEmail = updatedEmail.toLowerCase();
+      const existingUser = db
+        .prepare("SELECT * FROM users WHERE eragile_id = ?")
+        .get(id) as { id: string } | undefined;
+
+      if (existingUser) {
+        if (password && String(password).trim().length > 0) {
+          db.prepare(
+            "UPDATE users SET email = ?, password = ?, name = ? WHERE eragile_id = ?"
+          ).run(cleanEmail, String(password).trim(), updatedArduraduna || updatedIzena, id);
+        } else {
+          db.prepare(
+            "UPDATE users SET email = ?, name = ? WHERE eragile_id = ?"
+          ).run(cleanEmail, updatedArduraduna || updatedIzena, id);
+        }
+      } else {
+        const emailTaken = db
+          .prepare("SELECT id FROM users WHERE LOWER(email) = ?")
+          .get(cleanEmail);
+        if (!emailTaken) {
+          db.prepare(`
+            INSERT INTO users (id, email, password, name, role, eragile_id, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+          `).run(
+            "user-" + Date.now(),
+            cleanEmail,
+            password && String(password).trim().length > 0
+              ? String(password).trim()
+              : "bidean123",
+            updatedArduraduna || updatedIzena,
+            "eragilea",
+            id,
+            new Date().toISOString()
+          );
+        }
+      }
+    }
 
     const updated = db.prepare("SELECT * FROM eragileak WHERE id = ?").get(id) as Eragilea;
 

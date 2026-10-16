@@ -166,6 +166,9 @@ function createFallbackStore() {
           if (q.includes("FROM users WHERE id = ?")) {
             return store.users.find((u) => u.id === params[0]);
           }
+          if (q.includes("FROM users WHERE eragile_id = ?")) {
+            return store.users.find((u) => u.eragile_id === params[0]);
+          }
           // Pilots count
           if (q.includes("COUNT(*) as count FROM pilotuak")) {
             return { count: store.pilotuak.length };
@@ -257,6 +260,29 @@ function createFallbackStore() {
             save();
             return { changes: 1 };
           }
+          if (q.startsWith("UPDATE users SET email = ?, password = ?, name = ? WHERE eragile_id = ?")) {
+            const [email, password, name, eragile_id] = params;
+            const u = store.users.find((user) => user.eragile_id === eragile_id);
+            if (u) {
+              u.email = email;
+              u.password = password;
+              u.name = name;
+              save();
+              return { changes: 1 };
+            }
+            return { changes: 0 };
+          }
+          if (q.startsWith("UPDATE users SET email = ?, name = ? WHERE eragile_id = ?")) {
+            const [email, name, eragile_id] = params;
+            const u = store.users.find((user) => user.eragile_id === eragile_id);
+            if (u) {
+              u.email = email;
+              u.name = name;
+              save();
+              return { changes: 1 };
+            }
+            return { changes: 0 };
+          }
           if (q === "DELETE FROM users") {
             store.users = [];
             save();
@@ -320,6 +346,29 @@ function createFallbackStore() {
           if (q.startsWith("INSERT INTO pilotuak")) {
             const [id, izena, azpititulua, deskribapena, mota, adibidea, urratsak_json, ikonoa, kolorea, sortzaile_id] = params;
             store.pilotuak.push({ id, izena, azpititulua, deskribapena, mota, adibidea, urratsak_json, ikonoa, kolorea, sortzaile_id });
+            save();
+            return { changes: 1 };
+          }
+          if (q.startsWith("UPDATE pilotuak SET izena = ?, azpititulua = ?, deskribapena = ?, mota = ?, adibidea = ?, urratsak_json = ?, ikonoa = ?, kolorea = ? WHERE id = ?")) {
+            const [izena, azpititulua, deskribapena, mota, adibidea, urratsak_json, ikonoa, kolorea, id] = params;
+            const p = store.pilotuak.find((pil) => pil.id === id);
+            if (p) {
+              p.izena = izena;
+              p.azpititulua = azpititulua;
+              p.deskribapena = deskribapena;
+              p.mota = mota;
+              p.adibidea = adibidea;
+              p.urratsak_json = urratsak_json;
+              p.ikonoa = ikonoa;
+              p.kolorea = kolorea;
+              save();
+              return { changes: 1 };
+            }
+            return { changes: 0 };
+          }
+          if (q.startsWith("DELETE FROM pilotuak WHERE id = ?")) {
+            const [id] = params;
+            store.pilotuak = store.pilotuak.filter((p) => p.id !== id);
             save();
             return { changes: 1 };
           }

@@ -29,6 +29,8 @@ import {
   Pencil,
   Save,
   FlaskConical,
+  Monitor,
+  Printer,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { Eragilea, Esperimentua, Neurketa } from "@/lib/db";
@@ -56,6 +58,7 @@ export default function AdminKoadroa() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterMota, setFilterMota] = useState("all");
   const [selectedEragileForNudge, setSelectedEragileForNudge] = useState<Eragilea | null>(null);
+  const [isPresentationMode, setIsPresentationMode] = useState(false);
 
   // Deletion & Reset states
   const [eragileToDelete, setEragileToDelete] = useState<Eragilea | null>(null);
@@ -70,6 +73,7 @@ export default function AdminKoadroa() {
   const [editMota, setEditMota] = useState<string>("merkataritza");
   const [editArduraduna, setEditArduraduna] = useState("");
   const [editEmail, setEditEmail] = useState("");
+  const [editPassword, setEditPassword] = useState("");
   const [editErronka, setEditErronka] = useState("");
   const [editExpId, setEditExpId] = useState<string | null>(null);
   const [editPilotuId, setEditPilotuId] = useState("barra-barra-txapak");
@@ -97,6 +101,7 @@ export default function AdminKoadroa() {
     setEditMota(eragile.mota);
     setEditArduraduna(eragile.arduraduna);
     setEditEmail(eragile.email || "");
+    setEditPassword("");
     setEditErronka(eragile.erronka_nagusia);
 
     if (exp) {
@@ -133,6 +138,7 @@ export default function AdminKoadroa() {
       mota: editMota,
       arduraduna: editArduraduna.trim() || "Arduraduna",
       email: editEmail.trim(),
+      password: editPassword.trim() || undefined,
       erronka_nagusia: editErronka.trim() || "Dendan lehen hitza eta elkarrizketa euskaraz piztea.",
     });
 
@@ -381,42 +387,78 @@ export default function AdminKoadroa() {
         <div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-100 text-indigo-900 text-xs font-bold mb-2">
             <ShieldCheck className="w-4 h-4 text-indigo-600" />
-            <span>Bagera / Mikel • Koordinazio Panela</span>
+            <span>
+              {isPresentationMode
+                ? "Bagera • Emaitzen Aurkezpen Publikoa"
+                : "Bagera / Mikel • Koordinazio Panela"}
+            </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Bidean Eragin — Zentroen Kudeaketa Globala
+            {isPresentationMode
+              ? "Bidean Eragin — Emaitza eta Bilakaera Globala"
+              : "Bidean Eragin — Zentroen Kudeaketa Globala"}
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 mt-1">
-            Zentroen aurrerapena monitorizatu, portaera-bultzadak kudeatu eta emaitzak aztertu.
+            {isPresentationMode
+              ? "Parte hartzen duten saltoki eta zentroen hizkuntza-ohituren bilakaera (T0 → T1 → T2)."
+              : "Zentroen aurrerapena monitorizatu, portaera-bultzadak kudeatu eta emaitzak aztertu."}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
           <button
-            onClick={() => setShowNewPostModal(true)}
-            className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition cursor-pointer"
+            type="button"
+            onClick={() => setIsPresentationMode(!isPresentationMode)}
+            className={`px-3.5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 border transition cursor-pointer ${
+              isPresentationMode
+                ? "bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-600/25"
+                : "bg-white hover:bg-indigo-50 text-indigo-700 border-indigo-200"
+            }`}
+            title="Ezkutatu administrazio-botoiak proiektorean edo publikoaren aurrean erakusteko"
           >
-            <Plus className="w-4 h-4" />
-            <span>+ Saltoki / Postu Berria Gehitu</span>
+            <Monitor className="w-4 h-4" />
+            <span>{isPresentationMode ? "Irten Aurkezpen Modutik" : "Aurkezpen Modua"}</span>
           </button>
 
           <button
-            onClick={handleExportCSV}
-            className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-2 shadow-md transition cursor-pointer"
+            type="button"
+            onClick={() => window.print()}
+            className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
+            title="Inprimatu edo gorde PDF txostena"
           >
-            <Download className="w-4 h-4 text-slate-300" />
-            <span>Esportatu (CSV)</span>
+            <Printer className="w-4 h-4 text-slate-600" />
+            <span>Inprimatu (PDF)</span>
           </button>
 
-          {(eragileak.length > 0 || neurketak.length > 0) && (
-            <button
-              onClick={() => setShowResetConfirmModal(true)}
-              className="px-3.5 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
-              title="Ezabatu aurretik egindako proba, saltoki eta neurketa guztiak"
-            >
-              <RotateCcw className="w-3.5 h-3.5 text-rose-600" />
-              <span>Garbitu Proba Guztiak</span>
-            </button>
+          {!isPresentationMode && (
+            <>
+              <button
+                onClick={() => setShowNewPostModal(true)}
+                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>+ Saltoki / Postu Berria</span>
+              </button>
+
+              <button
+                onClick={handleExportCSV}
+                className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-2 shadow-md transition cursor-pointer"
+              >
+                <Download className="w-4 h-4 text-slate-300" />
+                <span>Esportatu (CSV)</span>
+              </button>
+
+              {(eragileak.length > 0 || neurketak.length > 0) && (
+                <button
+                  onClick={() => setShowResetConfirmModal(true)}
+                  className="px-3.5 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
+                  title="Ezabatu aurretik egindako proba, saltoki eta neurketa guztiak"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-rose-600" />
+                  <span>Garbitu Proba Guztiak</span>
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -484,6 +526,121 @@ export default function AdminKoadroa() {
           <p className="text-[11px] text-slate-500 mt-1">{amaitutakoEsperimentuak} ziklo osatu</p>
         </div>
       </div>
+
+      {/* Visual T0 -> T1 -> T2 Comparative Progress Chart Across Participating Centers */}
+      {eragileak.length > 0 && (
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+            <div>
+              <div className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-emerald-600" />
+                <h3 className="font-bold text-slate-900 text-base sm:text-lg">
+                  Saltokien Bilakaera Konparatiboa (T0 → T1 → T2 Euskararen Erabilera %)
+                </h3>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Saltoki bakoitzaren hasierako argazkia (T0), berehalako eragina (T1) eta ohitura finkatua (T2).
+              </p>
+            </div>
+            <div className="flex items-center gap-3 text-[11px] font-bold">
+              <span className="flex items-center gap-1.5 text-sky-700">
+                <span className="w-3 h-3 rounded-xs bg-sky-500 inline-block" /> T0 (Aurretik)
+              </span>
+              <span className="flex items-center gap-1.5 text-amber-700">
+                <span className="w-3 h-3 rounded-xs bg-amber-500 inline-block" /> T1 (Berehala)
+              </span>
+              <span className="flex items-center gap-1.5 text-emerald-700">
+                <span className="w-3 h-3 rounded-xs bg-emerald-500 inline-block" /> T2 (Sendotua)
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {eragileak.map((eragile) => {
+              const exp = esperimentuak.find((e) => e.eragile_id === eragile.id);
+              const expNeu = neurketak.filter((n) => n.esperimentu_id === exp?.id);
+              const calcPct = (phase: "T0" | "T1" | "T2") => {
+                const list = expNeu.filter((n) => n.unea === phase);
+                const eusk = list.reduce((s, n) => s + (n.euskaraz_count || 0), 0);
+                const tot = list.reduce(
+                  (s, n) =>
+                    s +
+                    (n.euskaraz_count || 0) +
+                    (n.erdaraz_count || 0) +
+                    (n.elebi_count || 0),
+                  0
+                );
+                return tot > 0 ? Math.round((eusk / tot) * 100) : null;
+              };
+              const p0 = calcPct("T0");
+              const p1 = calcPct("T1");
+              const p2 = calcPct("T2");
+              const latest = p2 !== null ? p2 : p1;
+              const diff = p0 !== null && latest !== null ? latest - p0 : null;
+
+              return (
+                <div
+                  key={eragile.id}
+                  className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+                    <div>
+                      <span className="font-bold text-slate-900 text-sm">
+                        {eragile.izena}
+                      </span>
+                      {exp && (
+                        <span className="text-xs text-slate-500 ml-2">
+                          ({exp.gunea} • Helburua: +%{exp.xede_portzentajea})
+                        </span>
+                      )}
+                    </div>
+                    {diff !== null ? (
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-xs font-extrabold ${
+                          diff >= 0
+                            ? "bg-emerald-100 text-emerald-800"
+                            : "bg-rose-100 text-rose-800"
+                        }`}
+                      >
+                        {diff >= 0 ? `+${diff}%` : `${diff}%`} bilakaera
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-semibold text-slate-400">
+                        {p0 !== null ? `T0 neurtuta (%${p0})` : "Lehen neurketaren zain"}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    {(
+                      [
+                        { label: "T0", val: p0, color: "bg-sky-500", text: "text-sky-700" },
+                        { label: "T1", val: p1, color: "bg-amber-500", text: "text-amber-700" },
+                        { label: "T2", val: p2, color: "bg-emerald-500", text: "text-emerald-700" },
+                      ] as const
+                    ).map((bar) => (
+                      <div key={bar.label} className="bg-white rounded-xl p-2.5 border border-slate-200/70">
+                        <div className="flex items-center justify-between text-xs mb-1">
+                          <span className={`font-extrabold ${bar.text}`}>{bar.label}</span>
+                          <span className="font-black text-slate-800">
+                            {bar.val !== null ? `%${bar.val}` : "—"}
+                          </span>
+                        </div>
+                        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full ${bar.color} rounded-full transition-all duration-500`}
+                            style={{ width: `${bar.val !== null ? Math.max(bar.val, 4) : 0}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Pilots Comparison & Effectiveness Ranking */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm mb-8">
@@ -569,7 +726,7 @@ export default function AdminKoadroa() {
               Parte Hartzen Duten Zentroak ({filteredEragileak.length})
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Egin klik zentroaren panelean sartzeko edo bultzada pertsonalizatu bat bidaltzeko.
+              Egin klik zentroaren panelean sartzeko edo hipotesia eta emaitzak ikusteko.
             </p>
           </div>
 
@@ -636,7 +793,8 @@ export default function AdminKoadroa() {
                         {eragile.izena}
                       </span>
                       <span className="text-[11px] text-slate-400">
-                        {eragile.arduraduna} ({eragile.email || "emailik gabe"})
+                        {eragile.arduraduna}
+                        {!isPresentationMode && eragile.email ? ` (${eragile.email})` : ""}
                       </span>
                     </td>
 
@@ -648,7 +806,7 @@ export default function AdminKoadroa() {
                       {exp ? (
                         <div>
                           <p
-                            onClick={() => openEditEragileModal(eragile, exp)}
+                            onClick={() => !isPresentationMode && openEditEragileModal(eragile, exp)}
                             className="text-slate-800 font-medium line-clamp-2 cursor-pointer hover:text-indigo-700 transition"
                             title="Egin klik hipotesia editatzeko"
                           >
@@ -694,7 +852,7 @@ export default function AdminKoadroa() {
                           }`}
                           title={t0List.length > 0 ? `T0: ${t0List.length} saio (%${t0Pct} euskara)` : "T0 egin gabe"}
                         >
-                          T0{t0List.length > 1 ? ` (${t0List.length})` : ""}
+                          T0{t0Pct !== null ? ` %${t0Pct}` : ""}
                         </span>
                         <span
                           className={`px-2 py-0.5 rounded-md flex items-center justify-center font-bold text-[10px] ${
@@ -702,7 +860,7 @@ export default function AdminKoadroa() {
                           }`}
                           title={t1List.length > 0 ? `T1: ${t1List.length} saio (%${t1Pct} euskara)` : "T1 egin gabe"}
                         >
-                          T1{t1List.length > 1 ? ` (${t1List.length})` : ""}
+                          T1{t1Pct !== null ? ` %${t1Pct}` : ""}
                         </span>
                         <span
                           className={`px-2 py-0.5 rounded-md flex items-center justify-center font-bold text-[10px] ${
@@ -710,42 +868,12 @@ export default function AdminKoadroa() {
                           }`}
                           title={t2List.length > 0 ? `T2: ${t2List.length} saio (%${t2Pct} euskara)` : "T2 egin gabe"}
                         >
-                          T2{t2List.length > 1 ? ` (${t2List.length})` : ""}
+                          T2{t2Pct !== null ? ` %${t2Pct}` : ""}
                         </span>
-                        {expNeurketak.length > 0 && (
-                          <span className="text-[10px] text-slate-500 font-semibold ml-1">
-                            {expNeurketak.length} saio
-                          </span>
-                        )}
                       </div>
                     </td>
 
                     <td className="py-3.5 text-right space-x-1.5 whitespace-nowrap">
-                      {exp && (
-                        <button
-                          onClick={() => {
-                            const nextPhase = t0List.length === 0 ? "T0" : t1List.length === 0 ? "T1" : "T2";
-                            setObservationConfig({ expId: exp.id, phase: nextPhase });
-                            setCurrentEragileId(eragile.id);
-                            setActiveTab("behaketa");
-                          }}
-                          className="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs inline-flex items-center gap-1 transition cursor-pointer"
-                          title="Neurtu postu hau zuzenean"
-                        >
-                          <Timer className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>Neurtu ({t0List.length === 0 ? "T0" : t1List.length === 0 ? "T1" : "T2"})</span>
-                        </button>
-                      )}
-
-                      <button
-                        onClick={() => openEditEragileModal(eragile, exp)}
-                        className="px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 font-bold text-xs inline-flex items-center gap-1 transition cursor-pointer"
-                        title="Editatu saltokiaren datuak eta hipotesia"
-                      >
-                        <Pencil className="w-3.5 h-3.5 text-amber-600" />
-                        <span>Editatu</span>
-                      </button>
-
                       <button
                         onClick={() => {
                           setCurrentEragileId(eragile.id);
@@ -758,41 +886,70 @@ export default function AdminKoadroa() {
                         <span>Panela</span>
                       </button>
 
-                      <button
-                        onClick={() => {
-                          const hasT0 = t0List.length > 0;
-                          const hasT1 = t1List.length > 0;
-                          const hasT2 = t2List.length > 0;
+                      {!isPresentationMode && (
+                        <>
+                          {exp && (
+                            <button
+                              onClick={() => {
+                                const nextPhase = t0List.length === 0 ? "T0" : t1List.length === 0 ? "T1" : "T2";
+                                setObservationConfig({ expId: exp.id, phase: nextPhase });
+                                setCurrentEragileId(eragile.id);
+                                setActiveTab("behaketa");
+                              }}
+                              className="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs inline-flex items-center gap-1 transition cursor-pointer"
+                              title="Neurtu postu hau zuzenean"
+                            >
+                              <Timer className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>Neurtu ({t0List.length === 0 ? "T0" : t1List.length === 0 ? "T1" : "T2"})</span>
+                            </button>
+                          )}
 
-                          setSelectedEragileForNudge(eragile);
-                          setNudgeTitle(
-                            hasT1 && !hasT2
-                              ? "T2 neurketa egiteko unea iritsi da! 🚀"
-                              : hasT0 && !hasT1
-                              ? "Nola doa pilotua? Egin T1 neurketa!"
-                              : "Kaixo! Zure esperimentuaren berri jakin nahi dugu"
-                          );
-                          setNudgeMessage(
-                            hasT1 && !hasT2
-                              ? `Kaixo ${eragile.izena}, bi aste pasa dira T1 neurketa egin zenutenetik. Egin T2 neurketa efektua sendotu den ikusteko!`
-                              : `Kaixo ${eragile.izena}, animatu hurrengo urratsa egitera eta kontatu nola doan prozesua!`
-                          );
-                        }}
-                        className="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-xs inline-flex items-center gap-1 transition cursor-pointer"
-                        title="Bidali bultzada mezu bat"
-                      >
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        <span>Bultzada</span>
-                      </button>
+                          <button
+                            onClick={() => openEditEragileModal(eragile, exp)}
+                            className="px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 font-bold text-xs inline-flex items-center gap-1 transition cursor-pointer"
+                            title="Editatu saltokiaren datuak eta hipotesia"
+                          >
+                            <Pencil className="w-3.5 h-3.5 text-amber-600" />
+                            <span>Editatu</span>
+                          </button>
 
-                      <button
-                        onClick={() => setEragileToDelete(eragile)}
-                        className="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold text-xs inline-flex items-center gap-1 transition cursor-pointer"
-                        title="Ezabatu saltokia / zentroa eta bere proba-neurketa guztiak"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                        <span>Ezabatu</span>
-                      </button>
+                          <button
+                            onClick={() => {
+                              const hasT0 = t0List.length > 0;
+                              const hasT1 = t1List.length > 0;
+                              const hasT2 = t2List.length > 0;
+
+                              setSelectedEragileForNudge(eragile);
+                              setNudgeTitle(
+                                hasT1 && !hasT2
+                                  ? "T2 neurketa egiteko unea iritsi da! 🚀"
+                                  : hasT0 && !hasT1
+                                  ? "Nola doa pilotua? Egin T1 neurketa!"
+                                  : "Kaixo! Zure esperimentuaren berri jakin nahi dugu"
+                              );
+                              setNudgeMessage(
+                                hasT1 && !hasT2
+                                  ? `Kaixo ${eragile.izena}, bi aste pasa dira T1 neurketa egin zenutenetik. Egin T2 neurketa efektua sendotu den ikusteko!`
+                                  : `Kaixo ${eragile.izena}, animatu hurrengo urratsa egitera eta kontatu nola doan prozesua!`
+                              );
+                            }}
+                            className="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-xs inline-flex items-center gap-1 transition cursor-pointer"
+                            title="Bidali bultzada mezu bat"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            <span>Bultzada</span>
+                          </button>
+
+                          <button
+                            onClick={() => setEragileToDelete(eragile)}
+                            className="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold text-xs inline-flex items-center gap-1 transition cursor-pointer"
+                            title="Ezabatu saltokia / zentroa eta bere proba-neurketa guztiak"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                            <span>Ezabatu</span>
+                          </button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 );
@@ -822,8 +979,8 @@ export default function AdminKoadroa() {
         </div>
       </div>
 
-      {/* Individual Measurements / Sessions Management Table */}
-      {neurketak.length > 0 && (
+      {/* Individual Measurements / Sessions Management Table (Hidden in Presentation Mode) */}
+      {!isPresentationMode && neurketak.length > 0 && (
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm mt-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
             <div>
@@ -936,7 +1093,7 @@ export default function AdminKoadroa() {
                     Saltokia eta Hipotesia Editatu
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Zuzendu saltokiaren datuak, gunea eta benetako hipotesia neurketak galdu gabe
+                    Zuzendu saltokiaren datuak, sarbide-kredentzialak eta benetako hipotesia
                   </p>
                 </div>
               </div>
@@ -954,7 +1111,7 @@ export default function AdminKoadroa() {
               <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 space-y-3">
                 <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                   <Store className="w-3.5 h-3.5 text-slate-600" />
-                  <span>1. Saltokiaren / Zentroaren Datuak</span>
+                  <span>1. Saltokiaren / Zentroaren Datuak & Sarbidea</span>
                 </h4>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1009,6 +1166,34 @@ export default function AdminKoadroa() {
                       type="text"
                       value={editErronka}
                       onChange={(e) => setEditErronka(e.target.value)}
+                      className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Emaila (Saltokiak saioa hasteko)
+                    </label>
+                    <input
+                      type="email"
+                      value={editEmail}
+                      onChange={(e) => setEditEmail(e.target.value)}
+                      placeholder="adib: denda@gmail.com"
+                      className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Pasahitz Berria (utzi hutsik ez aldatzeko)
+                    </label>
+                    <input
+                      type="text"
+                      value={editPassword}
+                      onChange={(e) => setEditPassword(e.target.value)}
+                      placeholder="Adib: bidean123"
                       className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
                     />
                   </div>

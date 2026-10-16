@@ -51,25 +51,25 @@ const ERRONKA_AUKERAK = [
 export default function AuthPortal() {
   const { login, register } = useApp();
 
-  const [portalRole, setPortalRole] = useState<"admin" | "eragilea">("admin");
+  const [portalRole, setPortalRole] = useState<"admin" | "eragilea">("eragilea");
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Login form state
-  const [loginEmail, setLoginEmail] = useState("admin@bagera.eus");
-  const [loginPassword, setLoginPassword] = useState("bagera2026");
+  // Login form state (never pre-fill password for public security)
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
 
   // Register form state
   const [regStep, setRegStep] = useState<1 | 2>(1);
   const [regIzena, setRegIzena] = useState("");
-  const [regMota, setRegMota] = useState<"ikastetxea" | "merkataritza" | "enpresa" | "aisialdia">("ikastetxea");
+  const [regMota, setRegMota] = useState<"ikastetxea" | "merkataritza" | "enpresa" | "aisialdia">("merkataritza");
   const [regArduraduna, setRegArduraduna] = useState("");
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regPasswordConfirm, setRegPasswordConfirm] = useState("");
-  const [regErronka, setRegErronka] = useState(ERRONKA_AUKERAK[0].titulua);
+  const [regErronka, setRegErronka] = useState(ERRONKA_AUKERAK[1].titulua);
   const [customErronka, setCustomErronka] = useState("");
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
@@ -87,18 +87,6 @@ export default function AuthPortal() {
 
     if (!result.success) {
       setErrorMessage(result.error || "Ezin izan da saioa hasi.");
-    }
-  };
-
-  const handleQuickAdminLogin = async () => {
-    setLoginEmail("admin@bagera.eus");
-    setLoginPassword("bagera2026");
-    setErrorMessage("");
-    setIsSubmitting(true);
-    const result = await login("admin@bagera.eus", "bagera2026");
-    setIsSubmitting(false);
-    if (!result.success) {
-      setErrorMessage(result.error || "Ezin izan da admin saioa hasi.");
     }
   };
 
@@ -162,36 +150,18 @@ export default function AuthPortal() {
           Bidean Eragin
         </h1>
         <p className="mt-1 text-sm font-semibold text-emerald-800">
-          Portaera-ekonomia eta esperimentazio arina
+          Portaera-ekonomia eta esperimentazio arina • Bagera
         </p>
         <p className="mt-2 text-xs sm:text-sm text-slate-600">
-          Euskararen erabilera aktibatzeko tresna praktikoa. Jarraitu zure zentroaren aurrerapena eta neurketak.
+          Euskararen erabilera aktibatzeko tresna praktikoa. Jarraitu zure saltoki edo zentroaren aurrerapena eta neurketak.
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-lg px-4">
         <div className="bg-white py-8 px-6 sm:px-10 shadow-xl shadow-slate-200/60 rounded-3xl border border-slate-200/80">
           
-          {/* Main Role Selector: Bagera Admin vs Eragileak */}
+          {/* Main Role Selector: Eragileak (Publikoa) vs Bagera Admin */}
           <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1.5 rounded-2xl mb-6">
-            <button
-              type="button"
-              onClick={() => {
-                setPortalRole("admin");
-                setLoginEmail("admin@bagera.eus");
-                setLoginPassword("bagera2026");
-                setErrorMessage("");
-              }}
-              className={`py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer ${
-                portalRole === "admin"
-                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <ShieldCheck className="w-4 h-4" />
-              <span>Bagera (Admin)</span>
-            </button>
-
             <button
               type="button"
               onClick={() => {
@@ -208,7 +178,26 @@ export default function AuthPortal() {
               }`}
             >
               <Store className="w-4 h-4 text-emerald-600" />
-              <span>Eragileak (Dendak)</span>
+              <span>Eragileak / Saltokiak</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setPortalRole("admin");
+                setActiveTab("login");
+                setLoginEmail("admin@bagera.eus");
+                setLoginPassword("");
+                setErrorMessage("");
+              }}
+              className={`py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer ${
+                portalRole === "admin"
+                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>Bagera (Koordinazioa)</span>
             </button>
           </div>
 
