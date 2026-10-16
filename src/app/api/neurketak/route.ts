@@ -159,6 +159,64 @@ export async function POST(request: Request) {
   }
 }
 
+export async function PATCH(request: Request) {
+  try {
+    await syncDbFromCloud();
+
+    const body = await request.json();
+    const {
+      id,
+      unea,
+      euskaraz_count,
+      erdaraz_count,
+      elebi_count,
+      oharrak,
+      behatzailea,
+    } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: "Neurketa IDa beharrezkoa da" },
+        { status: 400 }
+      );
+    }
+
+    const existing = db.prepare("SELECT * FROM neurketak WHERE id = ?").get(id) as Neurketa | undefined;
+    if (!existing) {
+      return NextResponse.json(
+        { success: false, error: "Neurketa ez da aurkitu" },
+        { status: 404 }
+      );
+    }
+
+    const updatedUnea = unea !== undefined ? String(unea).trim() : existing.unea;
+    const updatedEusk = euskaraz_count !== undefined ? Math.max(0, Number(euskaraz_count)) : existing.euskaraz_count;
+    const updatedErd = erdaraz_count !== undefined ? Math.max(0, Number(erdaraz_count)) : existing.erdaraz_count;
+    const updatedElebi = elebi_count !== undefined ? Math.max(0, Number(elebi_count)) : existing.elebi_count;
+    const updatedOharrak = oharrak !== undefined ? String(oharrak) : existing.oharrak;
+    const updatedBehatzailea = behatzailea !== undefined ? String(behatzailea).trim() : (existing.behatzailea || "Behatzaile Itsua");
+
+    db.prepare(
+      "UPDATE neurketak SET unea = ?, euskaraz_count = ?, erdaraz_count = ?, elebi_count = ?, oharrak = ?, behatzailea = ? WHERE id = ?"
+    ).run(updatedUnea, updatedEusk, updatedErd, updatedElebi, updatedOharrak, updatedBehatzailea, id);
+
+    const updated = db.prepare("SELECT * FROM neurketak WHERE id = ?").get(id) as Neurketa;
+
+    await syncDbToCloud();
+
+    return NextResponse.json({
+      success: true,
+      data: updated,
+    });
+  } catch (error) {
+    console.error("Errorea neurketa eguneratzean:", error);
+    return NextResponse.json(
+      { success: false, error: "Ezin izan da neurketa eguneratu" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(request: Request) {
   try {
     await syncDbFromCloud();
@@ -186,3 +244,4 @@ export async function DELETE(request: Request) {
     );
   }
 }
+

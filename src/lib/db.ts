@@ -178,8 +178,27 @@ function createFallbackStore() {
             return store.eragileak.find((e) => e.id === params[0]);
           }
           // Esperimentuak
+          if (q.includes("FROM esperimentuak") && q.includes("WHERE e.id = ?")) {
+            const exp = store.esperimentuak.find((e) => e.id === params[0]);
+            if (!exp) return undefined;
+            const pilotu = store.pilotuak.find((p) => p.id === exp.pilotu_id);
+            const eragile = store.eragileak.find((er) => er.id === exp.eragile_id);
+            return {
+              ...exp,
+              pilotu_izena: pilotu?.izena,
+              pilotu_ikonoa: pilotu?.ikonoa,
+              eragile_izena: eragile?.izena,
+            };
+          }
           if (q.includes("FROM esperimentuak WHERE id = ?")) {
-            return store.esperimentuak.find((e) => e.id === params[0]);
+            const exp = store.esperimentuak.find((e) => e.id === params[0]);
+            if (!exp) return undefined;
+            const pilotu = store.pilotuak.find((p) => p.id === exp.pilotu_id);
+            return {
+              ...exp,
+              pilotu_izena: pilotu?.izena,
+              pilotu_ikonoa: pilotu?.ikonoa,
+            };
           }
           // Neurketak
           if (q.includes("FROM neurketak WHERE id = ?")) {
@@ -278,6 +297,20 @@ function createFallbackStore() {
             save();
             return { changes: 1 };
           }
+          if (q.startsWith("UPDATE eragileak SET izena = ?, mota = ?, arduraduna = ?, email = ?, erronka_nagusia = ? WHERE id = ?")) {
+            const [izena, mota, arduraduna, email, erronka_nagusia, id] = params;
+            const er = store.eragileak.find((e) => e.id === id);
+            if (er) {
+              er.izena = izena;
+              er.mota = mota;
+              er.arduraduna = arduraduna;
+              er.email = email;
+              er.erronka_nagusia = erronka_nagusia;
+              save();
+              return { changes: 1 };
+            }
+            return { changes: 0 };
+          }
           if (q.startsWith("DELETE FROM eragileak WHERE id = ?")) {
             const [id] = params;
             store.eragileak = store.eragileak.filter((e) => e.id !== id);
@@ -303,6 +336,22 @@ function createFallbackStore() {
             save();
             return { changes: 1 };
           }
+          if (q.startsWith("UPDATE esperimentuak SET pilotu_id = ?, hipotesia = ?, taldea = ?, pertsonak = ?, gunea = ?, xede_portzentajea = ?, estatusa = ? WHERE id = ?")) {
+            const [pilotu_id, hipotesia, taldea, pertsonak, gunea, xede_portzentajea, estatusa, id] = params;
+            const exp = store.esperimentuak.find((e) => e.id === id);
+            if (exp) {
+              exp.pilotu_id = pilotu_id;
+              exp.hipotesia = hipotesia;
+              exp.taldea = taldea;
+              exp.pertsonak = pertsonak;
+              exp.gunea = gunea;
+              exp.xede_portzentajea = Number(xede_portzentajea);
+              exp.estatusa = estatusa;
+              save();
+              return { changes: 1 };
+            }
+            return { changes: 0 };
+          }
           if (q.startsWith("DELETE FROM esperimentuak WHERE eragile_id = ?")) {
             const [eragileId] = params;
             store.esperimentuak = store.esperimentuak.filter((e) => e.eragile_id !== eragileId);
@@ -314,6 +363,21 @@ function createFallbackStore() {
             store.neurketak.push({ id, esperimentu_id, unea, euskaraz_count, erdaraz_count, elebi_count, iraupena_segundotan, data_ordu, oharrak, behatzailea });
             save();
             return { changes: 1 };
+          }
+          if (q.startsWith("UPDATE neurketak SET unea = ?, euskaraz_count = ?, erdaraz_count = ?, elebi_count = ?, oharrak = ?, behatzailea = ? WHERE id = ?")) {
+            const [unea, euskaraz_count, erdaraz_count, elebi_count, oharrak, behatzailea, id] = params;
+            const neu = store.neurketak.find((n) => n.id === id);
+            if (neu) {
+              neu.unea = unea;
+              neu.euskaraz_count = Number(euskaraz_count);
+              neu.erdaraz_count = Number(erdaraz_count);
+              neu.elebi_count = Number(elebi_count);
+              neu.oharrak = oharrak;
+              neu.behatzailea = behatzailea;
+              save();
+              return { changes: 1 };
+            }
+            return { changes: 0 };
           }
           if (q.startsWith("DELETE FROM neurketak WHERE esperimentu_id = ?")) {
             const [expId] = params;

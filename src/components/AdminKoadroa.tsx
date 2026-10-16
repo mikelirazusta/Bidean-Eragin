@@ -26,9 +26,12 @@ import {
   Trash2,
   RotateCcw,
   AlertTriangle,
+  Pencil,
+  Save,
+  FlaskConical,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
-import { Eragilea } from "@/lib/db";
+import { Eragilea, Esperimentua, Neurketa } from "@/lib/db";
 
 export default function AdminKoadroa() {
   const {
@@ -38,6 +41,10 @@ export default function AdminKoadroa() {
     pilotuak,
     createAdminNudge,
     createQuickPostua,
+    createEsperimentua,
+    updateEragilea,
+    updateEsperimentua,
+    updateNeurketa,
     deleteEragilea,
     deleteNeurketa,
     resetDemoData,
@@ -56,6 +63,132 @@ export default function AdminKoadroa() {
   const [neurketaDeletingId, setNeurketaDeletingId] = useState<string | null>(null);
   const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
   const [isResettingAll, setIsResettingAll] = useState(false);
+
+  // Edit Center & Hypothesis Modal state
+  const [eragileToEdit, setEragileToEdit] = useState<Eragilea | null>(null);
+  const [editIzena, setEditIzena] = useState("");
+  const [editMota, setEditMota] = useState<string>("merkataritza");
+  const [editArduraduna, setEditArduraduna] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editErronka, setEditErronka] = useState("");
+  const [editExpId, setEditExpId] = useState<string | null>(null);
+  const [editPilotuId, setEditPilotuId] = useState("barra-barra-txapak");
+  const [editHipotesia, setEditHipotesia] = useState("");
+  const [editTaldea, setEditTaldea] = useState("");
+  const [editPertsonak, setEditPertsonak] = useState("");
+  const [editGunea, setEditGunea] = useState("");
+  const [editXedePct, setEditXedePct] = useState<number>(25);
+  const [editEstatusa, setEditEstatusa] = useState<string>("T0_zain");
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  // Edit Single Measurement Session Modal state
+  const [neurketaToEdit, setNeurketaToEdit] = useState<Neurketa | null>(null);
+  const [editNeuUnea, setEditNeuUnea] = useState<"T0" | "T1" | "T2">("T0");
+  const [editNeuBehatzailea, setEditNeuBehatzailea] = useState("");
+  const [editNeuEusk, setEditNeuEusk] = useState<number>(0);
+  const [editNeuErd, setEditNeuErd] = useState<number>(0);
+  const [editNeuElebi, setEditNeuElebi] = useState<number>(0);
+  const [editNeuOharrak, setEditNeuOharrak] = useState("");
+  const [isSavingNeurketaEdit, setIsSavingNeurketaEdit] = useState(false);
+
+  const openEditEragileModal = (eragile: Eragilea, exp?: Esperimentua) => {
+    setEragileToEdit(eragile);
+    setEditIzena(eragile.izena);
+    setEditMota(eragile.mota);
+    setEditArduraduna(eragile.arduraduna);
+    setEditEmail(eragile.email || "");
+    setEditErronka(eragile.erronka_nagusia);
+
+    if (exp) {
+      setEditExpId(exp.id);
+      setEditPilotuId(exp.pilotu_id || "barra-barra-txapak");
+      setEditHipotesia(exp.hipotesia);
+      setEditTaldea(exp.taldea);
+      setEditPertsonak(exp.pertsonak);
+      setEditGunea(exp.gunea);
+      setEditXedePct(exp.xede_portzentajea || 25);
+      setEditEstatusa(exp.estatusa || "T0_zain");
+    } else {
+      setEditExpId(null);
+      setEditPilotuId("barra-barra-txapak");
+      setEditTaldea("Saltokiko lantaldea");
+      setEditPertsonak("Bezeroak eta langileak");
+      setEditGunea("Saltokiaren mostradorea");
+      setEditXedePct(25);
+      setEditHipotesia(
+        "Gure ustez, Saltokiko lantaldea Bezeroak eta langileak, Saltokiaren mostradorea 'Euskaraz barra-barra' txapa soinean eramanda, euskararen erabilera %25 igoko da."
+      );
+      setEditEstatusa("T0_zain");
+    }
+  };
+
+  const handleSaveEditEragileAndExp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!eragileToEdit || !editIzena.trim()) return;
+
+    setIsSavingEdit(true);
+    await updateEragilea({
+      id: eragileToEdit.id,
+      izena: editIzena.trim(),
+      mota: editMota,
+      arduraduna: editArduraduna.trim() || "Arduraduna",
+      email: editEmail.trim(),
+      erronka_nagusia: editErronka.trim() || "Dendan lehen hitza eta elkarrizketa euskaraz piztea.",
+    });
+
+    if (editExpId) {
+      await updateEsperimentua({
+        id: editExpId,
+        pilotu_id: editPilotuId,
+        hipotesia: editHipotesia.trim(),
+        taldea: editTaldea.trim() || "Saltokiko lantaldea",
+        pertsonak: editPertsonak.trim() || "Bezeroak eta langileak",
+        gunea: editGunea.trim() || "Saltokiaren mostradorea",
+        xede_portzentajea: editXedePct,
+        estatusa: editEstatusa,
+      });
+    } else if (editHipotesia.trim()) {
+      await createEsperimentua({
+        eragile_id: eragileToEdit.id,
+        pilotu_id: editPilotuId,
+        hipotesia: editHipotesia.trim(),
+        taldea: editTaldea.trim() || "Saltokiko lantaldea",
+        pertsonak: editPertsonak.trim() || "Bezeroak eta langileak",
+        gunea: editGunea.trim() || "Saltokiaren mostradorea",
+        xede_portzentajea: editXedePct,
+      });
+    }
+
+    setIsSavingEdit(false);
+    setEragileToEdit(null);
+  };
+
+  const openEditNeurketaModal = (n: Neurketa) => {
+    setNeurketaToEdit(n);
+    setEditNeuUnea(n.unea);
+    setEditNeuBehatzailea(n.behatzailea || "Behatzaile Itsua");
+    setEditNeuEusk(n.euskaraz_count || 0);
+    setEditNeuErd(n.erdaraz_count || 0);
+    setEditNeuElebi(n.elebi_count || 0);
+    setEditNeuOharrak(n.oharrak || "");
+  };
+
+  const handleSaveEditNeurketa = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!neurketaToEdit) return;
+    setIsSavingNeurketaEdit(true);
+    await updateNeurketa({
+      id: neurketaToEdit.id,
+      unea: editNeuUnea,
+      behatzailea: editNeuBehatzailea.trim() || "Behatzaile Itsua",
+      euskaraz_count: editNeuEusk,
+      erdaraz_count: editNeuErd,
+      elebi_count: editNeuElebi,
+      oharrak: editNeuOharrak.trim(),
+    });
+    setIsSavingNeurketaEdit(false);
+    setNeurketaToEdit(null);
+  };
 
   const handleConfirmDeleteEragilea = async () => {
     if (!eragileToDelete) return;
@@ -82,7 +215,14 @@ export default function AdminKoadroa() {
   const [showNewPostModal, setShowNewPostModal] = useState(false);
   const [postName, setPostName] = useState("");
   const [postManager, setPostManager] = useState("");
-  const [postTargetPct, setPostTargetPct] = useState(60);
+  const [postErronka, setPostErronka] = useState("Dendan lehen hitza eta elkarrizketa euskaraz piztea, txapak erabilita.");
+  const [postTaldea, setPostTaldea] = useState("Saltokiko lantaldea");
+  const [postPertsonak, setPostPertsonak] = useState("Bezeroak eta langileak");
+  const [postGunea, setPostGunea] = useState("Saltokiaren mostradorea");
+  const [postTargetPct, setPostTargetPct] = useState(25);
+  const [postHipotesia, setPostHipotesia] = useState(
+    "Langileek 'Euskaraz barra-barra' txapa soinean eramanda, saltokiaren mostradorean bezeroen lehen hitza eta elkarrizketak euskaraz %25 igoko dira."
+  );
   const [isCreatingPost, setIsCreatingPost] = useState(false);
 
   const handleCreatePostSubmit = async (e: React.FormEvent) => {
@@ -93,6 +233,11 @@ export default function AdminKoadroa() {
     const created = await createQuickPostua({
       izena: postName.trim(),
       arduraduna: postManager.trim() || undefined,
+      erronka_nagusia: postErronka.trim() || undefined,
+      taldea: postTaldea.trim() || undefined,
+      pertsonak: postPertsonak.trim() || undefined,
+      gunea: postGunea.trim() || undefined,
+      hipotesia: postHipotesia.trim() || undefined,
       xede_portzentajea: postTargetPct,
     });
     setIsCreatingPost(false);
@@ -458,9 +603,9 @@ export default function AdminKoadroa() {
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-slate-200 text-slate-400 font-semibold uppercase text-[10px]">
-                <th className="pb-3">Zentroa</th>
+                <th className="pb-3">Zentroa / Saltokia</th>
                 <th className="pb-3">Mota</th>
-                <th className="pb-3">Erronka Nagusia</th>
+                <th className="pb-3">Hipotesia & Erronka</th>
                 <th className="pb-3">Pilotua & Estatusa</th>
                 <th className="pb-3">Neurketak</th>
                 <th className="pb-3 text-right">Ekintzak</th>
@@ -499,15 +644,30 @@ export default function AdminKoadroa() {
                       {eragile.mota}
                     </td>
 
-                    <td className="py-3.5 pr-3 text-slate-600 max-w-xs truncate">
-                      {eragile.erronka_nagusia}
+                    <td className="py-3.5 pr-3 max-w-xs">
+                      {exp ? (
+                        <div>
+                          <p
+                            onClick={() => openEditEragileModal(eragile, exp)}
+                            className="text-slate-800 font-medium line-clamp-2 cursor-pointer hover:text-indigo-700 transition"
+                            title="Egin klik hipotesia editatzeko"
+                          >
+                            &ldquo;{exp.hipotesia}&rdquo;
+                          </p>
+                          <span className="text-[10px] text-slate-400 block mt-0.5 truncate">
+                            Gunea: {exp.gunea} • Xedea: +%{exp.xede_portzentajea}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-500 truncate block">{eragile.erronka_nagusia}</span>
+                      )}
                     </td>
 
                     <td className="py-3.5 pr-3">
                       {exp ? (
                         <div>
                           <span className="font-semibold text-slate-800 block">
-                            {exp.pilotu_izena || "Pilotua"}
+                            {exp.pilotu_izena || "Euskaraz barra-barra txapak"}
                           </span>
                           <span
                             className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold mt-0.5 ${
@@ -560,7 +720,7 @@ export default function AdminKoadroa() {
                       </div>
                     </td>
 
-                    <td className="py-3.5 text-right space-x-2 whitespace-nowrap">
+                    <td className="py-3.5 text-right space-x-1.5 whitespace-nowrap">
                       {exp && (
                         <button
                           onClick={() => {
@@ -576,6 +736,15 @@ export default function AdminKoadroa() {
                           <span>Neurtu ({t0List.length === 0 ? "T0" : t1List.length === 0 ? "T1" : "T2"})</span>
                         </button>
                       )}
+
+                      <button
+                        onClick={() => openEditEragileModal(eragile, exp)}
+                        className="px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 font-bold text-xs inline-flex items-center gap-1 transition cursor-pointer"
+                        title="Editatu saltokiaren datuak eta hipotesia"
+                      >
+                        <Pencil className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Editatu</span>
+                      </button>
 
                       <button
                         onClick={() => {
@@ -662,7 +831,7 @@ export default function AdminKoadroa() {
                 Egindako Neurketen Saioak ({neurketak.length})
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Proba moduan egindako neurketa zehatz bat ezabatu nahi baduzu (saltokia bera ezabatu gabe), egin klik eskuineko «Ezabatu saioa» botoian.
+                Neurketa baten datuak (behatzailea, fasea, zenbakiak edo oharrak) zuzendu edo proba-saio bat ezabatu dezakezu hemen.
               </p>
             </div>
           </div>
@@ -676,7 +845,7 @@ export default function AdminKoadroa() {
                   <th className="pb-3">Behatzailea</th>
                   <th className="pb-3">Elkarrizketak (Eusk / Erd / Elebi)</th>
                   <th className="pb-3">Data eta Ordua</th>
-                  <th className="pb-3 text-right">Ekintza</th>
+                  <th className="pb-3 text-right">Ekintzak</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -725,7 +894,15 @@ export default function AdminKoadroa() {
                           minute: "2-digit",
                         })}
                       </td>
-                      <td className="py-3 text-right">
+                      <td className="py-3 text-right space-x-1.5 whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => openEditNeurketaModal(n)}
+                          className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 font-semibold text-[11px] inline-flex items-center gap-1 transition cursor-pointer"
+                        >
+                          <Pencil className="w-3 h-3 text-amber-600" />
+                          <span>Editatu</span>
+                        </button>
                         <button
                           type="button"
                           disabled={neurketaDeletingId === n.id}
@@ -741,6 +918,375 @@ export default function AdminKoadroa() {
                 })}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT CENTER & HYPOTHESIS MODAL */}
+      {eragileToEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl border border-slate-200 my-8 max-h-[92vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-5 pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 bg-amber-100 text-amber-800 rounded-2xl">
+                  <Pencil className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base sm:text-lg">
+                    Saltokia eta Hipotesia Editatu
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Zuzendu saltokiaren datuak, gunea eta benetako hipotesia neurketak galdu gabe
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEragileToEdit(null)}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditEragileAndExp} className="space-y-5">
+              {/* Section 1: Saltokiaren datuak */}
+              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 space-y-3">
+                <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                  <Store className="w-3.5 h-3.5 text-slate-600" />
+                  <span>1. Saltokiaren / Zentroaren Datuak</span>
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Saltokiaren / Postuaren Izena *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editIzena}
+                      onChange={(e) => setEditIzena(e.target.value)}
+                      className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Mota
+                    </label>
+                    <select
+                      value={editMota}
+                      onChange={(e) => setEditMota(e.target.value)}
+                      className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                    >
+                      <option value="merkataritza">Merkataritza / Saltokia</option>
+                      <option value="ikastetxea">Ikastetxea</option>
+                      <option value="enpresa">Enpresa</option>
+                      <option value="aisialdia">Aisialdia / Elkartea</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Arduraduna
+                    </label>
+                    <input
+                      type="text"
+                      value={editArduraduna}
+                      onChange={(e) => setEditArduraduna(e.target.value)}
+                      className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Erronka Nagusia
+                    </label>
+                    <input
+                      type="text"
+                      value={editErronka}
+                      onChange={(e) => setEditErronka(e.target.value)}
+                      className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 2: Esperimentua eta Hipotesi Erreala */}
+              <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-200 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h4 className="text-xs font-extrabold uppercase tracking-wider text-emerald-900 flex items-center gap-1.5">
+                    <FlaskConical className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>2. Hipotesi Erreala eta Esperimentuaren Xehetasunak</span>
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const generated = `Gure ustez, ${editTaldea || "Saltokiko lantaldea"} ${editPertsonak || "Bezeroak eta langileak"}, ${editGunea || "Saltokiaren mostradorea"} 'Euskaraz barra-barra' txapa soinean eramanda, euskararen erabilera %${editXedePct} igoko da.`;
+                      setEditHipotesia(generated);
+                    }}
+                    className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 bg-white px-2.5 py-1 rounded-lg border border-emerald-200 shadow-2xs transition cursor-pointer"
+                  >
+                    ✨ Sortu esaldia azpiko eremuekin
+                  </button>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-800 mb-1">
+                    Hipotesia (idatzi nahi duzun testu zehatza) *
+                  </label>
+                  <textarea
+                    rows={3}
+                    required
+                    value={editHipotesia}
+                    onChange={(e) => setEditHipotesia(e.target.value)}
+                    placeholder="Idatzi hemen saltoki honetarako adostutako hipotesi erreala..."
+                    className="w-full border border-emerald-300 bg-white rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Nork (Taldea)
+                    </label>
+                    <input
+                      type="text"
+                      value={editTaldea}
+                      onChange={(e) => setEditTaldea(e.target.value)}
+                      placeholder="Adib: Harategiko langileek"
+                      className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs text-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Norekin (Pertsonak)
+                    </label>
+                    <input
+                      type="text"
+                      value={editPertsonak}
+                      onChange={(e) => setEditPertsonak(e.target.value)}
+                      placeholder="Adib: Bezeroekin"
+                      className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs text-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Non (Gunea)
+                    </label>
+                    <input
+                      type="text"
+                      value={editGunea}
+                      onChange={(e) => setEditGunea(e.target.value)}
+                      placeholder="Adib: Mostradorean"
+                      className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs text-slate-900"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Xede-igoera (%):
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={100}
+                      value={editXedePct}
+                      onChange={(e) => setEditXedePct(Number(e.target.value))}
+                      className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs font-bold text-emerald-700"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Pilotua:
+                    </label>
+                    <select
+                      value={editPilotuId}
+                      onChange={(e) => setEditPilotuId(e.target.value)}
+                      className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs text-slate-900"
+                    >
+                      {pilotuak.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.izena}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Fasea / Estatusa:
+                    </label>
+                    <select
+                      value={editEstatusa}
+                      onChange={(e) => setEditEstatusa(e.target.value)}
+                      className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs text-slate-900"
+                    >
+                      <option value="T0_zain">T0 zain</option>
+                      <option value="T1_zain">T1 zain</option>
+                      <option value="T2_zain">T2 zain</option>
+                      <option value="Amaituta">Amaituta</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEragileToEdit(null)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                >
+                  Utzi
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingEdit || !editIzena.trim() || !editHipotesia.trim()}
+                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>{isSavingEdit ? "Gordetzen..." : "Gorde Aldaketak"}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT SINGLE MEASUREMENT SESSION MODAL */}
+      {neurketaToEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-200">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-amber-100 text-amber-800 rounded-xl">
+                  <Pencil className="w-4 h-4 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base">
+                    Neurketa Saioa Editatu
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Zuzendu fasea, behatzailea edo elkarrizketa kopuruak
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setNeurketaToEdit(null)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditNeurketa} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Fasea (T0 / T1 / T2)
+                  </label>
+                  <select
+                    value={editNeuUnea}
+                    onChange={(e) => setEditNeuUnea(e.target.value as "T0" | "T1" | "T2")}
+                    className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900"
+                  >
+                    <option value="T0">T0 (Aurre-neurketa)</option>
+                    <option value="T1">T1 (Tarteko neurketa)</option>
+                    <option value="T2">T2 (Amaierako neurketa)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Behatzailea
+                  </label>
+                  <input
+                    type="text"
+                    value={editNeuBehatzailea}
+                    onChange={(e) => setEditNeuBehatzailea(e.target.value)}
+                    className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2.5">
+                <div className="bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
+                  <label className="block text-[10px] font-extrabold uppercase text-emerald-800 mb-1">
+                    Euskaraz
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={editNeuEusk}
+                    onChange={(e) => setEditNeuEusk(Math.max(0, Number(e.target.value)))}
+                    className="w-full bg-white border border-emerald-300 rounded-lg px-2.5 py-1.5 text-sm font-black text-emerald-800"
+                  />
+                </div>
+
+                <div className="bg-rose-50 p-2.5 rounded-xl border border-rose-200">
+                  <label className="block text-[10px] font-extrabold uppercase text-rose-800 mb-1">
+                    Erdaraz
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={editNeuErd}
+                    onChange={(e) => setEditNeuErd(Math.max(0, Number(e.target.value)))}
+                    className="w-full bg-white border border-rose-300 rounded-lg px-2.5 py-1.5 text-sm font-black text-rose-800"
+                  />
+                </div>
+
+                <div className="bg-amber-50 p-2.5 rounded-xl border border-amber-200">
+                  <label className="block text-[10px] font-extrabold uppercase text-amber-800 mb-1">
+                    Elebi
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={editNeuElebi}
+                    onChange={(e) => setEditNeuElebi(Math.max(0, Number(e.target.value)))}
+                    className="w-full bg-white border border-amber-300 rounded-lg px-2.5 py-1.5 text-sm font-black text-amber-800"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Oharrak
+                </label>
+                <textarea
+                  rows={2}
+                  value={editNeuOharrak}
+                  onChange={(e) => setEditNeuOharrak(e.target.value)}
+                  className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setNeurketaToEdit(null)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                >
+                  Utzi
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingNeurketaEdit}
+                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>{isSavingNeurketaEdit ? "Gordetzen..." : "Gorde Saioa"}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
@@ -931,8 +1477,8 @@ export default function AdminKoadroa() {
 
       {/* New Post / Shop Modal */}
       {showNewPostModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-slate-200 my-8 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2.5">
                 <div className="p-2.5 bg-emerald-100 text-emerald-800 rounded-2xl">
@@ -943,7 +1489,7 @@ export default function AdminKoadroa() {
                     Saltoki edo Postu Berria Gehitu
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Gaurko behaketa itsua (T0) prestatzeko
+                    Zehaztu saltokia eta zuen hipotesi erreala
                   </p>
                 </div>
               </div>
@@ -956,43 +1502,81 @@ export default function AdminKoadroa() {
               </button>
             </div>
 
-            <form onSubmit={handleCreatePostSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Saltokiaren edo Postuaren Izena *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Adib: Bretxako 1. postua - Harategia"
-                  value={postName}
-                  onChange={(e) => setPostName(e.target.value)}
-                  className="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
-                  autoFocus
-                />
+            <form onSubmit={handleCreatePostSubmit} className="space-y-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Saltokiaren edo Postuaren Izena *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Adib: Bretxako 1. postua - Harategia"
+                    value={postName}
+                    onChange={(e) => setPostName(e.target.value)}
+                    className="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Arduradunaren Izena (hautazkoa)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Adib: Miren / Koldo"
+                    value={postManager}
+                    onChange={(e) => setPostManager(e.target.value)}
+                    className="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Nork (Taldea)
+                  </label>
+                  <input
+                    type="text"
+                    value={postTaldea}
+                    onChange={(e) => setPostTaldea(e.target.value)}
+                    className="w-full border border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Norekin (Pertsonak)
+                  </label>
+                  <input
+                    type="text"
+                    value={postPertsonak}
+                    onChange={(e) => setPostPertsonak(e.target.value)}
+                    className="w-full border border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Non (Gunea)
+                  </label>
+                  <input
+                    type="text"
+                    value={postGunea}
+                    onChange={(e) => setPostGunea(e.target.value)}
+                    className="w-full border border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-900"
+                  />
+                </div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Arduradunaren Izena (hautazkoa)
-                </label>
-                <input
-                  type="text"
-                  placeholder="Adib: Miren / Koldo"
-                  value={postManager}
-                  onChange={(e) => setPostManager(e.target.value)}
-                  className="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Euskararen Xede-Helburua (%):
+                  Euskararen Xede-Igoera (%):
                 </label>
                 <div className="flex items-center gap-3">
                   <input
                     type="range"
-                    min="30"
+                    min="5"
                     max="90"
                     step="5"
                     value={postTargetPct}
@@ -1000,16 +1584,35 @@ export default function AdminKoadroa() {
                     className="flex-1 accent-emerald-600"
                   />
                   <span className="font-extrabold text-sm text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-                    %{postTargetPct}
+                    +%{postTargetPct}
                   </span>
                 </div>
               </div>
 
-              <div className="bg-emerald-50 rounded-2xl p-3 border border-emerald-200 text-xs text-emerald-900 flex items-start gap-2">
-                <BadgeCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-bold">Euskaraz barra-barra txapak</span> pilotua automatikoki esleituko zaio, eta <span className="font-bold">T0 neurketa itsua</span> prest geratuko da berehala neurtzeko.
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-800">
+                    Hipotesi Erreala (nahi duzun bezala idatzi edo moldatu) *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPostHipotesia(
+                        `Gure ustez, ${postTaldea || "Saltokiko lantaldea"} ${postPertsonak || "Bezeroak eta langileak"}, ${postGunea || "Saltokiaren mostradorea"} 'Euskaraz barra-barra' txapa soinean eramanda, euskararen erabilera %${postTargetPct} igoko da.`
+                      )
+                    }
+                    className="text-[10px] font-bold text-emerald-700 hover:underline cursor-pointer"
+                  >
+                    ✨ Eguneratu txantiloiarekin
+                  </button>
                 </div>
+                <textarea
+                  rows={3}
+                  required
+                  value={postHipotesia}
+                  onChange={(e) => setPostHipotesia(e.target.value)}
+                  className="w-full border border-emerald-300 bg-emerald-50/30 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2">
@@ -1022,10 +1625,10 @@ export default function AdminKoadroa() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isCreatingPost || !postName.trim()}
+                  disabled={isCreatingPost || !postName.trim() || !postHipotesia.trim()}
                   className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
-                  {isCreatingPost ? "Sortzen..." : "Sortu Postua & Esperimentua →"}
+                  {isCreatingPost ? "Sortzen..." : "Sortu Postua & Hipotesia →"}
                 </button>
               </div>
             </form>

@@ -88,6 +88,55 @@ export async function POST(request: Request) {
   }
 }
 
+export async function PATCH(request: Request) {
+  try {
+    await syncDbFromCloud();
+
+    const body = await request.json();
+    const { id, izena, mota, arduraduna, email, erronka_nagusia } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: "Saltokiaren IDa beharrezkoa da" },
+        { status: 400 }
+      );
+    }
+
+    const existing = db.prepare("SELECT * FROM eragileak WHERE id = ?").get(id) as Eragilea | undefined;
+    if (!existing) {
+      return NextResponse.json(
+        { success: false, error: "Saltokia ez da aurkitu" },
+        { status: 404 }
+      );
+    }
+
+    const updatedIzena = izena !== undefined ? String(izena).trim() : existing.izena;
+    const updatedMota = mota !== undefined ? String(mota).trim() : existing.mota;
+    const updatedArduraduna = arduraduna !== undefined ? String(arduraduna).trim() : existing.arduraduna;
+    const updatedEmail = email !== undefined ? String(email).trim() : existing.email;
+    const updatedErronka = erronka_nagusia !== undefined ? String(erronka_nagusia).trim() : existing.erronka_nagusia;
+
+    db.prepare(
+      "UPDATE eragileak SET izena = ?, mota = ?, arduraduna = ?, email = ?, erronka_nagusia = ? WHERE id = ?"
+    ).run(updatedIzena, updatedMota, updatedArduraduna, updatedEmail, updatedErronka, id);
+
+    const updated = db.prepare("SELECT * FROM eragileak WHERE id = ?").get(id) as Eragilea;
+
+    await syncDbToCloud();
+
+    return NextResponse.json({
+      success: true,
+      data: updated,
+    });
+  } catch (error) {
+    console.error("Errorea eragilea eguneratzean:", error);
+    return NextResponse.json(
+      { success: false, error: "Ezin izan dira saltokiaren datuak eguneratu" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(request: Request) {
   try {
     await syncDbFromCloud();
@@ -127,4 +176,5 @@ export async function DELETE(request: Request) {
     );
   }
 }
+
 

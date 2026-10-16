@@ -84,3 +84,78 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export async function PATCH(request: Request) {
+  try {
+    await syncDbFromCloud();
+
+    const body = await request.json();
+    const {
+      id,
+      pilotu_id,
+      hipotesia,
+      taldea,
+      pertsonak,
+      gunea,
+      xede_portzentajea,
+      estatusa,
+    } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: "Esperimentuaren IDa beharrezkoa da" },
+        { status: 400 }
+      );
+    }
+
+    const existing = db.prepare("SELECT * FROM esperimentuak WHERE id = ?").get(id) as Esperimentua | undefined;
+    if (!existing) {
+      return NextResponse.json(
+        { success: false, error: "Esperimentua ez da aurkitu" },
+        { status: 404 }
+      );
+    }
+
+    const updatedPilotuId = pilotu_id !== undefined ? String(pilotu_id).trim() : existing.pilotu_id;
+    const updatedHipotesia = hipotesia !== undefined ? String(hipotesia).trim() : existing.hipotesia;
+    const updatedTaldea = taldea !== undefined ? String(taldea).trim() : existing.taldea;
+    const updatedPertsonak = pertsonak !== undefined ? String(pertsonak).trim() : existing.pertsonak;
+    const updatedGunea = gunea !== undefined ? String(gunea).trim() : existing.gunea;
+    const updatedXedea = xede_portzentajea !== undefined ? Number(xede_portzentajea) : existing.xede_portzentajea;
+    const updatedEstatusa = estatusa !== undefined ? String(estatusa).trim() : existing.estatusa;
+
+    db.prepare(
+      "UPDATE esperimentuak SET pilotu_id = ?, hipotesia = ?, taldea = ?, pertsonak = ?, gunea = ?, xede_portzentajea = ?, estatusa = ? WHERE id = ?"
+    ).run(
+      updatedPilotuId,
+      updatedHipotesia,
+      updatedTaldea,
+      updatedPertsonak,
+      updatedGunea,
+      updatedXedea,
+      updatedEstatusa,
+      id
+    );
+
+    const esperimentua = db.prepare(`
+      SELECT e.*, p.izena as pilotu_izena, p.ikonoa as pilotu_ikonoa
+      FROM esperimentuak e
+      LEFT JOIN pilotuak p ON e.pilotu_id = p.id
+      WHERE e.id = ?
+    `).get(id) as Esperimentua;
+
+    await syncDbToCloud();
+
+    return NextResponse.json({
+      success: true,
+      data: esperimentua,
+    });
+  } catch (error) {
+    console.error("Errorea esperimentua eguneratzean:", error);
+    return NextResponse.json(
+      { success: false, error: "Ezin izan da hipotesia edo esperimentua eguneratu" },
+      { status: 500 }
+    );
+  }
+}
+

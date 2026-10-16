@@ -92,6 +92,11 @@ export default function BehatzaileKontagailua() {
   const [showNewStandModal, setShowNewStandModal] = useState<boolean>(false);
   const [newStandName, setNewStandName] = useState<string>("");
   const [newStandManager, setNewStandManager] = useState<string>("");
+  const [newStandGunea, setNewStandGunea] = useState<string>("Saltokiaren mostradorea");
+  const [newStandTargetPct, setNewStandTargetPct] = useState<number>(25);
+  const [newStandHipotesia, setNewStandHipotesia] = useState<string>(
+    "Langileek 'Euskaraz barra-barra' txapa soinean eramanda, saltokiaren mostradorean bezeroen lehen hitza eta elkarrizketak euskaraz %25 igoko dira."
+  );
   const [isCreatingStand, setIsCreatingStand] = useState<boolean>(false);
 
   // Restore and persist observer name
@@ -121,6 +126,9 @@ export default function BehatzaileKontagailua() {
     const created = await createQuickPostua({
       izena: newStandName.trim(),
       arduraduna: newStandManager.trim() || undefined,
+      gunea: newStandGunea.trim() || undefined,
+      hipotesia: newStandHipotesia.trim() || undefined,
+      xede_portzentajea: newStandTargetPct,
     });
     setIsCreatingStand(false);
 
@@ -860,8 +868,8 @@ export default function BehatzaileKontagailua() {
 
       {/* Quick Stand Modal */}
       {showNewStandModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-200 my-8 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2.5">
                 <div className="p-2.5 bg-emerald-100 text-emerald-800 rounded-2xl">
@@ -872,7 +880,7 @@ export default function BehatzaileKontagailua() {
                     Gehitu Saltokia / Postua
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Gaurko neurketarako postu berria
+                    Zehaztu saltokia eta zuen hipotesi erreala
                   </p>
                 </div>
               </div>
@@ -885,7 +893,7 @@ export default function BehatzaileKontagailua() {
               </button>
             </div>
 
-            <form onSubmit={handleCreateStandSubmit} className="space-y-4">
+            <form onSubmit={handleCreateStandSubmit} className="space-y-3.5">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
                   Saltokiaren edo Postuaren Izena *
@@ -896,29 +904,68 @@ export default function BehatzaileKontagailua() {
                   placeholder="Adib: Bretxako 1. postua - Harategia"
                   value={newStandName}
                   onChange={(e) => setNewStandName(e.target.value)}
-                  className="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  className="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
                   autoFocus
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Arduradunaren izena (hautazkoa)
-                </label>
-                <input
-                  type="text"
-                  placeholder="Adib: Miren / Koldo"
-                  value={newStandManager}
-                  onChange={(e) => setNewStandManager(e.target.value)}
-                  className="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
-                />
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Arduraduna (hautazkoa)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Adib: Miren / Koldo"
+                    value={newStandManager}
+                    onChange={(e) => setNewStandManager(e.target.value)}
+                    className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Gunea (Non)
+                  </label>
+                  <input
+                    type="text"
+                    value={newStandGunea}
+                    onChange={(e) => setNewStandGunea(e.target.value)}
+                    className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  />
+                </div>
               </div>
 
-              <div className="bg-emerald-50 rounded-2xl p-3 border border-emerald-200 text-xs text-emerald-900 flex items-start gap-2">
-                <BadgeCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-bold">Euskaraz barra-barra txapak</span> pilotua automatikoki lotuko zaio, eta <span className="font-bold">T0 neurketa itsua</span> prest geratuko da.
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Xede-Igoera (+%):
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="range"
+                    min="5"
+                    max="90"
+                    step="5"
+                    value={newStandTargetPct}
+                    onChange={(e) => setNewStandTargetPct(Number(e.target.value))}
+                    className="flex-1 accent-emerald-600"
+                  />
+                  <span className="font-extrabold text-xs text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200">
+                    +%{newStandTargetPct}
+                  </span>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-800 mb-1">
+                  Hipotesi Erreala (nahi duzun bezala idatzi edo aldatu) *
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  value={newStandHipotesia}
+                  onChange={(e) => setNewStandHipotesia(e.target.value)}
+                  className="w-full border border-emerald-300 bg-emerald-50/30 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                />
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2">
@@ -931,7 +978,7 @@ export default function BehatzaileKontagailua() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isCreatingStand || !newStandName.trim()}
+                  disabled={isCreatingStand || !newStandName.trim() || !newStandHipotesia.trim()}
                   className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   {isCreatingStand ? "Sortzen..." : "Sortu eta hasi T0 neurtzen →"}

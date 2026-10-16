@@ -75,8 +75,41 @@ interface AppContextType {
   createQuickPostua: (data: {
     izena: string;
     arduraduna?: string;
+    mota?: string;
+    erronka_nagusia?: string;
+    hipotesia?: string;
+    taldea?: string;
+    pertsonak?: string;
+    gunea?: string;
     xede_portzentajea?: number;
   }) => Promise<{ eragilea: Eragilea; esperimentua: Esperimentua } | null>;
+  updateEragilea: (data: {
+    id: string;
+    izena?: string;
+    mota?: string;
+    arduraduna?: string;
+    email?: string;
+    erronka_nagusia?: string;
+  }) => Promise<Eragilea | null>;
+  updateEsperimentua: (data: {
+    id: string;
+    pilotu_id?: string;
+    hipotesia?: string;
+    taldea?: string;
+    pertsonak?: string;
+    gunea?: string;
+    xede_portzentajea?: number;
+    estatusa?: string;
+  }) => Promise<Esperimentua | null>;
+  updateNeurketa: (data: {
+    id: string;
+    unea?: "T0" | "T1" | "T2";
+    euskaraz_count?: number;
+    erdaraz_count?: number;
+    elebi_count?: number;
+    oharrak?: string;
+    behatzailea?: string;
+  }) => Promise<Neurketa | null>;
   saveNeurketa: (data: {
     esperimentu_id: string;
     unea: "T0" | "T1" | "T2";
@@ -478,19 +511,27 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
   const createQuickPostua = async (data: {
     izena: string;
     arduraduna?: string;
+    mota?: string;
+    erronka_nagusia?: string;
+    hipotesia?: string;
+    taldea?: string;
+    pertsonak?: string;
+    gunea?: string;
     xede_portzentajea?: number;
   }) => {
     try {
-      // 1. Create eragilea (merkataritza)
+      // 1. Create eragilea
       const resEragile = await fetch("/api/eragileak", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           izena: data.izena.trim(),
-          mota: "merkataritza",
+          mota: data.mota || "merkataritza",
           arduraduna: data.arduraduna?.trim() || "Arduraduna",
           email: `komertzioa-${Date.now().toString(36)}@bideaneragin.eus`,
-          erronka_nagusia: "Dendan lehen hitza eta elkarrizketa euskaraz piztea, txapak erabilita.",
+          erronka_nagusia:
+            data.erronka_nagusia?.trim() ||
+            "Dendan lehen hitza eta elkarrizketa euskaraz piztea, txapak erabilita.",
         }),
       });
       const jsonEragile = await resEragile.json();
@@ -499,6 +540,14 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
       }
       const newEragilea = jsonEragile.data as Eragilea;
 
+      const xedea = data.xede_portzentajea || 25;
+      const taldeaVal = data.taldea?.trim() || "Saltokiko lantaldea";
+      const pertsonakVal = data.pertsonak?.trim() || "Bezeroak eta langileak";
+      const guneaVal = data.gunea?.trim() || "Saltokiaren mostradorea";
+      const hipotesiaVal =
+        data.hipotesia?.trim() ||
+        `Gure ustez, ${taldeaVal} ${pertsonakVal}, ${guneaVal} 'Euskaraz barra-barra' txapa soinean eramanda, euskararen erabilera %${xedea} igoko da.`;
+
       // 2. Create experiment with 'barra-barra-txapak' pilot
       const resExp = await fetch("/api/esperimentuak", {
         method: "POST",
@@ -506,11 +555,11 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
         body: JSON.stringify({
           eragile_id: newEragilea.id,
           pilotu_id: "barra-barra-txapak",
-          hipotesia: "Langileek txapa eramanda, bezeroen lehen hitza eta elkarrizketak euskaraz %25 igoko dira.",
-          taldea: "Saltokiko lantaldea",
-          pertsonak: "Bezeroak eta langileak",
-          gunea: "Saltokiaren mostradorea",
-          xede_portzentajea: data.xede_portzentajea || 60,
+          hipotesia: hipotesiaVal,
+          taldea: taldeaVal,
+          pertsonak: pertsonakVal,
+          gunea: guneaVal,
+          xede_portzentajea: xedea,
         }),
       });
       const jsonExp = await resExp.json();
@@ -528,6 +577,84 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
       console.error("Errorea saltoki azkarra sortzean:", e);
       return null;
     }
+  };
+
+  const updateEragilea = async (data: {
+    id: string;
+    izena?: string;
+    mota?: string;
+    arduraduna?: string;
+    email?: string;
+    erronka_nagusia?: string;
+  }) => {
+    try {
+      const res = await fetch("/api/eragileak", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        await refreshData();
+        return json.data as Eragilea;
+      }
+    } catch (e) {
+      console.error("Errorea eragilea eguneratzean:", e);
+    }
+    return null;
+  };
+
+  const updateEsperimentua = async (data: {
+    id: string;
+    pilotu_id?: string;
+    hipotesia?: string;
+    taldea?: string;
+    pertsonak?: string;
+    gunea?: string;
+    xede_portzentajea?: number;
+    estatusa?: string;
+  }) => {
+    try {
+      const res = await fetch("/api/esperimentuak", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        await refreshData();
+        return json.data as Esperimentua;
+      }
+    } catch (e) {
+      console.error("Errorea esperimentua eguneratzean:", e);
+    }
+    return null;
+  };
+
+  const updateNeurketa = async (data: {
+    id: string;
+    unea?: "T0" | "T1" | "T2";
+    euskaraz_count?: number;
+    erdaraz_count?: number;
+    elebi_count?: number;
+    oharrak?: string;
+    behatzailea?: string;
+  }) => {
+    try {
+      const res = await fetch("/api/neurketak", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        await refreshData();
+        return json.data as Neurketa;
+      }
+    } catch (e) {
+      console.error("Errorea neurketa eguneratzean:", e);
+    }
+    return null;
   };
 
   const syncOfflineData = async () => {
@@ -732,6 +859,9 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
         createPilotua,
         createEsperimentua,
         createQuickPostua,
+        updateEragilea,
+        updateEsperimentua,
+        updateNeurketa,
         saveNeurketa,
         deleteNeurketa,
         deleteEragilea,

@@ -19,6 +19,9 @@ import {
   Award,
   Layers,
   BarChart3,
+  Pencil,
+  Save,
+  X,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { Esperimentua, Neurketa } from "@/lib/db";
@@ -75,6 +78,7 @@ export default function ZentroDashboard() {
     setObservationConfig,
     triggerConfetti,
     deleteNeurketa,
+    updateEsperimentua,
   } = useApp();
 
   // Find all experiments for this organization
@@ -88,6 +92,40 @@ export default function ZentroDashboard() {
 
   const currentExp =
     orgExperiments.find((e) => e.id === selectedExpId) || orgExperiments[0];
+
+  const [isEditingHypothesis, setIsEditingHypothesis] = useState(false);
+  const [editHipotesiaText, setEditHipotesiaText] = useState("");
+  const [editTaldeaText, setEditTaldeaText] = useState("");
+  const [editPertsonakText, setEditPertsonakText] = useState("");
+  const [editGuneaText, setEditGuneaText] = useState("");
+  const [editXedeaNum, setEditXedeaNum] = useState<number>(25);
+  const [isSavingHypothesis, setIsSavingHypothesis] = useState(false);
+
+  const handleOpenEditHypothesis = () => {
+    if (!currentExp) return;
+    setEditHipotesiaText(currentExp.hipotesia);
+    setEditTaldeaText(currentExp.taldea);
+    setEditPertsonakText(currentExp.pertsonak);
+    setEditGuneaText(currentExp.gunea);
+    setEditXedeaNum(currentExp.xede_portzentajea || 25);
+    setIsEditingHypothesis(true);
+  };
+
+  const handleSaveHypothesis = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentExp || !editHipotesiaText.trim()) return;
+    setIsSavingHypothesis(true);
+    await updateEsperimentua({
+      id: currentExp.id,
+      hipotesia: editHipotesiaText.trim(),
+      taldea: editTaldeaText.trim() || currentExp.taldea,
+      pertsonak: editPertsonakText.trim() || currentExp.pertsonak,
+      gunea: editGuneaText.trim() || currentExp.gunea,
+      xede_portzentajea: editXedeaNum,
+    });
+    setIsSavingHypothesis(false);
+    setIsEditingHypothesis(false);
+  };
 
   // Get measurements for current experiment
   const expNeurketak = neurketak.filter(
@@ -311,27 +349,143 @@ export default function ZentroDashboard() {
                   </div>
                 </div>
 
-                <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-emerald-100 text-emerald-800">
-                  Xedea: +%{currentExp.xede_portzentajea}
-                </span>
-              </div>
-
-              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 my-3">
-                <p className="text-xs sm:text-sm font-semibold text-slate-800 italic leading-relaxed">
-                  &ldquo;{currentExp.hipotesia}&rdquo;
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 text-xs text-slate-500 pt-1">
-                <div>
-                  <span className="block text-[10px] text-slate-400 uppercase font-bold">Taldea</span>
-                  <span className="font-semibold text-slate-700">{currentExp.taldea}</span>
-                </div>
-                <div>
-                  <span className="block text-[10px] text-slate-400 uppercase font-bold">Gunea</span>
-                  <span className="font-semibold text-slate-700">{currentExp.gunea}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-emerald-100 text-emerald-800">
+                    Xedea: +%{currentExp.xede_portzentajea}
+                  </span>
+                  {!isEditingHypothesis && (
+                    <button
+                      type="button"
+                      onClick={handleOpenEditHypothesis}
+                      className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold inline-flex items-center gap-1 transition cursor-pointer"
+                      title="Editatu hipotesia eta xehetasunak"
+                    >
+                      <Pencil className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Editatu</span>
+                    </button>
+                  )}
                 </div>
               </div>
+
+              {isEditingHypothesis ? (
+                <form onSubmit={handleSaveHypothesis} className="space-y-3 bg-amber-50/40 p-4 rounded-2xl border border-amber-200 my-2">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] font-bold text-slate-800">
+                        Hipotesi Erreala *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setEditHipotesiaText(
+                            `Gure ustez, ${editTaldeaText || "Saltokiko lantaldea"} ${editPertsonakText || "Bezeroak eta langileak"}, ${editGuneaText || "Saltokiaren mostradorea"} 'Euskaraz barra-barra' txapa soinean eramanda, euskararen erabilera %${editXedeaNum} igoko da.`
+                          )
+                        }
+                        className="text-[10px] font-bold text-emerald-700 hover:underline cursor-pointer"
+                      >
+                        ✨ Sortu azpiko eremuekin
+                      </button>
+                    </div>
+                    <textarea
+                      rows={3}
+                      required
+                      value={editHipotesiaText}
+                      onChange={(e) => setEditHipotesiaText(e.target.value)}
+                      className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase text-slate-600 mb-0.5">
+                        Taldea
+                      </label>
+                      <input
+                        type="text"
+                        value={editTaldeaText}
+                        onChange={(e) => setEditTaldeaText(e.target.value)}
+                        className="w-full border border-slate-300 bg-white rounded-lg px-2.5 py-1.5 text-xs text-slate-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase text-slate-600 mb-0.5">
+                        Gunea
+                      </label>
+                      <input
+                        type="text"
+                        value={editGuneaText}
+                        onChange={(e) => setEditGuneaText(e.target.value)}
+                        className="w-full border border-slate-300 bg-white rounded-lg px-2.5 py-1.5 text-xs text-slate-900"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase text-slate-600 mb-0.5">
+                        Pertsonak
+                      </label>
+                      <input
+                        type="text"
+                        value={editPertsonakText}
+                        onChange={(e) => setEditPertsonakText(e.target.value)}
+                        className="w-full border border-slate-300 bg-white rounded-lg px-2.5 py-1.5 text-xs text-slate-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase text-slate-600 mb-0.5">
+                        Xedea (+%)
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={100}
+                        value={editXedeaNum}
+                        onChange={(e) => setEditXedeaNum(Number(e.target.value))}
+                        className="w-full border border-slate-300 bg-white rounded-lg px-2.5 py-1.5 text-xs font-bold text-emerald-700"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingHypothesis(false)}
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-200/70 transition cursor-pointer inline-flex items-center gap-1"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      <span>Utzi</span>
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSavingHypothesis || !editHipotesiaText.trim()}
+                      className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs cursor-pointer inline-flex items-center gap-1 disabled:opacity-50"
+                    >
+                      <Save className="w-3.5 h-3.5" />
+                      <span>{isSavingHypothesis ? "Gordetzen..." : "Gorde Hipotesia"}</span>
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <>
+                  <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 my-3">
+                    <p className="text-xs sm:text-sm font-semibold text-slate-800 italic leading-relaxed">
+                      &ldquo;{currentExp.hipotesia}&rdquo;
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs text-slate-500 pt-1">
+                    <div>
+                      <span className="block text-[10px] text-slate-400 uppercase font-bold">Taldea</span>
+                      <span className="font-semibold text-slate-700">{currentExp.taldea}</span>
+                    </div>
+                    <div>
+                      <span className="block text-[10px] text-slate-400 uppercase font-bold">Gunea</span>
+                      <span className="font-semibold text-slate-700">{currentExp.gunea}</span>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Aurrerapen Barra */}
