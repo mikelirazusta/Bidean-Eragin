@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
-import db, { Eragilea } from "@/lib/db";
+import db, { Eragilea, syncDbFromCloud, syncDbToCloud } from "@/lib/db";
 
 export async function POST(request: Request) {
   try {
+    await syncDbFromCloud();
+
     const body = await request.json();
     const { izena, mota, arduraduna, email, erronka_nagusia } = body;
 
@@ -71,6 +73,8 @@ export async function POST(request: Request) {
 
     const eragilea = db.prepare("SELECT * FROM eragileak WHERE id = ?").get(id) as Eragilea;
 
+    await syncDbToCloud();
+
     return NextResponse.json({
       success: true,
       data: eragilea,
@@ -86,6 +90,8 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    await syncDbFromCloud();
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
@@ -106,6 +112,8 @@ export async function DELETE(request: Request) {
     db.prepare("DELETE FROM nudges WHERE eragile_id = ?").run(id);
     db.prepare("DELETE FROM users WHERE eragile_id = ?").run(id);
     db.prepare("DELETE FROM eragileak WHERE id = ?").run(id);
+
+    await syncDbToCloud();
 
     return NextResponse.json({
       success: true,

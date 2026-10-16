@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
-import db, { Esperimentua } from "@/lib/db";
+import db, { Esperimentua, syncDbFromCloud, syncDbToCloud } from "@/lib/db";
 
 export async function POST(request: Request) {
   try {
+    await syncDbFromCloud();
+
     const body = await request.json();
     const {
       eragile_id,
@@ -67,6 +69,8 @@ export async function POST(request: Request) {
       LEFT JOIN pilotuak p ON e.pilotu_id = p.id
       WHERE e.id = ?
     `).get(id) as Esperimentua;
+
+    await syncDbToCloud();
 
     return NextResponse.json({
       success: true,

@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
-import db, { Eragilea, Pilotua, Esperimentua, Neurketa, Nudge } from "@/lib/db";
+import db, { Eragilea, Pilotua, Esperimentua, Neurketa, Nudge, syncDbFromCloud } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET() {
   try {
+    await syncDbFromCloud();
+
     const pilotuak = db.prepare("SELECT * FROM pilotuak").all() as Pilotua[];
     const eragileak = db.prepare("SELECT * FROM eragileak ORDER BY sortze_data DESC").all() as Eragilea[];
     
@@ -17,16 +22,25 @@ export async function GET() {
     const neurketak = db.prepare("SELECT * FROM neurketak ORDER BY data_ordu DESC").all() as Neurketa[];
     const nudges = db.prepare("SELECT * FROM nudges ORDER BY sortze_data DESC").all() as Nudge[];
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        pilotuak,
-        eragileak,
-        esperimentuak,
-        neurketak,
-        nudges,
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          pilotuak,
+          eragileak,
+          esperimentuak,
+          neurketak,
+          nudges,
+        },
       },
-    });
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      }
+    );
   } catch (error) {
     console.error("Errorea bootstrap datuak eskuratzean:", error);
     return NextResponse.json(

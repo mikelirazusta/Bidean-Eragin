@@ -1,14 +1,18 @@
 import { NextResponse } from "next/server";
-import db from "@/lib/db";
+import db, { syncDbFromCloud, syncDbToCloud } from "@/lib/db";
 
 export async function POST() {
   try {
+    await syncDbFromCloud();
+
     // Clear all dynamic data so user can start completely from scratch
     db.prepare("DELETE FROM neurketak").run();
     db.prepare("DELETE FROM esperimentuak").run();
     db.prepare("DELETE FROM nudges").run();
     db.prepare("DELETE FROM eragileak").run();
     db.prepare("DELETE FROM users WHERE role = 'eragilea'").run();
+
+    await syncDbToCloud();
 
     return NextResponse.json({
       success: true,

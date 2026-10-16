@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
-import db, { Eragilea, User } from "@/lib/db";
+import db, { Eragilea, User, syncDbFromCloud } from "@/lib/db";
 
 export async function POST(request: Request) {
   try {
+    await syncDbFromCloud();
+
     const body = await request.json();
     const { email, password } = body;
 

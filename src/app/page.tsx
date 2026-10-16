@@ -1,9 +1,10 @@
-import { getInitialData } from "@/lib/db";
+import { getInitialData, syncDbFromCloud } from "@/lib/db";
 import MainClientApp from "@/components/MainClientApp";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-export default function Home() {
+export default async function Home() {
   let initialData: ReturnType<typeof getInitialData> = {
     pilotuak: [],
     eragileak: [],
@@ -13,6 +14,7 @@ export default function Home() {
   };
 
   try {
+    await syncDbFromCloud();
     const data = getInitialData();
     if (data) {
       initialData = data;

@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
-import db, { Eragilea, User } from "@/lib/db";
+import db, { Eragilea, User, syncDbFromCloud, syncDbToCloud } from "@/lib/db";
 
 export async function POST(request: Request) {
   try {
+    await syncDbFromCloud();
+
     const body = await request.json();
     const { izena, mota, arduraduna, email, password, erronka_nagusia } = body;
 
@@ -90,6 +92,8 @@ export async function POST(request: Request) {
 
     const newUser = db.prepare("SELECT id, email, name, role, eragile_id, created_at FROM users WHERE id = ?").get(userId) as User;
     const newEragilea = db.prepare("SELECT * FROM eragileak WHERE id = ?").get(zentroId) as Eragilea;
+
+    await syncDbToCloud();
 
     return NextResponse.json({
       success: true,

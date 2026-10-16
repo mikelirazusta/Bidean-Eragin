@@ -32,11 +32,20 @@ export default function BehatzaileKontagailua() {
     setObservationConfig,
     saveNeurketa,
     createQuickPostua,
+    refreshData,
     currentUser,
     setCurrentEragileId,
     setActiveTab,
     isOnline,
   } = useApp();
+
+  const [isRefreshingStandList, setIsRefreshingStandList] = useState(false);
+
+  const handleManualRefresh = async () => {
+    setIsRefreshingStandList(true);
+    await refreshData();
+    setIsRefreshingStandList(false);
+  };
 
   // Find suitable experiment: either configured or active organization's experiment
   const currentExp =
@@ -266,22 +275,34 @@ export default function BehatzaileKontagailua() {
       
       {/* Stand & Observer Selector Card */}
       <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white rounded-3xl p-5 shadow-lg mb-4 border border-slate-700/80">
-        <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-700/60">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2 border-b border-slate-700/60">
           <div className="flex items-center gap-2">
             <Store className="w-4 h-4 text-emerald-400" />
             <span className="text-xs font-bold text-slate-200 uppercase tracking-wider">
               Gaurko Neurketaren Saltokia & Behatzailea
             </span>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowNewStandModal(true)}
-            disabled={sessionActive}
-            className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer disabled:opacity-50 transition"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>+ Gehitu Postu Berria</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleManualRefresh}
+              disabled={isRefreshingStandList}
+              className="text-xs font-semibold text-sky-300 hover:text-sky-200 flex items-center gap-1 cursor-pointer disabled:opacity-50 transition"
+              title="Lankideak sortutako saltokiak eguneratu"
+            >
+              <RotateCcw className={`w-3.5 h-3.5 ${isRefreshingStandList ? "animate-spin" : ""}`} />
+              <span>{isRefreshingStandList ? "Eguneratzen..." : "Eguneratu"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowNewStandModal(true)}
+              disabled={sessionActive}
+              className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer disabled:opacity-50 transition"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>+ Gehitu Postu Berria</span>
+            </button>
+          </div>
         </div>
 
         {esperimentuak.length === 0 ? (

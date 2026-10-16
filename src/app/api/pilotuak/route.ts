@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
-import db, { Pilotua } from "@/lib/db";
+import db, { Pilotua, syncDbFromCloud, syncDbToCloud } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET() {
   try {
+    await syncDbFromCloud();
     const pilotuak = db.prepare("SELECT * FROM pilotuak ORDER BY id = 'barra-barra-txapak' DESC").all() as Pilotua[];
     return NextResponse.json({ success: true, data: pilotuak });
   } catch (error) {
@@ -13,6 +17,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    await syncDbFromCloud();
+
     const body = await request.json();
     const {
       izena,
@@ -63,6 +69,8 @@ export async function POST(request: Request) {
     );
 
     const newPilot = db.prepare("SELECT * FROM pilotuak WHERE id = ?").get(pilotuId) as Pilotua;
+
+    await syncDbToCloud();
 
     return NextResponse.json({
       success: true,

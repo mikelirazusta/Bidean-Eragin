@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import db, { Neurketa, Esperimentua } from "@/lib/db";
+import db, { Neurketa, Esperimentua, syncDbFromCloud, syncDbToCloud } from "@/lib/db";
 
 const HILABETEAK = [
   "Urtarrilak", "Otsailak", "Martxoak", "Apirilak", "Maiatzak", "Ekainak",
@@ -14,6 +14,8 @@ function formatEuskalData(date: Date): string {
 
 export async function POST(request: Request) {
   try {
+    await syncDbFromCloud();
+
     const body = await request.json();
     const {
       esperimentu_id,
@@ -142,6 +144,8 @@ export async function POST(request: Request) {
 
     const savedNeurketa = db.prepare("SELECT * FROM neurketak WHERE id = ?").get(id) as Neurketa;
 
+    await syncDbToCloud();
+
     return NextResponse.json({
       success: true,
       data: savedNeurketa,
@@ -157,6 +161,8 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    await syncDbFromCloud();
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
@@ -168,6 +174,8 @@ export async function DELETE(request: Request) {
     }
 
     db.prepare("DELETE FROM neurketak WHERE id = ?").run(id);
+
+    await syncDbToCloud();
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -197,7 +197,13 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
 
   const refreshData = useCallback(async () => {
     try {
-      const res = await fetch("/api/bootstrap");
+      const res = await fetch(`/api/bootstrap?t=${Date.now()}`, {
+        cache: "no-store",
+        headers: {
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+        },
+      });
       const json = await res.json();
       if (json.success && json.data) {
         setPilotuak(json.data.pilotuak || []);
@@ -234,6 +240,28 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
 
   useEffect(() => {
     refreshData();
+
+    if (typeof window !== "undefined") {
+      const handleVisibilityOrFocus = () => {
+        if (document.visibilityState === "visible") {
+          refreshData();
+        }
+      };
+      window.addEventListener("focus", handleVisibilityOrFocus);
+      document.addEventListener("visibilitychange", handleVisibilityOrFocus);
+
+      const interval = setInterval(() => {
+        if (document.visibilityState === "visible" && navigator.onLine) {
+          refreshData();
+        }
+      }, 12000);
+
+      return () => {
+        window.removeEventListener("focus", handleVisibilityOrFocus);
+        document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
+        clearInterval(interval);
+      };
+    }
   }, [refreshData]);
 
   // Auth: Login

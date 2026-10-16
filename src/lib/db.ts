@@ -195,6 +195,9 @@ function createFallbackStore() {
           if (q.includes("FROM esperimentuak WHERE eragile_id = ?")) {
             return store.esperimentuak.filter((e) => e.eragile_id === params[0]);
           }
+          if (q.includes("FROM users")) {
+            return [...store.users];
+          }
           if (q.includes("FROM pilotuak")) {
             return [...store.pilotuak];
           }
@@ -235,6 +238,16 @@ function createFallbackStore() {
             save();
             return { changes: 1 };
           }
+          if (q === "DELETE FROM users") {
+            store.users = [];
+            save();
+            return { changes: 1 };
+          }
+          if (q === "DELETE FROM pilotuak") {
+            store.pilotuak = [];
+            save();
+            return { changes: 1 };
+          }
           if (q === "DELETE FROM users WHERE role = 'eragilea'") {
             store.users = store.users.filter((u) => u.role !== "eragilea");
             save();
@@ -267,8 +280,8 @@ function createFallbackStore() {
             return { changes: 1 };
           }
           if (q.startsWith("INSERT INTO pilotuak")) {
-            const [id, izena, azpititulua, deskribapena, mota, adibidea, urratsak_json, ikonoa, kolorea] = params;
-            store.pilotuak.push({ id, izena, azpititulua, deskribapena, mota, adibidea, urratsak_json, ikonoa, kolorea });
+            const [id, izena, azpititulua, deskribapena, mota, adibidea, urratsak_json, ikonoa, kolorea, sortzaile_id] = params;
+            store.pilotuak.push({ id, izena, azpititulua, deskribapena, mota, adibidea, urratsak_json, ikonoa, kolorea, sortzaile_id });
             save();
             return { changes: 1 };
           }
@@ -539,6 +552,317 @@ function initDb() {
     console.warn("better-sqlite3 native ez dago erabilgarri ingurune honetan. Memoria/JSON biltegi segurua martxan jartzen:", error);
     db = createFallbackStore();
     return db;
+  }
+}
+
+// Netlify Blobs Cloud Persistence (so all phones/devices share the same database on Netlify)
+interface BlobsContext {
+  apiURL?: string;
+  edgeURL?: string;
+  uncachedEdgeURL?: string;
+  siteID?: string;
+  token?: string;
+  region?: string;
+}
+
+const BLOB_STORE_NAME = "site:bidean-eragin";
+const BLOB_KEY_NAME = "db-state-v1";
+
+function getNetlifyBlobsContext(): BlobsContext | null {
+  try {
+    const raw =
+      (globalThis as any).netlifyBlobsContext ||
+      (globalThis as any).Netlify?.env?.get?.("NETLIFY_BLOBS_CONTEXT") ||
+      process.env.NETLIFY_BLOBS_CONTEXT;
+    if (!raw || typeof raw !== "string") return null;
+    const decoded = Buffer.from(raw, "base64").toString("utf-8");
+    const parsed = JSON.parse(decoded);
+    if (parsed && parsed.siteID && parsed.token) {
+      return parsed;
+    }
+  } catch (e) {
+    console.warn("Errorea Netlify Blobs testuingurua irakurtzean:", e);
+  }
+  return null;
+}
+
+async function readSnapshotFromNetlifyBlobs(): Promise<MemoryStoreData | null> {
+  const ctx = getNetlifyBlobsContext();
+  if (!ctx || !ctx.siteID || !ctx.token) return null;
+
+  try {
+    const baseUrl = ctx.uncachedEdgeURL || ctx.edgeURL;
+    if (baseUrl) {
+      let urlPath = `/${ctx.siteID}/${BLOB_STORE_NAME}/${BLOB_KEY_NAME}`;
+      if (ctx.region) {
+        urlPath = `/region:${ctx.region}${urlPath}`;
+      }
+      const url = new URL(urlPath, baseUrl).toString();
+      const res = await fetch(url, {
+        method: "GET",
+        headers: { authorization: `Bearer ${ctx.token}` },
+        cache: "no-store",
+      });
+      if (res.status === 404) return null;
+      if (res.status === 200) {
+        return (await res.json()) as MemoryStoreData;
+      }
+    } else {
+      const apiUrl = new URL(
+        `/api/v1/blobs/${ctx.siteID}/${BLOB_STORE_NAME}/${BLOB_KEY_NAME}`,
+        ctx.apiURL || "https://api.netlify.com"
+      );
+      if (ctx.region) apiUrl.searchParams.set("region", ctx.region);
+      const signedRes = await fetch(apiUrl.toString(), {
+        method: "GET",
+        headers: {
+          authorization: `Bearer ${ctx.token}`,
+          accept: "application/json;type=signed-url",
+        },
+        cache: "no-store",
+      });
+      if (signedRes.status === 404) return null;
+      if (signedRes.status === 200) {
+        const { url: signedUrl } = await signedRes.json();
+        const dataRes = await fetch(signedUrl, { method: "GET", cache: "no-store" });
+        if (dataRes.status === 200) {
+          return (await dataRes.json()) as MemoryStoreData;
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("Errorea Netlify Blobs-etik datuak irakurtzean:", e);
+  }
+  return null;
+}
+
+async function writeSnapshotToNetlifyBlobs(snapshot: MemoryStoreData): Promise<boolean> {
+  const ctx = getNetlifyBlobsContext();
+  if (!ctx || !ctx.siteID || !ctx.token) return false;
+
+  try {
+    const payload = JSON.stringify(snapshot);
+    const baseUrl = ctx.uncachedEdgeURL || ctx.edgeURL;
+    if (baseUrl) {
+      let urlPath = `/${ctx.siteID}/${BLOB_STORE_NAME}/${BLOB_KEY_NAME}`;
+      if (ctx.region) {
+        urlPath = `/region:${ctx.region}${urlPath}`;
+      }
+      const url = new URL(urlPath, baseUrl).toString();
+      const res = await fetch(url, {
+        method: "PUT",
+        headers: {
+          authorization: `Bearer ${ctx.token}`,
+          "content-type": "application/json",
+          "cache-control": "max-age=0, stale-while-revalidate=60",
+        },
+        body: payload,
+      });
+      return res.status === 200;
+    } else {
+      const apiUrl = new URL(
+        `/api/v1/blobs/${ctx.siteID}/${BLOB_STORE_NAME}/${BLOB_KEY_NAME}`,
+        ctx.apiURL || "https://api.netlify.com"
+      );
+      if (ctx.region) apiUrl.searchParams.set("region", ctx.region);
+      const signedRes = await fetch(apiUrl.toString(), {
+        method: "PUT",
+        headers: {
+          authorization: `Bearer ${ctx.token}`,
+          accept: "application/json;type=signed-url",
+        },
+      });
+      if (signedRes.status === 200) {
+        const { url: signedUrl } = await signedRes.json();
+        const putRes = await fetch(signedUrl, {
+          method: "PUT",
+          headers: {
+            "content-type": "application/json",
+            "cache-control": "max-age=0, stale-while-revalidate=60",
+          },
+          body: payload,
+        });
+        return putRes.status === 200;
+      }
+    }
+  } catch (e) {
+    console.warn("Errorea Netlify Blobs-en datuak gordetzean:", e);
+  }
+  return false;
+}
+
+export function exportDbSnapshot(): MemoryStoreData {
+  const database = initDb();
+  const users = database.prepare("SELECT * FROM users").all() as User[];
+  const eragileak = database.prepare("SELECT * FROM eragileak ORDER BY sortze_data DESC").all() as Eragilea[];
+  const pilotuak = database.prepare("SELECT * FROM pilotuak").all() as Pilotua[];
+  const esperimentuak = database.prepare("SELECT * FROM esperimentuak").all() as Esperimentua[];
+  const neurketak = database.prepare("SELECT * FROM neurketak ORDER BY data_ordu DESC").all() as Neurketa[];
+  const nudges = database.prepare("SELECT * FROM nudges ORDER BY sortze_data DESC").all() as Nudge[];
+  return { users, eragileak, pilotuak, esperimentuak, neurketak, nudges };
+}
+
+export function importDbSnapshot(snapshot: MemoryStoreData) {
+  const database = initDb();
+  const apply = database.transaction(() => {
+    database.prepare("DELETE FROM neurketak").run();
+    database.prepare("DELETE FROM esperimentuak").run();
+    database.prepare("DELETE FROM nudges").run();
+    database.prepare("DELETE FROM eragileak").run();
+    database.prepare("DELETE FROM users").run();
+    database.prepare("DELETE FROM pilotuak").run();
+
+    const pilotsToInsert =
+      Array.isArray(snapshot.pilotuak) && snapshot.pilotuak.length > 0
+        ? [...snapshot.pilotuak]
+        : [DEFAULT_PILOT];
+    if (!pilotsToInsert.some((p) => p.id === DEFAULT_PILOT.id)) {
+      pilotsToInsert.unshift(DEFAULT_PILOT);
+    }
+    for (const p of pilotsToInsert) {
+      database
+        .prepare(
+          `INSERT INTO pilotuak (id, izena, azpititulua, deskribapena, mota, adibidea, urratsak_json, ikonoa, kolorea, sortzaile_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        )
+        .run(
+          p.id,
+          p.izena,
+          p.azpititulua,
+          p.deskribapena,
+          p.mota,
+          p.adibidea,
+          p.urratsak_json,
+          p.ikonoa,
+          p.kolorea,
+          p.sortzaile_id || null
+        );
+    }
+
+    const eragileakToInsert = Array.isArray(snapshot.eragileak) ? snapshot.eragileak : [];
+    for (const er of eragileakToInsert) {
+      database
+        .prepare(
+          `INSERT INTO eragileak (id, izena, mota, arduraduna, email, erronka_nagusia, sortze_data)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`
+        )
+        .run(
+          er.id,
+          er.izena,
+          er.mota,
+          er.arduraduna,
+          er.email || "",
+          er.erronka_nagusia,
+          er.sortze_data
+        );
+    }
+
+    const usersToInsert =
+      Array.isArray(snapshot.users) && snapshot.users.length > 0
+        ? [...snapshot.users]
+        : [DEFAULT_ADMIN];
+    if (!usersToInsert.some((u) => u.email.toLowerCase() === DEFAULT_ADMIN.email.toLowerCase())) {
+      usersToInsert.unshift(DEFAULT_ADMIN);
+    }
+    for (const u of usersToInsert) {
+      database
+        .prepare(
+          `INSERT INTO users (id, email, password, name, role, eragile_id, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`
+        )
+        .run(
+          u.id,
+          u.email,
+          u.password || "bagera2026",
+          u.name,
+          u.role,
+          u.eragile_id || null,
+          u.created_at || new Date().toISOString()
+        );
+    }
+
+    const expsToInsert = Array.isArray(snapshot.esperimentuak) ? snapshot.esperimentuak : [];
+    for (const e of expsToInsert) {
+      database
+        .prepare(
+          `INSERT INTO esperimentuak (id, eragile_id, pilotu_id, hipotesia, taldea, pertsonak, gunea, xede_portzentajea, estatusa, hasiera_data)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        )
+        .run(
+          e.id,
+          e.eragile_id,
+          e.pilotu_id,
+          e.hipotesia,
+          e.taldea,
+          e.pertsonak,
+          e.gunea,
+          e.xede_portzentajea,
+          e.estatusa,
+          e.hasiera_data
+        );
+    }
+
+    const neurketakToInsert = Array.isArray(snapshot.neurketak) ? snapshot.neurketak : [];
+    for (const n of neurketakToInsert) {
+      database
+        .prepare(
+          `INSERT INTO neurketak (id, esperimentu_id, unea, euskaraz_count, erdaraz_count, elebi_count, iraupena_segundotan, data_ordu, oharrak, behatzailea)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        )
+        .run(
+          n.id,
+          n.esperimentu_id,
+          n.unea,
+          n.euskaraz_count || 0,
+          n.erdaraz_count || 0,
+          n.elebi_count || 0,
+          n.iraupena_segundotan || 600,
+          n.data_ordu,
+          n.oharrak || "",
+          n.behatzailea || "Behatzaile Itsua"
+        );
+    }
+
+    const nudgesToInsert = Array.isArray(snapshot.nudges) ? snapshot.nudges : [];
+    for (const nd of nudgesToInsert) {
+      database
+        .prepare(
+          `INSERT INTO nudges (id, eragile_id, titulua, mezua, mota, epemuga, irakurria, ekintza_esteka, sortze_data)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        )
+        .run(
+          nd.id,
+          nd.eragile_id,
+          nd.titulua,
+          nd.mezua,
+          nd.mota,
+          nd.epemuga || new Date().toISOString(),
+          nd.irakurria || 0,
+          nd.ekintza_esteka || "",
+          nd.sortze_data
+        );
+    }
+  });
+  apply();
+}
+
+export async function syncDbFromCloud(): Promise<void> {
+  try {
+    const cloudSnapshot = await readSnapshotFromNetlifyBlobs();
+    if (cloudSnapshot && Array.isArray(cloudSnapshot.eragileak)) {
+      importDbSnapshot(cloudSnapshot);
+    }
+  } catch (e) {
+    console.warn("Errorea syncDbFromCloud exekutatzean:", e);
+  }
+}
+
+export async function syncDbToCloud(): Promise<void> {
+  try {
+    const snapshot = exportDbSnapshot();
+    await writeSnapshotToNetlifyBlobs(snapshot);
+  } catch (e) {
+    console.warn("Errorea syncDbToCloud exekutatzean:", e);
   }
 }
 

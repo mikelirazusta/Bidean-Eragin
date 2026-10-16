@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
-import db, { Nudge } from "@/lib/db";
+import db, { Nudge, syncDbFromCloud, syncDbToCloud } from "@/lib/db";
 
 export async function POST(request: Request) {
   try {
+    await syncDbFromCloud();
+
     const body = await request.json();
     const { action, nudge_id, eragile_id, titulua, mezua, mota, epemuga, ekintza_esteka } = body;
 
     if (action === "mark_read" && nudge_id) {
       db.prepare("UPDATE nudges SET irakurria = 1 WHERE id = ?").run(nudge_id);
+      await syncDbToCloud();
       return NextResponse.json({ success: true, message: "Irakurria gisa markatu da" });
     }
 
@@ -39,6 +42,7 @@ export async function POST(request: Request) {
       );
 
       const created = db.prepare("SELECT * FROM nudges WHERE id = ?").get(id) as Nudge;
+      await syncDbToCloud();
       return NextResponse.json({ success: true, data: created });
     }
 
