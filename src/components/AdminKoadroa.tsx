@@ -144,7 +144,7 @@ export default function AdminKoadroa() {
     }
   });
 
-  const avgGrowth = growthCount > 0 ? Math.round(totalGrowthSum / growthCount) : 21;
+  const avgGrowth = growthCount > 0 ? Math.round(totalGrowthSum / growthCount) : 0;
 
   // Filtered centers
   const filteredEragileak = eragileak.filter((e) => {
@@ -318,9 +318,11 @@ export default function AdminKoadroa() {
             </div>
           </div>
           <div className="text-3xl font-black text-emerald-600">
-            +{avgGrowth}%
+            {growthCount > 0 ? `${avgGrowth >= 0 ? "+" : ""}${avgGrowth}%` : "0%"}
           </div>
-          <p className="text-[11px] text-slate-500 mt-1">Euskararen erabileraren hobekuntza</p>
+          <p className="text-[11px] text-slate-500 mt-1">
+            {growthCount > 0 ? "Euskararen erabileraren hobekuntza" : "T0 eta T1/T2 neurketen zain"}
+          </p>
         </div>
 
         {/* KPI 4: Experiments */}
@@ -352,6 +354,27 @@ export default function AdminKoadroa() {
             const pilotExps = esperimentuak.filter((e) => e.pilotu_id === pilotu.id);
             const pilotExpsCount = pilotExps.length;
 
+            let pilotGrowthSum = 0;
+            let pilotGrowthCount = 0;
+            pilotExps.forEach((exp) => {
+              const expNeurketak = neurketak.filter((n) => n.esperimentu_id === exp.id);
+              const t0List = expNeurketak.filter((n) => n.unea === "T0");
+              const t2List = expNeurketak.filter((n) => n.unea === "T2");
+              const t1List = expNeurketak.filter((n) => n.unea === "T1");
+              const latestList = t2List.length > 0 ? t2List : t1List;
+              if (t0List.length > 0 && latestList.length > 0) {
+                const t0Eusk = t0List.reduce((s, n) => s + (n.euskaraz_count || 0), 0);
+                const t0Tot = t0List.reduce((s, n) => s + (n.euskaraz_count || 0) + (n.erdaraz_count || 0) + (n.elebi_count || 0), 0);
+                const latEusk = latestList.reduce((s, n) => s + (n.euskaraz_count || 0), 0);
+                const latTot = latestList.reduce((s, n) => s + (n.euskaraz_count || 0) + (n.erdaraz_count || 0) + (n.elebi_count || 0), 0);
+                if (t0Tot > 0 && latTot > 0) {
+                  pilotGrowthSum += (latEusk / latTot) * 100 - (t0Eusk / t0Tot) * 100;
+                  pilotGrowthCount++;
+                }
+              }
+            });
+            const pilotAvgGrowth = pilotGrowthCount > 0 ? Math.round(pilotGrowthSum / pilotGrowthCount) : null;
+
             return (
               <div
                 key={pilotu.id}
@@ -375,9 +398,15 @@ export default function AdminKoadroa() {
                   <span className="text-[11px] text-slate-400 font-semibold">
                     Batez besteko efektua:
                   </span>
-                  <span className="text-xs font-black text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-lg">
-                    {pilotu.id === "erreferenteak" ? "+%24 igoera" : pilotu.id === "kriseilua" ? "+%22 igoera" : "+%28 igoera"}
-                  </span>
+                  {pilotAvgGrowth !== null ? (
+                    <span className="text-xs font-black text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-lg">
+                      {pilotAvgGrowth >= 0 ? `+${pilotAvgGrowth}%` : `${pilotAvgGrowth}%`} igoera
+                    </span>
+                  ) : (
+                    <span className="text-[11px] font-bold text-slate-500 bg-slate-200/80 px-2 py-0.5 rounded-lg">
+                      Datuen zain (T0/T1)
+                    </span>
+                  )}
                 </div>
               </div>
             );

@@ -306,7 +306,7 @@ export default function ZentroDashboard() {
                       Zuen Hipotesia
                     </h3>
                     <span className="text-[11px] text-slate-400">
-                      Pilotua: {currentExp.pilotu_izena || "Erreferenteak"}
+                      Pilotua: {currentExp.pilotu_izena || "Euskaraz barra-barra txapak"}
                     </span>
                   </div>
                 </div>

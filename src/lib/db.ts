@@ -248,6 +248,11 @@ function createFallbackStore() {
             save();
             return { changes: 1 };
           }
+          if (q === "DELETE FROM pilotuak WHERE id != 'barra-barra-txapak'") {
+            store.pilotuak = [DEFAULT_PILOT];
+            save();
+            return { changes: 1 };
+          }
           if (q === "DELETE FROM users WHERE role = 'eragilea'") {
             store.users = store.users.filter((u) => u.role !== "eragilea");
             save();
@@ -499,6 +504,13 @@ function initSqliteTables(db: any) {
   } catch {}
 
   try {
+    // Purge yesterday's test records & legacy fake pilots so the database starts 100% clean from 0
+    db.prepare("DELETE FROM neurketak WHERE esperimentu_id IN ('exp-1792053345640', 'exp-1792061550571')").run();
+    db.prepare("DELETE FROM esperimentuak WHERE eragile_id = 'zentro-1792052519787' OR id IN ('exp-1792053345640', 'exp-1792061550571')").run();
+    db.prepare("DELETE FROM nudges WHERE eragile_id = 'zentro-1792052519787' OR id IN ('nudge-1792052519788', 'nudge-1792053345641', 'nudge-1792061550573')").run();
+    db.prepare("DELETE FROM eragileak WHERE id = 'zentro-1792052519787'").run();
+    db.prepare("DELETE FROM users WHERE id = 'user-1792052519787'").run();
+    db.prepare("DELETE FROM pilotuak WHERE id IN ('erreferenteak', 'kriseilua', 'agur-txartelak')").run();
     db.prepare("DELETE FROM users WHERE role = 'eragilea' AND (eragile_id IS NULL OR eragile_id NOT IN (SELECT id FROM eragileak))").run();
   } catch {}
 }
@@ -517,27 +529,19 @@ function initDb() {
   );
 
   const localDataDir = path.join(process.cwd(), "data");
-  const localDbPath = path.join(localDataDir, "bidean_eragin.db");
+  const localDbPath = path.join(localDataDir, "bidean_eragin_v2.db");
 
   let dbPath = localDbPath;
 
   if (isServerless) {
-    const tmpDbPath = path.join("/tmp", "bidean_eragin.db");
-    if (!fs.existsSync(tmpDbPath) && fs.existsSync(localDbPath)) {
-      try {
-        fs.copyFileSync(localDbPath, tmpDbPath);
-      } catch (err) {
-        console.warn("Ezin izan da datu-basea /tmp-ra kopiatu:", err);
-      }
-    }
-    dbPath = tmpDbPath;
+    dbPath = path.join("/tmp", "bidean_eragin_v2.db");
   } else {
     try {
       if (!fs.existsSync(localDataDir)) {
         fs.mkdirSync(localDataDir, { recursive: true });
       }
     } catch {
-      dbPath = path.join("/tmp", "bidean_eragin.db");
+      dbPath = path.join("/tmp", "bidean_eragin_v2.db");
     }
   }
 
@@ -566,7 +570,7 @@ interface BlobsContext {
 }
 
 const BLOB_STORE_NAME = "site:bidean-eragin";
-const BLOB_KEY_NAME = "db-state-v1";
+const BLOB_KEY_NAME = "db-state-clean-v2";
 
 function getNetlifyBlobsContext(): BlobsContext | null {
   try {

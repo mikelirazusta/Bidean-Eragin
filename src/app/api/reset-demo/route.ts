@@ -11,6 +11,7 @@ export async function POST() {
     db.prepare("DELETE FROM nudges").run();
     db.prepare("DELETE FROM eragileak").run();
     db.prepare("DELETE FROM users WHERE role = 'eragilea'").run();
+    db.prepare("DELETE FROM pilotuak WHERE id != 'barra-barra-txapak'").run();
 
     await syncDbToCloud();
 

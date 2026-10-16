@@ -9,6 +9,8 @@ import {
   syncPendingNeurketak,
   saveCachedBootstrapData,
   getCachedBootstrapData,
+  clearPendingNeurketak,
+  clearCachedBootstrapData,
 } from "@/lib/offlineStore";
 
 interface AppContextType {
@@ -142,11 +144,18 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
       const savedUserStr = localStorage.getItem("bidean_eragin_session");
       if (savedUserStr) {
         const parsed = JSON.parse(savedUserStr) as User;
+        // Never restore yesterday's test account
+        if (parsed && parsed.id === "user-1792052519787") {
+          localStorage.removeItem("bidean_eragin_session");
+          return;
+        }
         if (parsed && parsed.id) {
           setCurrentUser(parsed);
           setUserRole(parsed.role);
           if (parsed.role === "eragilea" && parsed.eragile_id) {
             setCurrentEragileId(parsed.eragile_id);
+          } else if (parsed.role === "admin") {
+            setActiveTab("admin");
           }
         }
       }
@@ -206,8 +215,9 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
       });
       const json = await res.json();
       if (json.success && json.data) {
+        const loadedEragileak: Eragilea[] = json.data.eragileak || [];
         setPilotuak(json.data.pilotuak || []);
-        setEragileak(json.data.eragileak || []);
+        setEragileak(loadedEragileak);
         setEsperimentuak(json.data.esperimentuak || []);
         setNeurketak(json.data.neurketak || []);
         setNudges(json.data.nudges || []);
@@ -215,11 +225,22 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
         // Cache snapshot to localStorage for offline mode
         saveCachedBootstrapData(json.data);
 
-        // If eragilea is logged in, bind to their eragile_id
-        if (currentUser?.role === "eragilea" && currentUser.eragile_id) {
-          setCurrentEragileId(currentUser.eragile_id);
-        } else if (json.data.eragileak?.length > 0 && !currentEragileId) {
-          setCurrentEragileId(json.data.eragileak[0].id);
+        // If an eragilea is logged in, verify their center still exists; if deleted, log them out cleanly
+        if (currentUser?.role === "eragilea") {
+          const exists = loadedEragileak.some((e) => e.id === currentUser.eragile_id);
+          if (!exists) {
+            setCurrentUser(null);
+            setCurrentEragileId("");
+            try {
+              localStorage.removeItem("bidean_eragin_session");
+            } catch {}
+          } else if (currentUser.eragile_id) {
+            setCurrentEragileId(currentUser.eragile_id);
+          }
+        } else if (loadedEragileak.length > 0 && !currentEragileId) {
+          setCurrentEragileId(loadedEragileak[0].id);
+        } else if (loadedEragileak.length === 0 && currentEragileId) {
+          setCurrentEragileId("");
         }
       }
     } catch (e) {
@@ -665,10 +686,8 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
     try {
       setIsLoading(true);
       await fetch("/api/reset-demo", { method: "POST" });
-      if (typeof window !== "undefined") {
-        localStorage.removeItem(PENDING_NEURKETAK_KEY);
-        localStorage.removeItem(BOOTSTRAP_CACHE_KEY);
-      }
+      clearPendingNeurketak();
+      clearCachedBootstrapData();
       setPendingSyncCount(0);
       setCurrentEragileId("");
       await refreshData();

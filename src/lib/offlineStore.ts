@@ -15,13 +15,24 @@ export interface PendingNeurketa {
   is_offline: boolean;
 }
 
-const PENDING_NEURKETAK_KEY = "bidean_eragin_pending_neurketak";
-const CACHED_DATA_KEY = "bidean_eragin_cached_bootstrap";
+const PENDING_NEURKETAK_KEY = "bidean_eragin_pending_neurketak_v2";
+const CACHED_DATA_KEY = "bidean_eragin_cached_bootstrap_v2";
+
+function cleanupLegacyKeys() {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem("bidean_eragin_pending_neurketak");
+    localStorage.removeItem("bidean_eragin_cached_bootstrap");
+    localStorage.removeItem("bidean_pending_neurketak");
+    localStorage.removeItem("bidean_bootstrap_cache");
+  } catch {}
+}
 
 // ================= PENDING OFFLINE MEASUREMENTS QUEUE =================
 
 export function getPendingNeurketak(): PendingNeurketa[] {
   if (typeof window === "undefined") return [];
+  cleanupLegacyKeys();
   try {
     const raw = localStorage.getItem(PENDING_NEURKETAK_KEY);
     if (!raw) return [];
@@ -61,6 +72,7 @@ export function removePendingNeurketa(id: string): void {
 }
 
 export function clearPendingNeurketak(): void {
+  cleanupLegacyKeys();
   try {
     localStorage.removeItem(PENDING_NEURKETAK_KEY);
   } catch (e) {
@@ -72,6 +84,7 @@ export function clearPendingNeurketak(): void {
 
 export function saveCachedBootstrapData(data: any): void {
   if (typeof window === "undefined" || !data) return;
+  cleanupLegacyKeys();
   try {
     localStorage.setItem(
       CACHED_DATA_KEY,
@@ -87,6 +100,7 @@ export function saveCachedBootstrapData(data: any): void {
 
 export function getCachedBootstrapData(): any | null {
   if (typeof window === "undefined") return null;
+  cleanupLegacyKeys();
   try {
     const raw = localStorage.getItem(CACHED_DATA_KEY);
     if (!raw) return null;
@@ -95,6 +109,15 @@ export function getCachedBootstrapData(): any | null {
   } catch (e) {
     console.warn("Ezin izan da tokiko snapshot-a irakurri:", e);
     return null;
+  }
+}
+
+export function clearCachedBootstrapData(): void {
+  cleanupLegacyKeys();
+  try {
+    localStorage.removeItem(CACHED_DATA_KEY);
+  } catch (e) {
+    console.warn("Ezin izan da tokiko snapshot-a garbitu:", e);
   }
 }
 

@@ -70,7 +70,7 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
     );
   }, [pilotu]);
 
-  const fullHypothesis = `Gure ustez, ${taldea || "..."} ${pertsonak || "..."}, ${gunea || "..."} ${ekintza} eginda, euskararen erabilera %${metrika}% igoko da.`;
+  const fullHypothesis = `Gure ustez, ${taldea || "..."} ${pertsonak || "..."}, ${gunea || "..."} ${ekintza} eginda, euskararen erabilera %${metrika} igoko da.`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
