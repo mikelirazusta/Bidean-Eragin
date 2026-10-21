@@ -150,6 +150,12 @@ interface AppContextType {
     ekintza_esteka?: string;
   }) => Promise<boolean>;
   resetDemoData: () => Promise<void>;
+  updateAdminCredentials: (data: {
+    currentPassword: string;
+    newEmail?: string;
+    newPassword?: string;
+    newName?: string;
+  }) => Promise<{ success: boolean; error?: string }>;
   triggerConfetti: () => void;
   isOnline: boolean;
   pendingSyncCount: number;
@@ -901,6 +907,34 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
     }
   };
 
+  const updateAdminCredentials = async (data: {
+    currentPassword: string;
+    newEmail?: string;
+    newPassword?: string;
+    newName?: string;
+  }) => {
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const json = await res.json();
+      if (json.success && json.user) {
+        setCurrentUser(json.user);
+        try {
+          localStorage.setItem("bidean_eragin_session", JSON.stringify(json.user));
+        } catch {}
+        triggerConfetti();
+        return { success: true };
+      }
+      return { success: false, error: json.error || "Errorea gertatu da pasahitza aldatzean." };
+    } catch (e) {
+      console.error("Errorea admin kredentzialak eguneratzean:", e);
+      return { success: false, error: "Zerbitzariarekin konektatzeko errorea." };
+    }
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -943,6 +977,7 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
         markNudgeRead,
         createAdminNudge,
         resetDemoData,
+        updateAdminCredentials,
         triggerConfetti,
         isOnline,
         pendingSyncCount,

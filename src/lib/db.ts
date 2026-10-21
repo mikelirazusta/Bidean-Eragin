@@ -168,7 +168,7 @@ function createFallbackStore() {
   }
 
   // Ensure admin always exists in fallback
-  if (!store.users.some((u) => u.email === "admin@bagera.eus")) {
+  if (!store.users.some((u) => u.role === "admin")) {
     store.users.push(DEFAULT_ADMIN);
     save();
   }
@@ -189,6 +189,9 @@ function createFallbackStore() {
           if (q.includes("FROM users WHERE LOWER(email) = ?") || q.includes("FROM users WHERE email = ?")) {
             const emailParam = String(params[0]).toLowerCase();
             return store.users.find((u) => u.email.toLowerCase() === emailParam);
+          }
+          if (q.includes("FROM users WHERE role = 'admin'")) {
+            return store.users.find((u) => u.role === "admin");
           }
           if (q.includes("FROM users WHERE id = ?")) {
             return store.users.find((u) => u.id === params[0]);
@@ -286,6 +289,18 @@ function createFallbackStore() {
             if (u) u.password = password;
             save();
             return { changes: 1 };
+          }
+          if (q.startsWith("UPDATE users SET email = ?, password = ?, name = ? WHERE id = ?")) {
+            const [email, password, name, id] = params;
+            const u = store.users.find((user) => user.id === id);
+            if (u) {
+              u.email = email;
+              u.password = password;
+              u.name = name;
+              save();
+              return { changes: 1 };
+            }
+            return { changes: 0 };
           }
           if (q.startsWith("UPDATE users SET email = ?, password = ?, name = ? WHERE eragile_id = ?")) {
             const [email, password, name, eragile_id] = params;
@@ -648,7 +663,7 @@ function initSqliteTables(db: any) {
   } catch {}
 
   try {
-    const adminUser = db.prepare("SELECT * FROM users WHERE email = ?").get("admin@bagera.eus") as User | undefined;
+    const adminUser = db.prepare("SELECT * FROM users WHERE role = 'admin'").get() as User | undefined;
     if (!adminUser) {
       db.prepare(`
         INSERT INTO users (id, email, password, name, role, eragile_id, created_at)
@@ -662,11 +677,8 @@ function initSqliteTables(db: any) {
         DEFAULT_ADMIN.eragile_id ?? null,
         DEFAULT_ADMIN.created_at
       );
-    } else {
-      if (!adminUser.password) {
-        db.prepare("UPDATE users SET password = ? WHERE email = ?").run("bagera2026", "admin@bagera.eus");
-      }
-      db.prepare("UPDATE users SET name = ? WHERE email = ?").run("Bagera Koordinazioa", "admin@bagera.eus");
+    } else if (!adminUser.password) {
+      db.prepare("UPDATE users SET password = ? WHERE id = ?").run("bagera2026", adminUser.id);
     }
   } catch {}
 
@@ -933,14 +945,10 @@ export function importDbSnapshot(snapshot: MemoryStoreData) {
       Array.isArray(snapshot.users) && snapshot.users.length > 0
         ? [...snapshot.users]
         : [DEFAULT_ADMIN];
-    if (!usersToInsert.some((u) => u.email.toLowerCase() === DEFAULT_ADMIN.email.toLowerCase())) {
+    if (!usersToInsert.some((u) => u.role === "admin")) {
       usersToInsert.unshift(DEFAULT_ADMIN);
     }
     for (const u of usersToInsert) {
-      const normalizedName =
-        u.email.toLowerCase() === DEFAULT_ADMIN.email.toLowerCase()
-          ? "Bagera Koordinazioa"
-          : u.name;
       database
         .prepare(
           `INSERT INTO users (id, email, password, name, role, eragile_id, created_at)
@@ -950,7 +958,7 @@ export function importDbSnapshot(snapshot: MemoryStoreData) {
           u.id,
           u.email,
           u.password || "bagera2026",
-          normalizedName,
+          u.name || "Bagera Koordinazioa",
           u.role,
           u.eragile_id || null,
           u.created_at || new Date().toISOString()
