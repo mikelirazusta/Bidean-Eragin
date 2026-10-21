@@ -15,16 +15,16 @@ import { useApp } from "@/context/AppContext";
 
 const ERRONKA_AUKERAK = [
   {
-    id: "erronka-1",
-    titulua: "Ikasleek badakite baina pasilloetan/aisialdian ez dute egiten",
-    azpititulua: "Gelan erabiltzen dute baina espazio informaletan erdarara jotzen dute inertziaz.",
-    mota: "ikastetxea",
-  },
-  {
     id: "erronka-2",
     titulua: "Dendan lehen hitza gaztelaniaz ateratzen zaigu",
     azpititulua: "Bezeroak euskaraz jakin arren, agurra eta hasiera automatikoki erdaraz egiten dira.",
     mota: "merkataritza",
+  },
+  {
+    id: "erronka-1",
+    titulua: "Ikasleek badakite baina pasilloetan/aisialdian ez dute egiten",
+    azpititulua: "Gelan erabiltzen dute baina espazio informaletan erdarara jotzen dute inertziaz.",
+    mota: "ikastetxea",
   },
   {
     id: "erronka-3",
@@ -48,7 +48,7 @@ export default function OnboardingView() {
   const [arduraduna, setArduraduna] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [mota, setMota] = useState<"ikastetxea" | "merkataritza" | "enpresa" | "aisialdia">("ikastetxea");
+  const [mota, setMota] = useState<"ikastetxea" | "merkataritza" | "enpresa" | "aisialdia">("merkataritza");
   const [erronkaNagusia, setErronkaNagusia] = useState(ERRONKA_AUKERAK[0].titulua);
   const [customErronka, setCustomErronka] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -90,7 +90,7 @@ export default function OnboardingView() {
           Eman izena & Aktibatu Euskara
         </h1>
         <p className="mt-2 text-sm sm:text-base text-slate-600 max-w-xl mx-auto">
-          Zure zentroak hipotesiak sortu, behaketa itsuak egin eta emaitzetan oinarritutako portaera-aldaketak bultzatuko ditu.
+          Zure saltoki edo erakundeak hipotesiak sortu, behaketa itsuak egin eta emaitzetan oinarritutako portaera-aldaketak bultzatuko ditu.
         </p>
 
         {/* Step Indicator */}
@@ -102,7 +102,7 @@ export default function OnboardingView() {
                 : "bg-emerald-100 text-emerald-800"
             }`}
           >
-            <span>1. Zentroaren Datuak</span>
+            <span>1. Saltokiaren Datuak</span>
           </div>
           <div className="w-6 h-0.5 bg-slate-200"></div>
           <div
@@ -126,14 +126,14 @@ export default function OnboardingView() {
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-bold text-slate-800 mb-1.5">
-                Zentroaren Izena <span className="text-rose-500">*</span>
+                Saltokiaren edo Erakundearen Izena <span className="text-rose-500">*</span>
               </label>
               <input
                 type="text"
                 required
                 value={izena}
                 onChange={(e) => setIzena(e.target.value)}
-                placeholder="Adibidez: Santo Tomas Lizeoa, Kaxilda Denda, CAF..."
+                placeholder="Adibidez: Bretxako Harategia, Kaxilda Denda, Zurriola..."
                 className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-slate-900 text-sm shadow-xs transition"
               />
             </div>
@@ -141,12 +141,12 @@ export default function OnboardingView() {
             {/* Center type selection */}
             <div>
               <label className="block text-sm font-bold text-slate-800 mb-2">
-                Zentro Mota <span className="text-rose-500">*</span>
+                Eragile Mota <span className="text-rose-500">*</span>
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 {[
-                  { id: "ikastetxea", label: "Ikastetxea", icon: GraduationCap },
                   { id: "merkataritza", label: "Merkataritza", icon: Store },
+                  { id: "ikastetxea", label: "Ikastetxea", icon: GraduationCap },
                   { id: "enpresa", label: "Enpresa", icon: Briefcase },
                   { id: "aisialdia", label: "Aisialdia", icon: Award },
                 ].map((item) => {

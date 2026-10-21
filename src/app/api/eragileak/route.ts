@@ -6,7 +6,7 @@ export async function POST(request: Request) {
     await syncDbFromCloud();
 
     const body = await request.json();
-    const { izena, mota, arduraduna, email, erronka_nagusia } = body;
+    const { izena, mota, arduraduna, email, erronka_nagusia, publikoa } = body;
 
     if (!izena || !mota || !erronka_nagusia) {
       return NextResponse.json(
@@ -19,8 +19,8 @@ export async function POST(request: Request) {
     const sortze_data = new Date().toISOString();
 
     const insert = db.prepare(`
-      INSERT INTO eragileak (id, izena, mota, arduraduna, email, erronka_nagusia, sortze_data)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO eragileak (id, izena, mota, arduraduna, email, erronka_nagusia, sortze_data, publikoa)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     insert.run(
@@ -30,7 +30,8 @@ export async function POST(request: Request) {
       (arduraduna || "Arduraduna").trim(),
       (email || "").trim(),
       erronka_nagusia.trim(),
-      sortze_data
+      sortze_data,
+      Number(publikoa || 0)
     );
 
     // If email is provided, create/link user
@@ -93,7 +94,7 @@ export async function PATCH(request: Request) {
     await syncDbFromCloud();
 
     const body = await request.json();
-    const { id, izena, mota, arduraduna, email, erronka_nagusia, password } = body;
+    const { id, izena, mota, arduraduna, email, erronka_nagusia, password, publikoa } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -115,10 +116,11 @@ export async function PATCH(request: Request) {
     const updatedArduraduna = arduraduna !== undefined ? String(arduraduna).trim() : existing.arduraduna;
     const updatedEmail = email !== undefined ? String(email).trim() : existing.email;
     const updatedErronka = erronka_nagusia !== undefined ? String(erronka_nagusia).trim() : existing.erronka_nagusia;
+    const updatedPublikoa = publikoa !== undefined ? Number(publikoa ? 1 : 0) : Number(existing.publikoa || 0);
 
     db.prepare(
-      "UPDATE eragileak SET izena = ?, mota = ?, arduraduna = ?, email = ?, erronka_nagusia = ? WHERE id = ?"
-    ).run(updatedIzena, updatedMota, updatedArduraduna, updatedEmail, updatedErronka, id);
+      "UPDATE eragileak SET izena = ?, mota = ?, arduraduna = ?, email = ?, erronka_nagusia = ?, publikoa = ? WHERE id = ?"
+    ).run(updatedIzena, updatedMota, updatedArduraduna, updatedEmail, updatedErronka, updatedPublikoa, id);
 
     // Sync or create shop user account if email is set
     if (updatedEmail) {

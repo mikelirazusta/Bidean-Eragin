@@ -1,12 +1,24 @@
 import { NextResponse } from "next/server";
-import db, { Eragilea, User, syncDbFromCloud, syncDbToCloud } from "@/lib/db";
+import db, { Eragilea, Esperimentua, User, syncDbFromCloud, syncDbToCloud } from "@/lib/db";
 
 export async function POST(request: Request) {
   try {
     await syncDbFromCloud();
 
     const body = await request.json();
-    const { izena, mota, arduraduna, email, password, erronka_nagusia } = body;
+    const {
+      izena,
+      mota,
+      arduraduna,
+      email,
+      password,
+      erronka_nagusia,
+      publikoa,
+      hipotesia,
+      gunea,
+      xede_portzentajea,
+      pilotu_id,
+    } = body;
 
     // Validation
     if (!izena || !mota || !arduraduna || !email || !password || !erronka_nagusia) {
@@ -37,13 +49,22 @@ export async function POST(request: Request) {
 
     const zentroId = "zentro-" + Date.now();
     const userId = "user-" + Date.now();
+    const expId = "exp-" + Date.now();
     const sortze_data = new Date().toISOString();
+
+    const chosenPilotId = pilotu_id || "barra-barra-txapak";
+    const chosenGunea = (gunea || izena).trim();
+    const chosenTarget = Number(xede_portzentajea || 20);
+    const chosenHipotesia = (
+      hipotesia ||
+      `${izena.trim()} gunean 'Euskaraz barra-barra' txapa ikusgai erabiltzen badugu, euskarazko elkarrizketak %${chosenTarget} handituko dira.`
+    ).trim();
 
     const insertCenterAndUser = db.transaction(() => {
       // 1. Insert center
       const insertCenter = db.prepare(`
-        INSERT INTO eragileak (id, izena, mota, arduraduna, email, erronka_nagusia, sortze_data)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO eragileak (id, izena, mota, arduraduna, email, erronka_nagusia, sortze_data, publikoa)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `);
       insertCenter.run(
         zentroId,
@@ -52,7 +73,8 @@ export async function POST(request: Request) {
         arduraduna.trim(),
         cleanEmail,
         erronka_nagusia.trim(),
-        sortze_data
+        sortze_data,
+        Number(publikoa ? 1 : 0)
       );
 
       // 2. Insert user
@@ -70,7 +92,25 @@ export async function POST(request: Request) {
         sortze_data
       );
 
-      // 3. Insert welcome nudge
+      // 3. Create initial experiment so user lands on a ready-to-use dashboard
+      const insertExp = db.prepare(`
+        INSERT INTO esperimentuak (id, eragile_id, pilotu_id, hipotesia, taldea, pertsonak, gunea, xede_portzentajea, estatusa, hasiera_data)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      insertExp.run(
+        expId,
+        zentroId,
+        chosenPilotId,
+        chosenHipotesia,
+        izena.trim(),
+        arduraduna.trim(),
+        chosenGunea,
+        chosenTarget,
+        "T0_PENDIENTE",
+        sortze_data
+      );
+
+      // 4. Insert welcome nudge
       const insertNudge = db.prepare(`
         INSERT INTO nudges (id, eragile_id, titulua, mezua, mota, epemuga, irakurria, ekintza_esteka, sortze_data)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -78,12 +118,12 @@ export async function POST(request: Request) {
       insertNudge.run(
         "nudge-" + Date.now(),
         zentroId,
-        "Ongi etorri Bidean Eragin-era! 🌟",
-        `Kontua sortuta! Zure erronka nagusia (${erronka_nagusia.trim()}) gainditzeko lehen urratsa prest duzu: aukeratu pilotu bat katalogoan eta hasi zure lehen hipotesiarekin.`,
-        "bultzada",
+        "1. Urratsa: Egin T0 Aurre-neurketa Itsua 🕵️",
+        `Zure hipotesia prest dago! Txapak jarri aurretik, egin 10 minutuko lehen behaketa (T0) gaur egungo abiapuntua ezagutzeko.`,
+        "neurketa_t0",
         new Date(Date.now() + 86400000 * 3).toISOString(),
         0,
-        "/katalogoa",
+        "/kontagailua",
         sortze_data
       );
     });
@@ -92,6 +132,13 @@ export async function POST(request: Request) {
 
     const newUser = db.prepare("SELECT id, email, name, role, eragile_id, created_at FROM users WHERE id = ?").get(userId) as User;
     const newEragilea = db.prepare("SELECT * FROM eragileak WHERE id = ?").get(zentroId) as Eragilea;
+    const newEsperimentua = db.prepare(`
+      SELECT e.*, p.izena as pilotu_izena, p.ikonoa as pilotu_ikonoa, er.izena as eragile_izena
+      FROM esperimentuak e
+      LEFT JOIN pilotuak p ON e.pilotu_id = p.id
+      LEFT JOIN eragileak er ON e.eragile_id = er.id
+      WHERE e.id = ?
+    `).get(expId) as Esperimentua & { eragile_izena: string };
 
     await syncDbToCloud();
 
@@ -99,6 +146,7 @@ export async function POST(request: Request) {
       success: true,
       user: newUser,
       eragilea: newEragilea,
+      esperimentua: newEsperimentua,
     });
   } catch (error) {
     console.error("Errorea kontua sortzean:", error);

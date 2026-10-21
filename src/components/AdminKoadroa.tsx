@@ -31,9 +31,11 @@ import {
   FlaskConical,
   Monitor,
   Printer,
+  Lock,
+  Unlock,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
-import { Eragilea, Esperimentua, Neurketa } from "@/lib/db";
+import { Eragilea, Esperimentua, Neurketa, getPublicEragileLabel } from "@/lib/db";
 
 export default function AdminKoadroa() {
   const {
@@ -390,7 +392,7 @@ export default function AdminKoadroa() {
             <span>
               {isPresentationMode
                 ? "Bagera • Emaitzen Aurkezpen Publikoa"
-                : "Bagera / Mikel • Koordinazio Panela"}
+                : "Bagera • Koordinazio Panela"}
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
@@ -584,12 +586,27 @@ export default function AdminKoadroa() {
                   className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
-                    <div>
+                    <div className="flex items-center gap-2">
                       <span className="font-bold text-slate-900 text-sm">
-                        {eragile.izena}
+                        {isPresentationMode
+                          ? getPublicEragileLabel(eragile, "eragilea")
+                          : eragile.izena}
                       </span>
-                      {exp && (
-                        <span className="text-xs text-slate-500 ml-2">
+                      {!isPresentationMode && (
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            Number(eragile.publikoa) === 1
+                              ? "bg-emerald-100 text-emerald-800"
+                              : "bg-slate-200 text-slate-700"
+                          }`}
+                        >
+                          {Number(eragile.publikoa) === 1
+                            ? "🔓 Publikoa"
+                            : `🔒 ${getPublicEragileLabel(eragile, "eragilea")}`}
+                        </span>
+                      )}
+                      {exp && !isPresentationMode && (
+                        <span className="text-xs text-slate-500">
                           ({exp.gunea} • Helburua: +%{exp.xede_portzentajea})
                         </span>
                       )}
@@ -789,13 +806,48 @@ export default function AdminKoadroa() {
                 return (
                   <tr key={eragile.id} className="hover:bg-slate-50/70 transition">
                     <td className="py-3.5 pr-3">
-                      <span className="font-bold text-slate-900 block text-sm">
-                        {eragile.izena}
-                      </span>
-                      <span className="text-[11px] text-slate-400">
-                        {eragile.arduraduna}
-                        {!isPresentationMode && eragile.email ? ` (${eragile.email})` : ""}
-                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-bold text-slate-900 text-sm">
+                          {isPresentationMode
+                            ? getPublicEragileLabel(eragile, "eragilea")
+                            : eragile.izena}
+                        </span>
+                        {!isPresentationMode && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateEragilea({
+                                id: eragile.id,
+                                publikoa: Number(eragile.publikoa) === 1 ? 0 : 1,
+                              })
+                            }
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold inline-flex items-center gap-1 transition cursor-pointer ${
+                              Number(eragile.publikoa) === 1
+                                ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
+                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                            }`}
+                            title="Sakatu pribatutasun-egoera aldatzeko (Izen publikoa vs Kode anonimoa #ID)"
+                          >
+                            {Number(eragile.publikoa) === 1 ? (
+                              <>
+                                <Unlock className="w-2.5 h-2.5" />
+                                <span>Publikoa</span>
+                              </>
+                            ) : (
+                              <>
+                                <Lock className="w-2.5 h-2.5" />
+                                <span>{getPublicEragileLabel(eragile, "eragilea")}</span>
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
+                      {!isPresentationMode && (
+                        <span className="text-[11px] text-slate-400 block mt-0.5">
+                          {eragile.arduraduna}
+                          {eragile.email ? ` (${eragile.email})` : ""}
+                        </span>
+                      )}
                     </td>
 
                     <td className="py-3.5 pr-3 capitalize font-medium text-slate-600">

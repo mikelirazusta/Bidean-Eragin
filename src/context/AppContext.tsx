@@ -43,6 +43,10 @@ interface AppContextType {
     email: string;
     password: string;
     erronka_nagusia: string;
+    publikoa?: number;
+    hipotesia?: string;
+    gunea?: string;
+    xede_portzentajea?: number;
   }) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   registerEragilea: (data: {
@@ -52,6 +56,7 @@ interface AppContextType {
     email: string;
     erronka_nagusia: string;
     password?: string;
+    publikoa?: number;
   }) => Promise<Eragilea | null>;
   createPilotua: (data: {
     izena: string;
@@ -91,6 +96,7 @@ interface AppContextType {
     email?: string;
     erronka_nagusia?: string;
     password?: string;
+    publikoa?: number;
   }) => Promise<Eragilea | null>;
   updatePilotua: (data: {
     id: string;
@@ -375,6 +381,10 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
     email: string;
     password: string;
     erronka_nagusia: string;
+    publikoa?: number;
+    hipotesia?: string;
+    gunea?: string;
+    xede_portzentajea?: number;
   }) => {
     try {
       const res = await fetch("/api/auth/register", {
@@ -395,7 +405,10 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
         if (json.user.eragile_id) {
           setCurrentEragileId(json.user.eragile_id);
         }
-        setActiveTab("katalogoa");
+        if (json.esperimentua?.id) {
+          setObservationConfig({ expId: json.esperimentua.id, phase: "T0" });
+        }
+        setActiveTab("panela");
         triggerConfetti();
         return { success: true };
       }
@@ -436,6 +449,7 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
     email: string;
     erronka_nagusia: string;
     password?: string;
+    publikoa?: number;
   }) => {
     try {
       const res = await fetch("/api/eragileak", {
@@ -600,6 +614,7 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
     email?: string;
     erronka_nagusia?: string;
     password?: string;
+    publikoa?: number;
   }) => {
     try {
       const res = await fetch("/api/eragileak", {

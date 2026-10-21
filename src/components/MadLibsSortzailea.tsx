@@ -60,6 +60,8 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
   const [gunea, setGunea] = useState(defaultGunea);
   const [ekintza, setEkintza] = useState(defaultEkintza);
   const [metrika, setMetrika] = useState<number>(25);
+  const [customHypothesis, setCustomHypothesis] = useState<string>("");
+  const [isCustomMode, setIsCustomMode] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -70,7 +72,8 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
     );
   }, [pilotu]);
 
-  const fullHypothesis = `Gure ustez, ${taldea || "..."} ${pertsonak || "..."}, ${gunea || "..."} ${ekintza} eginda, euskararen erabilera %${metrika} igoko da.`;
+  const generatedHypothesis = `Gure ustez, ${taldea || "..."} ${pertsonak || "..."}, ${gunea || "..."} ${ekintza} eginda, euskararen erabilera %${metrika} igoko da.`;
+  const fullHypothesis = isCustomMode && customHypothesis.trim() ? customHypothesis.trim() : generatedHypothesis;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,7 +120,7 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
             {pilotu.izena}
           </h2>
           <p className="text-xs sm:text-sm text-sky-200 mt-1">
-            {activeEragilea?.izena || "Zure zentroa"}: bihurtu zuen asmoa hipotesi zientifiko neurgarri batean!
+            {activeEragilea?.izena || "Zure saltokia"}: bihurtu zuen asmoa hipotesi zientifiko neurgarri batean!
           </p>
         </div>
 
@@ -126,83 +129,133 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
           
           {/* Mad Libs Guided Builder Card */}
           <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-5 shadow-inner">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 mb-3 uppercase tracking-wider">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>Bete hutsuneak zure esperimentua zehazteko:</span>
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>Bete hutsuneak zure esperimentua zehazteko:</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isCustomMode && !customHypothesis.trim()) {
+                    setCustomHypothesis(generatedHypothesis);
+                  }
+                  setIsCustomMode(!isCustomMode);
+                }}
+                className="text-[11px] font-bold text-sky-700 hover:text-sky-900 underline cursor-pointer"
+              >
+                {isCustomMode ? "Txantiloi gidatura itzuli" : "Esaldia libreki idatzi"}
+              </button>
             </div>
 
-            <div className="text-base sm:text-lg text-slate-800 font-medium leading-loose">
-              <span>Gure ustez, </span>
+            {!isCustomMode ? (
+              <div className="text-base sm:text-lg text-slate-800 font-medium leading-loose">
+                <span>Gure ustez, </span>
 
-              {/* Box 1: Taldea */}
-              <span className="inline-block mx-1">
-                <input
-                  type="text"
+                {/* Box 1: Taldea */}
+                <span className="inline-block mx-1">
+                  <input
+                    type="text"
+                    required
+                    value={taldea}
+                    onChange={(e) => setTaldea(e.target.value)}
+                    placeholder="adib. Saltokiko"
+                    className="bg-white font-bold text-sky-700 border-2 border-sky-300 rounded-lg px-2.5 py-1 text-sm focus:ring-2 focus:ring-sky-500 focus:outline-hidden shadow-xs min-w-[140px]"
+                  />
+                </span>
+
+                {/* Box 2: Pertsonak */}
+                <span className="inline-block mx-1">
+                  <input
+                    type="text"
+                    required
+                    value={pertsonak}
+                    onChange={(e) => setPertsonak(e.target.value)}
+                    placeholder="bezeroekin"
+                    className="bg-white font-bold text-sky-700 border-2 border-sky-300 rounded-lg px-2.5 py-1 text-sm focus:ring-2 focus:ring-sky-500 focus:outline-hidden shadow-xs min-w-[110px]"
+                  />
+                </span>
+                <span>, </span>
+
+                {/* Box 3: Gunea */}
+                <span className="inline-block mx-1">
+                  <input
+                    type="text"
+                    required
+                    value={gunea}
+                    onChange={(e) => setGunea(e.target.value)}
+                    placeholder="mostradorean"
+                    className="bg-white font-bold text-emerald-700 border-2 border-emerald-300 rounded-lg px-2.5 py-1 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-hidden shadow-xs min-w-[180px]"
+                  />
+                </span>
+
+                {/* Box 4: Pilotua */}
+                <span className="inline-block mx-1 font-bold text-slate-900 bg-slate-200 px-2 py-0.5 rounded-lg text-sm">
+                  {ekintza}
+                </span>
+                <span> eginda, euskararen erabilera </span>
+
+                {/* Box 5: Metrika */}
+                <span className="inline-flex items-center mx-1">
+                  <span className="font-bold text-amber-700 mr-0.5">%</span>
+                  <input
+                    type="number"
+                    min="5"
+                    max="100"
+                    step="5"
+                    required
+                    value={metrika}
+                    onChange={(e) => setMetrika(Number(e.target.value))}
+                    className="bg-white font-extrabold text-amber-700 border-2 border-amber-400 rounded-lg px-2 py-1 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-hidden shadow-xs w-16 text-center"
+                  />
+                  <span className="font-bold text-amber-700 ml-0.5">%</span>
+                </span>
+
+                <span> igoko da.</span>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <textarea
+                  rows={3}
                   required
-                  value={taldea}
-                  onChange={(e) => setTaldea(e.target.value)}
-                  placeholder="adib. DBH 2. Mailako"
-                  className="bg-white font-bold text-sky-700 border-2 border-sky-300 rounded-lg px-2.5 py-1 text-sm focus:ring-2 focus:ring-sky-500 focus:outline-hidden shadow-xs min-w-[140px]"
+                  value={customHypothesis}
+                  onChange={(e) => setCustomHypothesis(e.target.value)}
+                  placeholder="Idatzi hemen zure hipotesia nahi duzun bezala..."
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border-2 border-sky-300 text-sm font-semibold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-sky-500"
                 />
-              </span>
-
-              {/* Box 2: Pertsonak */}
-              <span className="inline-block mx-1">
-                <input
-                  type="text"
-                  required
-                  value={pertsonak}
-                  onChange={(e) => setPertsonak(e.target.value)}
-                  placeholder="ikasleekin"
-                  className="bg-white font-bold text-sky-700 border-2 border-sky-300 rounded-lg px-2.5 py-1 text-sm focus:ring-2 focus:ring-sky-500 focus:outline-hidden shadow-xs min-w-[110px]"
-                />
-              </span>
-              <span>, </span>
-
-              {/* Box 3: Gunea */}
-              <span className="inline-block mx-1">
-                <input
-                  type="text"
-                  required
-                  value={gunea}
-                  onChange={(e) => setGunea(e.target.value)}
-                  placeholder="pasilloetan"
-                  className="bg-white font-bold text-emerald-700 border-2 border-emerald-300 rounded-lg px-2.5 py-1 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-hidden shadow-xs min-w-[180px]"
-                />
-              </span>
-
-              {/* Box 4: Pilotua */}
-              <span className="inline-block mx-1 font-bold text-slate-900 bg-slate-200 px-2 py-0.5 rounded-lg text-sm">
-                {ekintza}
-              </span>
-              <span> eginda, euskararen erabilera </span>
-
-              {/* Box 5: Metrika */}
-              <span className="inline-flex items-center mx-1">
-                <span className="font-bold text-amber-700 mr-0.5">%</span>
-                <input
-                  type="number"
-                  min="5"
-                  max="100"
-                  step="5"
-                  required
-                  value={metrika}
-                  onChange={(e) => setMetrika(Number(e.target.value))}
-                  className="bg-white font-extrabold text-amber-700 border-2 border-amber-400 rounded-lg px-2 py-1 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-hidden shadow-xs w-16 text-center"
-                />
-                <span className="font-bold text-amber-700 ml-0.5">%</span>
-              </span>
-
-              <span> igoko da.</span>
-            </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Behaketa-gunea</label>
+                    <input
+                      type="text"
+                      value={gunea}
+                      onChange={(e) => setGunea(e.target.value)}
+                      className="w-full px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Xede-igoera (%)</label>
+                    <input
+                      type="number"
+                      min="5"
+                      max="100"
+                      value={metrika}
+                      onChange={(e) => setMetrika(Number(e.target.value))}
+                      className="w-full px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Quick Chip Suggestions */}
             <div className="mt-4 pt-3 border-t border-slate-200/80 flex flex-wrap items-center gap-2">
               <span className="text-[11px] font-semibold text-slate-500">Iradokizun azkarrak:</span>
               {[
-                { label: "DBH 1-2. Mailak", t: "DBH 1-2. Mailako", p: "ikasleekin", g: "pasillo eta jantokian" },
-                { label: "Bezero goiztiarrak", t: "Goizeko", p: "bezeroekin", g: "dendako sarreran" },
-                { label: "Bileretako lankideak", t: "Asteko bilerako", p: "lankideekin", g: "bilera gela nagusian" },
+                { label: "Saltokiko mostradorea", t: "Saltokiko", p: "bezeroekin", g: "mostradorean eta ordainlekuan" },
+                { label: "Goizeko erosleak", t: "Goizeko", p: "erosleekin", g: "dendako sarreran" },
+                { label: "Ostalari eta bezeroak", t: "Barrako", p: "bezeroekin", g: "kafe-orduan" },
+                { label: "Ikastetxeko pasilloak", t: "DBH 1-2. Mailako", p: "ikasleekin", g: "pasillo eta jantokian" },
               ].map((chip, idx) => (
                 <button
                   key={idx}
@@ -211,6 +264,7 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
                     setTaldea(chip.t);
                     setPertsonak(chip.p);
                     setGunea(chip.g);
+                    setIsCustomMode(false);
                   }}
                   className="text-[11px] font-medium bg-white hover:bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full border border-slate-200 shadow-2xs transition cursor-pointer"
                 >

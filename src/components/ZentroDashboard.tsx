@@ -23,9 +23,13 @@ import {
   Save,
   X,
   Printer,
+  Lock,
+  Unlock,
+  Users,
+  Compass,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
-import { Esperimentua, Neurketa } from "@/lib/db";
+import { Esperimentua, Neurketa, getPublicEragileLabel } from "@/lib/db";
 
 export interface PhaseStats {
   unea: "T0" | "T1" | "T2";
@@ -71,6 +75,7 @@ function computePhaseStats(list: Neurketa[], phase: "T0" | "T1" | "T2"): PhaseSt
 export default function ZentroDashboard() {
   const {
     activeEragilea,
+    eragileak,
     esperimentuak,
     neurketak,
     nudges,
@@ -80,6 +85,9 @@ export default function ZentroDashboard() {
     triggerConfetti,
     deleteNeurketa,
     updateEsperimentua,
+    updateEragilea,
+    createEsperimentua,
+    currentUser,
   } = useApp();
 
   // Find all experiments for this organization
@@ -101,6 +109,42 @@ export default function ZentroDashboard() {
   const [editGuneaText, setEditGuneaText] = useState("");
   const [editXedeaNum, setEditXedeaNum] = useState<number>(25);
   const [isSavingHypothesis, setIsSavingHypothesis] = useState(false);
+  const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
+
+  // Quick setup state when !currentExp
+  const [quickHipotesia, setQuickHipotesia] = useState(
+    `${activeEragilea?.izena || "Gure saltokian"} 'Euskaraz barra-barra' txapa ikusgai erabiltzen badugu, euskarazko elkarrizketak %20 handituko dira.`
+  );
+  const [quickGunea, setQuickGunea] = useState(activeEragilea?.izena || "Mostradorea");
+  const [quickXedea, setQuickXedea] = useState(20);
+  const [isCreatingQuickExp, setIsCreatingQuickExp] = useState(false);
+
+  const handleTogglePrivacy = async () => {
+    if (!activeEragilea || isUpdatingPrivacy) return;
+    setIsUpdatingPrivacy(true);
+    const nextPublikoa = Number(activeEragilea.publikoa) === 1 ? 0 : 1;
+    await updateEragilea({
+      id: activeEragilea.id,
+      publikoa: nextPublikoa,
+    });
+    setIsUpdatingPrivacy(false);
+  };
+
+  const handleCreateQuickExp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeEragilea || !quickHipotesia.trim()) return;
+    setIsCreatingQuickExp(true);
+    await createEsperimentua({
+      eragile_id: activeEragilea.id,
+      pilotu_id: "barra-barra-txapak",
+      hipotesia: quickHipotesia.trim(),
+      taldea: activeEragilea.izena,
+      pertsonak: activeEragilea.arduraduna || "Bezeroak eta langileak",
+      gunea: quickGunea.trim() || activeEragilea.izena,
+      xede_portzentajea: quickXedea,
+    });
+    setIsCreatingQuickExp(false);
+  };
 
   const handleOpenEditHypothesis = () => {
     if (!currentExp) return;
@@ -284,6 +328,67 @@ export default function ZentroDashboard() {
             <span>Hasi Behaketa</span>
           </button>
         </div>
+      </div>
+
+      {/* 🎯 GUIDED NEXT STEP BANNER (Always clear what to do next) */}
+      <div className="mb-6 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 text-white rounded-3xl p-5 sm:p-6 shadow-lg border border-slate-700/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-start gap-3.5">
+          <div className="w-11 h-11 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center shrink-0">
+            <Compass className="w-6 h-6 text-emerald-400" />
+          </div>
+          <div>
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-300">
+              🎯 Zure Hurrengo Urratsa Orain
+            </span>
+            <h2 className="text-base sm:text-lg font-extrabold text-white mt-0.5">
+              {!currentExp
+                ? "1. Urratsa: Aktibatu zure hasierako hipotesia beheko taulan"
+                : !t0Stats
+                ? "1. Urratsa: Egin T0 Behaketa Itsua (txapa jarri aurretik)"
+                : !t1Stats
+                ? "2. Urratsa: Jarri 'Euskaraz barra-barra' txapa ikusgai eta neurtu T1"
+                : !t2Stats
+                ? "3. Urratsa: Egin T2 Behaketa ohitura sendotu dela egiaztatzeko"
+                : "Zorionak! Ziklo osoa (T0, T1 eta T2) osatu duzue"}
+            </h2>
+            <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
+              {!currentExp
+                ? "Zehaztu esaldi bakarrean zer lortu nahi duzuen zuen saltokian, eta berehala hasi ahalko zarete neurtzen."
+                : !t0Stats
+                ? "Txapak jarri aurretik, neurtu 10-30 minutuz gaur egungo elkarrizketak zein hizkuntzatan diren (abiapuntua ezagutzeko)."
+                : !t1Stats
+                ? `T0 oinarria baduzue (%${t0Stats.pct} euskara). Orain jarri txapak paparrean eta egin T1 behaketa berehalako eragina neurtzeko.`
+                : !t2Stats
+                ? `T1 neurketan %${t1Stats.pct} jaso duzue. Egin T2 neurketa 14-21 egunera portaera berria egonkortu den ikusteko.`
+                : "Nahi baduzue, saio gehiago gehitu ditzakezue batez bestekoa sendotzeko edo PDF txostena inprimatu."}
+            </p>
+          </div>
+        </div>
+
+        {currentExp && (
+          <button
+            type="button"
+            onClick={() => {
+              setObservationConfig({
+                expId: currentExp.id,
+                phase: !t0Stats ? "T0" : !t1Stats ? "T1" : "T2",
+              });
+              setActiveTab("behaketa");
+            }}
+            className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shadow-md shadow-emerald-500/20 transition flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+          >
+            <span>
+              {!t0Stats
+                ? "Neurtu T0 Orain"
+                : !t1Stats
+                ? "Neurtu T1 Orain"
+                : !t2Stats
+                ? "Neurtu T2 Orain"
+                : "+ Gehitu beste saio bat"}
+            </span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {/* ACTIVE NUDGE BANNER (if any unread nudge exists) */}
@@ -591,6 +696,67 @@ export default function ZentroDashboard() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* 🔒 Pribatutasuna Komunitatean Card */}
+            <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-2.5">
+                  <div
+                    className={`p-2 rounded-xl shrink-0 mt-0.5 ${
+                      Number(activeEragilea.publikoa) === 1
+                        ? "bg-emerald-50 text-emerald-600"
+                        : "bg-slate-100 text-slate-600"
+                    }`}
+                  >
+                    {Number(activeEragilea.publikoa) === 1 ? (
+                      <Unlock className="w-4 h-4" />
+                    ) : (
+                      <Lock className="w-4 h-4" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-sm">
+                      Pribatutasuna Komunitatean
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                      {Number(activeEragilea.publikoa) === 1 ? (
+                        <span>
+                          Zure saltokiaren izena (<strong>{activeEragilea.izena}</strong>) ikusgai dago beste eragileentzat komunitateko zerrendan.
+                        </span>
+                      ) : (
+                        <span>
+                          Zure izena babestuta dago. Beste eragileek kode anonimo bat bakarrik ikusten dute: <strong>{getPublicEragileLabel(activeEragilea, "eragilea", "other")}</strong>.
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                <span className="text-[11px] font-bold text-slate-600">
+                  {Number(activeEragilea.publikoa) === 1
+                    ? "🔓 Izen publikoa aktibatuta"
+                    : "🔒 Modu anonimoa aktibatuta (#ID)"}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleTogglePrivacy}
+                  disabled={isUpdatingPrivacy}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer disabled:opacity-50 ${
+                    Number(activeEragilea.publikoa) === 1
+                      ? "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                      : "bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200"
+                  }`}
+                >
+                  {isUpdatingPrivacy
+                    ? "Aldatzen..."
+                    : Number(activeEragilea.publikoa) === 1
+                    ? "Bihurtu Anonimo (#ID)"
+                    : "Erakutsi Nire Izena"}
+                </button>
               </div>
             </div>
           </div>
@@ -1098,23 +1264,174 @@ export default function ZentroDashboard() {
           </div>
         </div>
       ) : (
-        /* Empty State: No experiment yet */
-        <div className="bg-white rounded-3xl p-8 sm:p-12 text-center max-w-xl mx-auto border border-slate-200 shadow-sm">
-          <div className="w-16 h-16 rounded-3xl bg-sky-50 text-sky-600 flex items-center justify-center mx-auto mb-4">
-            <FlaskConical className="w-8 h-8" />
+        /* Guided 1-Click Initial Hypothesis Setup Card */
+        <div className="bg-white rounded-3xl p-6 sm:p-10 max-w-2xl mx-auto border border-slate-200 shadow-md">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+              <FlaskConical className="w-6 h-6" />
+            </div>
+            <div>
+              <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-700">
+                1. Urratsa • Hasierako Konfigurazioa
+              </span>
+              <h3 className="text-xl font-extrabold text-slate-900">
+                Sortu zure saltokiaren lehen hipotesia
+              </h3>
+            </div>
           </div>
-          <h3 className="text-xl font-bold text-slate-900">
-            Ez duzue esperimentu aktiborik oraindik
-          </h3>
-          <p className="text-xs sm:text-sm text-slate-600 mt-2 mb-6">
-            Zuen erronkari erantzuteko lehen urratsa katalogoan pilotu bat aukeratu eta hipotesia zehaztea da.
+
+          <p className="text-xs sm:text-sm text-slate-600 mb-5 leading-relaxed">
+            Berretsi edo egokitu beheko hipotesia zure saltokirako. Gorde bezain laster, T0 aurre-neurketa egiteko prest izango duzu kontagailua:
           </p>
-          <button
-            onClick={() => setActiveTab("katalogoa")}
-            className="px-6 py-3 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm shadow-md shadow-sky-600/30 transition cursor-pointer"
-          >
-            Aukeratu Pilotu bat Katalogoan →
-          </button>
+
+          <form onSubmit={handleCreateQuickExp} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Zuen Hipotesi Erreala *
+              </label>
+              <textarea
+                rows={3}
+                required
+                value={quickHipotesia}
+                onChange={(e) => setQuickHipotesia(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-emerald-300 bg-emerald-50/40 text-xs sm:text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Behaketa-gunea (Non)
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={quickGunea}
+                  onChange={(e) => setQuickGunea(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-medium text-slate-900"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Igoera-xedea (+%)
+                </label>
+                <input
+                  type="number"
+                  min={5}
+                  max={100}
+                  value={quickXedea}
+                  onChange={(e) => setQuickXedea(Number(e.target.value))}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-bold text-emerald-700"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setActiveTab("katalogoa")}
+                className="text-xs font-semibold text-slate-500 hover:text-slate-800 underline cursor-pointer"
+              >
+                Edo ikusi katalogoko beste pilotuak
+              </button>
+
+              <button
+                type="submit"
+                disabled={isCreatingQuickExp || !quickHipotesia.trim()}
+                className="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md shadow-emerald-600/30 transition cursor-pointer flex items-center gap-2 disabled:opacity-50"
+              >
+                <span>{isCreatingQuickExp ? "Aktibatzen..." : "Aktibatu Hipotesia & Hasi T0 Neurtzen →"}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* 📊 KOMUNITATEAREN ERREFERENTZIA (ANONIMIZATUA / PRIBATUTASUNA BABESTUTA) */}
+      {eragileak.length > 1 && (
+        <div className="mt-10 bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                <Users className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 text-base">
+                  Komunitatearen Erreferentzia (Pribatutasuna Babestuta)
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Beste eragileen bilakaera ikus dezakezu; izenak kode anonimo gisa agertzen dira (adib. <strong>Saltokia #ID</strong>), eragileak berak izena publiko egitea onartu ezean.
+                </p>
+              </div>
+            </div>
+            <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold shrink-0">
+              {eragileak.length} eragile komunitatean
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {eragileak.map((er) => {
+              const isMe = er.id === activeEragilea.id;
+              const label = getPublicEragileLabel(er, currentUser?.role, activeEragilea.id);
+              const erExp = esperimentuak.find((e) => e.eragile_id === er.id);
+              const erNeurketak = erExp
+                ? neurketak.filter((n) => n.esperimentu_id === erExp.id)
+                : [];
+              const erT0 = computePhaseStats(erNeurketak, "T0");
+              const erT1 = computePhaseStats(erNeurketak, "T1");
+              const erT2 = computePhaseStats(erNeurketak, "T2");
+
+              return (
+                <div
+                  key={er.id}
+                  className={`p-4 rounded-2xl border transition ${
+                    isMe
+                      ? "bg-emerald-50/50 border-emerald-300 ring-1 ring-emerald-300"
+                      : "bg-slate-50/70 border-slate-200/80"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      {isMe || Number(er.publikoa) === 1 || currentUser?.role === "admin" ? (
+                        <Unlock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      ) : (
+                        <Lock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      )}
+                      <span className="font-bold text-xs text-slate-900 truncate">
+                        {label}
+                      </span>
+                    </div>
+                    {isMe && (
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-extrabold shrink-0">
+                        Zure Saltokia
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-1.5 text-center mt-2">
+                    <div className="bg-white rounded-xl py-1.5 px-1 border border-slate-200/80">
+                      <span className="block text-[9px] font-bold text-slate-400">T0</span>
+                      <span className="text-xs font-extrabold text-sky-700">
+                        {erT0 ? `%${erT0.pct}` : "—"}
+                      </span>
+                    </div>
+                    <div className="bg-white rounded-xl py-1.5 px-1 border border-slate-200/80">
+                      <span className="block text-[9px] font-bold text-slate-400">T1</span>
+                      <span className="text-xs font-extrabold text-teal-700">
+                        {erT1 ? `%${erT1.pct}` : "—"}
+                      </span>
+                    </div>
+                    <div className="bg-white rounded-xl py-1.5 px-1 border border-slate-200/80">
+                      <span className="block text-[9px] font-bold text-slate-400">T2</span>
+                      <span className="text-xs font-extrabold text-emerald-700">
+                        {erT2 ? `%${erT2.pct}` : "—"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

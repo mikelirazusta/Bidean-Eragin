@@ -10,6 +10,9 @@ import {
   Undo2,
   CheckCircle2,
   Eye,
+  EyeOff,
+  Volume2,
+  VolumeX,
   AlertCircle,
   HelpCircle,
   Sparkles,
@@ -39,7 +42,24 @@ export default function BehatzaileKontagailua() {
     isOnline,
   } = useApp();
 
+  const isAdmin = currentUser?.role === "admin";
   const [isRefreshingStandList, setIsRefreshingStandList] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(false);
+  const [stealthMode, setStealthMode] = useState<boolean>(false);
+
+  useEffect(() => {
+    try {
+      setSoundEnabled(localStorage.getItem("bidean_sound_enabled") === "true");
+    } catch {}
+  }, []);
+
+  const toggleSound = () => {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    try {
+      localStorage.setItem("bidean_sound_enabled", next ? "true" : "false");
+    } catch {}
+  };
 
   const handleManualRefresh = async () => {
     setIsRefreshingStandList(true);
@@ -47,11 +67,15 @@ export default function BehatzaileKontagailua() {
     setIsRefreshingStandList(false);
   };
 
-  // Find suitable experiment: either configured or active organization's experiment
+  // Strict privacy: non-admin users only see and measure their own center's experiments
+  const availableEsperimentuak = isAdmin
+    ? esperimentuak
+    : esperimentuak.filter((e) => e.eragile_id === activeEragilea?.id);
+
   const currentExp =
-    esperimentuak.find((e) => e.id === observationConfig.expId) ||
-    esperimentuak.find((e) => e.eragile_id === activeEragilea?.id) ||
-    esperimentuak[0];
+    availableEsperimentuak.find((e) => e.id === observationConfig.expId) ||
+    availableEsperimentuak.find((e) => e.eragile_id === activeEragilea?.id) ||
+    availableEsperimentuak[0];
 
   const [phase, setPhase] = useState<"T0" | "T1" | "T2">(
     observationConfig.phase || "T0"
@@ -105,7 +129,7 @@ export default function BehatzaileKontagailua() {
       const saved = localStorage.getItem("bidean_behatzaile_izena");
       if (saved) {
         setBehatzailea(saved);
-      } else if (currentUser?.name && !currentUser.name.includes("Admin")) {
+      } else if (currentUser?.name && !currentUser.name.includes("Admin") && !currentUser.name.includes("Koordinazioa")) {
         setBehatzailea(currentUser.name);
       }
     } catch {}
@@ -301,7 +325,7 @@ export default function BehatzaileKontagailua() {
       setIsPaused(false);
     }
 
-    playCounterClick(type);
+    playCounterClick(type, { soundEnabled });
 
     if (type === "euskaraz") setEuskarazCount((c) => c + 1);
     if (type === "erdaraz") setErdarazCount((c) => c + 1);
@@ -310,12 +334,34 @@ export default function BehatzaileKontagailua() {
     setHistory((prev) => [...prev, type]);
   };
 
+  // Hardware Volume / Keyboard shortcut support for discreet counting
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (showSaveModal || showNewStandModal) return;
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+
+      if (e.key === "AudioVolumeUp" || e.key === "VolumeUp" || e.key === "ArrowUp" || e.key === "1") {
+        e.preventDefault();
+        handleCount("euskaraz");
+      } else if (e.key === "AudioVolumeDown" || e.key === "VolumeDown" || e.key === "ArrowDown" || e.key === "2") {
+        e.preventDefault();
+        handleCount("erdaraz");
+      } else if (e.key === "ArrowRight" || e.key === "3") {
+        e.preventDefault();
+        handleCount("elebi");
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  });
+
   const handleDecrement = (
     e: React.MouseEvent,
     type: "euskaraz" | "erdaraz" | "elebi"
   ) => {
     e.stopPropagation();
-    playCounterClick("undo");
+    playCounterClick("undo", { soundEnabled });
     if (type === "euskaraz" && euskarazCount > 0) setEuskarazCount((c) => c - 1);
     if (type === "erdaraz" && erdarazCount > 0) setErdarazCount((c) => c - 1);
     if (type === "elebi" && elebiCount > 0) setElebiCount((c) => c - 1);
@@ -324,7 +370,7 @@ export default function BehatzaileKontagailua() {
   const handleUndo = () => {
     if (history.length === 0) return;
 
-    playCounterClick("undo");
+    playCounterClick("undo", { soundEnabled });
     const last = history[history.length - 1];
     if (last === "euskaraz" && euskarazCount > 0) setEuskarazCount((c) => c - 1);
     if (last === "erdaraz" && erdarazCount > 0) setErdarazCount((c) => c - 1);
@@ -445,70 +491,109 @@ export default function BehatzaileKontagailua() {
           <div className="flex items-center gap-2">
             <Store className="w-4 h-4 text-emerald-400" />
             <span className="text-xs font-bold text-slate-200 uppercase tracking-wider">
-              Gaurko Neurketaren Saltokia & Behatzailea
+              {isAdmin ? "Gaurko Neurketaren Saltokia & Behatzailea" : "Zure Saltokiko Neurketa Gunea"}
             </span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            {/* Sound Toggle */}
             <button
               type="button"
-              onClick={handleManualRefresh}
-              disabled={isRefreshingStandList}
-              className="text-xs font-semibold text-sky-300 hover:text-sky-200 flex items-center gap-1 cursor-pointer disabled:opacity-50 transition"
-              title="Lankideak sortutako saltokiak eguneratu"
+              onClick={toggleSound}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition cursor-pointer ${
+                soundEnabled
+                  ? "bg-amber-500/20 text-amber-300 border border-amber-400/30"
+                  : "bg-slate-800 text-slate-300 border border-slate-700"
+              }`}
+              title="Soinua aktibatu edo isilarazi (bibrazioa beti aktibo)"
             >
-              <RotateCcw className={`w-3.5 h-3.5 ${isRefreshingStandList ? "animate-spin" : ""}`} />
-              <span>{isRefreshingStandList ? "Eguneratzen..." : "Eguneratu"}</span>
+              {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+              <span>{soundEnabled ? "Soinua ON" : "Isila (Bibrazioa)"}</span>
             </button>
+
+            {/* Stealth / Camouflage Mode Toggle */}
             <button
               type="button"
-              onClick={() => setShowNewStandModal(true)}
-              disabled={sessionActive}
-              className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer disabled:opacity-50 transition"
+              onClick={() => setStealthMode(!stealthMode)}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition cursor-pointer ${
+                stealthMode
+                  ? "bg-emerald-500 text-slate-950 shadow-sm"
+                  : "bg-slate-800 text-emerald-300 border border-emerald-500/30 hover:bg-slate-700"
+              }`}
+              title="Modu ezkutua: pantaila ilundu eta kolore deigarriak ezkutatu inork ez nabaritzeko"
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>+ Gehitu Postu Berria</span>
+              {stealthMode ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              <span>{stealthMode ? "Modu Ezkutua ON" : "🕵️ Modu Ezkutua"}</span>
             </button>
+
+            {isAdmin && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleManualRefresh}
+                  disabled={isRefreshingStandList}
+                  className="text-xs font-semibold text-sky-300 hover:text-sky-200 flex items-center gap-1 cursor-pointer disabled:opacity-50 transition"
+                  title="Lankideak sortutako saltokiak eguneratu"
+                >
+                  <RotateCcw className={`w-3.5 h-3.5 ${isRefreshingStandList ? "animate-spin" : ""}`} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowNewStandModal(true)}
+                  disabled={sessionActive}
+                  className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer disabled:opacity-50 transition"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Postu Berria</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
 
-        {esperimentuak.length === 0 ? (
+        {availableEsperimentuak.length === 0 ? (
           <div className="bg-slate-800/80 rounded-2xl p-4 border border-slate-700 text-center">
             <p className="text-xs text-slate-300 mb-3">
-              Oraindik ez dago posturik sortuta sisteman. Sortu gaur neurtuko duzuen lehen postua:
+              Oraindik ez dago esperimenturik aktibo. Sortu zure hipotesia neurketak hasteko:
             </p>
             <button
               type="button"
-              onClick={() => setShowNewStandModal(true)}
+              onClick={() => (isAdmin ? setShowNewStandModal(true) : setActiveTab("katalogoa"))}
               className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs rounded-xl transition shadow-md flex items-center gap-2 mx-auto cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>+ Sortu 1. Postua Orain</span>
+              <span>{isAdmin ? "+ Sortu 1. Postua Orain" : "Aukeratu Pilotua eta Hipotesia"}</span>
             </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                📍 Zein komertzio / postutan zaude?
+                📍 {isAdmin ? "Zein komertzio / postutan zaude?" : "Zure saltokia eta behaketa-gunea:"}
               </label>
-              <select
-                value={currentExp?.id || ""}
-                disabled={sessionActive}
-                onChange={(e) => {
-                  const exp = esperimentuak.find((x) => x.id === e.target.value);
-                  if (exp) {
-                    setObservationConfig({ expId: exp.id, phase });
-                    if (exp.eragile_id) setCurrentEragileId(exp.eragile_id);
-                  }
-                }}
-                className="w-full bg-slate-800 border border-slate-600 text-white rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-hidden cursor-pointer disabled:opacity-50"
-              >
-                {esperimentuak.map((exp) => (
-                  <option key={exp.id} value={exp.id}>
-                    {exp.eragile_izena || "Saltokia"} ({exp.gunea || exp.taldea || "Komertzioa"})
-                  </option>
-                ))}
-              </select>
+              {isAdmin ? (
+                <select
+                  value={currentExp?.id || ""}
+                  disabled={sessionActive}
+                  onChange={(e) => {
+                    const exp = availableEsperimentuak.find((x) => x.id === e.target.value);
+                    if (exp) {
+                      setObservationConfig({ expId: exp.id, phase });
+                      if (exp.eragile_id) setCurrentEragileId(exp.eragile_id);
+                    }
+                  }}
+                  className="w-full bg-slate-800 border border-slate-600 text-white rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-hidden cursor-pointer disabled:opacity-50"
+                >
+                  {availableEsperimentuak.map((exp) => (
+                    <option key={exp.id} value={exp.id}>
+                      {exp.eragile_izena || "Saltokia"} ({exp.gunea || exp.taldea || "Komertzioa"})
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="w-full bg-slate-800/90 border border-slate-700 text-emerald-300 rounded-xl px-3 py-2 text-xs font-bold truncate">
+                  {activeEragilea?.izena || "Zure Saltokia"} • {currentExp?.gunea || "Mostradorea"}
+                </div>
+              )}
             </div>
 
             <div>
@@ -520,7 +605,7 @@ export default function BehatzaileKontagailua() {
                 value={behatzailea}
                 disabled={sessionActive}
                 onChange={(e) => handleBehatzaileaChange(e.target.value)}
-                placeholder="Adibidez: Mikel / Ane..."
+                placeholder="Adibidez: Ane / Jon..."
                 className="w-full bg-slate-800 border border-slate-600 text-white rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-hidden disabled:opacity-50 placeholder:text-slate-500"
               />
             </div>
@@ -827,157 +912,270 @@ export default function BehatzaileKontagailua() {
         </div>
       </div>
 
-      {/* 3 GIANT BUTTONS FOR FAST MOBILE THUMB TAPPING */}
-      <div className="space-y-4">
-        
-        {/* 🟢 EUSKARAZ BUTTON */}
-        <div
-          onClick={() => handleCount("euskaraz")}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") handleCount("euskaraz");
-          }}
-          className="w-full h-32 sm:h-36 rounded-3xl bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-xl shadow-emerald-600/30 flex items-center justify-between px-6 sm:px-8 transition active-press cursor-pointer border-2 border-emerald-400/40 relative overflow-hidden group select-none"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-3xl font-black shadow-inner">
-              🟢
-            </div>
-            <div className="text-left">
-              <span className="text-2xl sm:text-3xl font-extrabold tracking-tight block">
-                Euskaraz
-              </span>
-              <span className="text-xs text-emerald-100 font-medium">
-                Sakatze bakoitzeko +1
+      {/* STEALTH CAMOUFLAGE MODE vs STANDARD 3 GIANT BUTTONS */}
+      {stealthMode ? (
+        <div className="bg-slate-950 text-slate-400 rounded-3xl p-5 border border-slate-800 shadow-2xl space-y-3 select-none">
+          <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
+            <div className="flex items-center gap-2">
+              <EyeOff className="w-4 h-4 text-slate-500" />
+              <span className="text-xs font-bold text-slate-400">
+                Ohar-bloka / Zerrenda (Modu Ezkutua)
               </span>
             </div>
+            <span className="text-[11px] font-mono text-slate-500">
+              #{totalInteractions} ({euskarazCount}·{erdarazCount}·{elebiCount})
+            </span>
           </div>
 
-          <div className="flex items-center gap-3">
-            {euskarazCount > 0 && (
-              <button
-                type="button"
-                onClick={(e) => handleDecrement(e, "euskaraz")}
-                className="px-2.5 py-1.5 rounded-xl bg-black/25 hover:bg-black/40 text-white font-extrabold text-xs border border-white/20 transition cursor-pointer"
-                title="Kendu 1 euskarazko zenbaketatik"
-              >
-                -1
-              </button>
-            )}
-            <div className="text-right">
-              <span className="text-4xl sm:text-5xl font-black tracking-tight block">
+          <p className="text-[11px] text-slate-500 leading-relaxed">
+            Pantaila ilunduta dago ingurukoek ez nabaritzeko. Sakatu eremu bakoitza begiratu gabe (bibrazio ezberdina du bakoitzak) edo erabili bolumen/gezi teklak:
+          </p>
+
+          {/* Zone A: Euskaraz (top half, 1 vibration) */}
+          <div
+            onClick={() => handleCount("euskaraz")}
+            role="button"
+            tabIndex={0}
+            className="w-full h-36 rounded-2xl bg-slate-900/90 hover:bg-slate-900 active:bg-slate-800 border border-slate-800 flex items-center justify-between px-6 cursor-pointer transition"
+          >
+            <div>
+              <span className="text-sm font-bold text-slate-300 block">
+                1. Eremua — A aukera
+              </span>
+              <span className="text-[11px] text-slate-500">
+                Bibrazio 1 (sendoa) • Bolumena + / ↑
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              {euskarazCount > 0 && (
+                <button
+                  type="button"
+                  onClick={(e) => handleDecrement(e, "euskaraz")}
+                  className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 text-xs font-bold border border-slate-700 cursor-pointer"
+                >
+                  -1
+                </button>
+              )}
+              <span className="text-2xl font-mono font-bold text-slate-400">
                 {euskarazCount}
               </span>
-              <span className="text-xs font-bold text-emerald-100">
-                {totalInteractions > 0 ? `${Math.round((euskarazCount / totalInteractions) * 100)}%` : "0%"}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* 🔴 ERDARAZ BUTTON */}
-        <div
-          onClick={() => handleCount("erdaraz")}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") handleCount("erdaraz");
-          }}
-          className="w-full h-28 sm:h-32 rounded-3xl bg-gradient-to-r from-rose-500 via-rose-600 to-red-600 hover:from-rose-600 hover:to-red-700 text-white shadow-lg shadow-rose-600/25 flex items-center justify-between px-6 sm:px-8 transition active-press cursor-pointer border-2 border-rose-400/40 relative overflow-hidden group select-none"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-2xl font-black shadow-inner">
-              🔴
-            </div>
-            <div className="text-left">
-              <span className="text-xl sm:text-2xl font-extrabold tracking-tight block">
-                Erdaraz
-              </span>
-              <span className="text-xs text-rose-100 font-medium">
-                Gaztelania / Beste hizkuntza bat
-              </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {erdarazCount > 0 && (
-              <button
-                type="button"
-                onClick={(e) => handleDecrement(e, "erdaraz")}
-                className="px-2.5 py-1.5 rounded-xl bg-black/25 hover:bg-black/40 text-white font-extrabold text-xs border border-white/20 transition cursor-pointer"
-                title="Kendu 1 erdarazko zenbaketatik"
-              >
-                -1
-              </button>
-            )}
-            <div className="text-right">
-              <span className="text-3xl sm:text-4xl font-black tracking-tight block">
+          {/* Zone B: Erdaraz (middle, 2 vibrations) */}
+          <div
+            onClick={() => handleCount("erdaraz")}
+            role="button"
+            tabIndex={0}
+            className="w-full h-32 rounded-2xl bg-slate-900/90 hover:bg-slate-900 active:bg-slate-800 border border-slate-800 flex items-center justify-between px-6 cursor-pointer transition"
+          >
+            <div>
+              <span className="text-sm font-bold text-slate-300 block">
+                2. Eremua — B aukera
+              </span>
+              <span className="text-[11px] text-slate-500">
+                2 bibrazio labur • Bolumena - / ↓
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              {erdarazCount > 0 && (
+                <button
+                  type="button"
+                  onClick={(e) => handleDecrement(e, "erdaraz")}
+                  className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 text-xs font-bold border border-slate-700 cursor-pointer"
+                >
+                  -1
+                </button>
+              )}
+              <span className="text-2xl font-mono font-bold text-slate-400">
                 {erdarazCount}
               </span>
-              <span className="text-xs font-bold text-rose-100">
-                {totalInteractions > 0 ? `${Math.round((erdarazCount / totalInteractions) * 100)}%` : "0%"}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* 🟡 ELEBI BUTTON */}
-        <div
-          onClick={() => handleCount("elebi")}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") handleCount("elebi");
-          }}
-          className="w-full h-24 sm:h-28 rounded-3xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-slate-950 shadow-md shadow-amber-500/20 flex items-center justify-between px-6 sm:px-8 transition active-press cursor-pointer border-2 border-amber-300/60 relative overflow-hidden group select-none"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-black/10 backdrop-blur-xs flex items-center justify-center text-xl font-black shadow-inner">
-              🟡
-            </div>
-            <div className="text-left">
-              <span className="text-lg sm:text-xl font-extrabold tracking-tight block">
-                Elebi (Nahastua)
-              </span>
-              <span className="text-xs text-amber-950/70 font-medium">
-                Euskara eta gaztelania txandakatuta
-              </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {elebiCount > 0 && (
-              <button
-                type="button"
-                onClick={(e) => handleDecrement(e, "elebi")}
-                className="px-2.5 py-1.5 rounded-xl bg-black/15 hover:bg-black/30 text-slate-950 font-extrabold text-xs border border-black/15 transition cursor-pointer"
-                title="Kendu 1 elebiko zenbaketatik"
-              >
-                -1
-              </button>
-            )}
-            <div className="text-right">
-              <span className="text-3xl sm:text-4xl font-black tracking-tight block">
+          {/* Zone C: Elebi (bottom, 3 vibrations) */}
+          <div
+            onClick={() => handleCount("elebi")}
+            role="button"
+            tabIndex={0}
+            className="w-full h-24 rounded-2xl bg-slate-900/90 hover:bg-slate-900 active:bg-slate-800 border border-slate-800 flex items-center justify-between px-6 cursor-pointer transition"
+          >
+            <div>
+              <span className="text-sm font-bold text-slate-300 block">
+                3. Eremua — C aukera
+              </span>
+              <span className="text-[11px] text-slate-500">
+                3 bibrazio labur • → tekla
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              {elebiCount > 0 && (
+                <button
+                  type="button"
+                  onClick={(e) => handleDecrement(e, "elebi")}
+                  className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 text-xs font-bold border border-slate-700 cursor-pointer"
+                >
+                  -1
+                </button>
+              )}
+              <span className="text-2xl font-mono font-bold text-slate-400">
                 {elebiCount}
               </span>
-              <span className="text-xs font-bold text-amber-950">
-                {totalInteractions > 0 ? `${Math.round((elebiCount / totalInteractions) * 100)}%` : "0%"}
-              </span>
             </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="space-y-4">
+          
+          {/* 🟢 EUSKARAZ BUTTON */}
+          <div
+            onClick={() => handleCount("euskaraz")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") handleCount("euskaraz");
+            }}
+            className="w-full h-32 sm:h-36 rounded-3xl bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-xl shadow-emerald-600/30 flex items-center justify-between px-6 sm:px-8 transition active-press cursor-pointer border-2 border-emerald-400/40 relative overflow-hidden group select-none"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-3xl font-black shadow-inner">
+                🟢
+              </div>
+              <div className="text-left">
+                <span className="text-2xl sm:text-3xl font-extrabold tracking-tight block">
+                  Euskaraz
+                </span>
+                <span className="text-xs text-emerald-100 font-medium">
+                  Sakatze bakoitzeko +1 (Bibrazio 1)
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {euskarazCount > 0 && (
+                <button
+                  type="button"
+                  onClick={(e) => handleDecrement(e, "euskaraz")}
+                  className="px-2.5 py-1.5 rounded-xl bg-black/25 hover:bg-black/40 text-white font-extrabold text-xs border border-white/20 transition cursor-pointer"
+                  title="Kendu 1 euskarazko zenbaketatik"
+                >
+                  -1
+                </button>
+              )}
+              <div className="text-right">
+                <span className="text-4xl sm:text-5xl font-black tracking-tight block">
+                  {euskarazCount}
+                </span>
+                <span className="text-xs font-bold text-emerald-100">
+                  {totalInteractions > 0 ? `${Math.round((euskarazCount / totalInteractions) * 100)}%` : "0%"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* 🔴 ERDARAZ BUTTON */}
+          <div
+            onClick={() => handleCount("erdaraz")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") handleCount("erdaraz");
+            }}
+            className="w-full h-28 sm:h-32 rounded-3xl bg-gradient-to-r from-rose-500 via-rose-600 to-red-600 hover:from-rose-600 hover:to-red-700 text-white shadow-lg shadow-rose-600/25 flex items-center justify-between px-6 sm:px-8 transition active-press cursor-pointer border-2 border-rose-400/40 relative overflow-hidden group select-none"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-2xl font-black shadow-inner">
+                🔴
+              </div>
+              <div className="text-left">
+                <span className="text-xl sm:text-2xl font-extrabold tracking-tight block">
+                  Erdaraz
+                </span>
+                <span className="text-xs text-rose-100 font-medium">
+                  Gaztelania / Beste bat (2 bibrazio)
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {erdarazCount > 0 && (
+                <button
+                  type="button"
+                  onClick={(e) => handleDecrement(e, "erdaraz")}
+                  className="px-2.5 py-1.5 rounded-xl bg-black/25 hover:bg-black/40 text-white font-extrabold text-xs border border-white/20 transition cursor-pointer"
+                  title="Kendu 1 erdarazko zenbaketatik"
+                >
+                  -1
+                </button>
+              )}
+              <div className="text-right">
+                <span className="text-3xl sm:text-4xl font-black tracking-tight block">
+                  {erdarazCount}
+                </span>
+                <span className="text-xs font-bold text-rose-100">
+                  {totalInteractions > 0 ? `${Math.round((erdarazCount / totalInteractions) * 100)}%` : "0%"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* 🟡 ELEBI BUTTON */}
+          <div
+            onClick={() => handleCount("elebi")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") handleCount("elebi");
+            }}
+            className="w-full h-24 sm:h-28 rounded-3xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-slate-950 shadow-md shadow-amber-500/20 flex items-center justify-between px-6 sm:px-8 transition active-press cursor-pointer border-2 border-amber-300/60 relative overflow-hidden group select-none"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-black/10 backdrop-blur-xs flex items-center justify-center text-xl font-black shadow-inner">
+                🟡
+              </div>
+              <div className="text-left">
+                <span className="text-lg sm:text-xl font-extrabold tracking-tight block">
+                  Elebi (Nahastua)
+                </span>
+                <span className="text-xs text-amber-950/70 font-medium">
+                  Euskara eta erdara txandakatuta (3 bibrazio)
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {elebiCount > 0 && (
+                <button
+                  type="button"
+                  onClick={(e) => handleDecrement(e, "elebi")}
+                  className="px-2.5 py-1.5 rounded-xl bg-black/15 hover:bg-black/30 text-slate-950 font-extrabold text-xs border border-black/15 transition cursor-pointer"
+                  title="Kendu 1 elebiko zenbaketatik"
+                >
+                  -1
+                </button>
+              )}
+              <div className="text-right">
+                <span className="text-3xl sm:text-4xl font-black tracking-tight block">
+                  {elebiCount}
+                </span>
+                <span className="text-xs font-bold text-amber-950">
+                  {totalInteractions > 0 ? `${Math.round((elebiCount / totalInteractions) * 100)}%` : "0%"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Observer Instructions Card */}
       <div className="mt-8 bg-sky-50/70 rounded-2xl p-4 border border-sky-100 text-xs text-slate-600 leading-relaxed">
         <h4 className="font-bold text-sky-900 mb-1 flex items-center gap-1.5">
           <AlertCircle className="w-4 h-4 text-sky-600" />
-          Behatzailearen Gida Praktikoa:
+          Behatzailearen Gida Praktikoa (Modu Diskretoa):
         </h4>
         <ul className="list-disc pl-4 space-y-1 mt-1 text-slate-700">
-          <li>Kokatu espazioan modu naturalean eta diskretoan (arretarik piztu gabe).</li>
-          <li>Entzuten duzun elkarrizketa edo agur bakoitzeko sakatu dagokion botoia (+1).</li>
+          <li>Sakatu goiko <strong>&ldquo;🕵️ Modu Ezkutua&rdquo;</strong> botoia pantaila iluntzeko eta kolore deigarriak ezkutatzeko.</li>
+          <li>Soinua lehenetsita <strong>isilik</strong> dago, eta aukera bakoitzak <strong>bibrazio-eredu ezberdina</strong> du pantailari begiratu gabe zenbatu ahal izateko.</li>
           <li>Nahastu bazara, erabili <strong>-1</strong> botoia edo desegin botoia edozein unetan.</li>
           <li>Amaitutakoan, sakatu <strong>&ldquo;Gorde&rdquo;</strong> emaitzak erregistratzeko.</li>
         </ul>

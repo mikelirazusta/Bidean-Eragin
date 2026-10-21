@@ -23,16 +23,22 @@ import { useApp } from "@/context/AppContext";
 
 const ERRONKA_AUKERAK = [
   {
-    id: "erronka-1",
-    titulua: "Ikasleek badakite baina pasilloetan/aisialdian ez dute egiten",
-    azpititulua: "Gelan erabiltzen dute baina espazio informaletan erdarara jotzen dute inertziaz.",
-    mota: "ikastetxea",
-  },
-  {
     id: "erronka-2",
     titulua: "Dendan lehen hitza gaztelaniaz ateratzen zaigu",
     azpititulua: "Bezeroak euskaraz jakin arren, agurra eta hasiera automatikoki erdaraz egiten dira.",
     mota: "merkataritza",
+  },
+  {
+    id: "erronka-5",
+    titulua: "Bezeroak ez daki langileak euskaraz badakien ala ez",
+    azpititulua: "Zalantza horren aurrean, bezeroak gaztelaniara jotzen du zuzenean segurtasun faltagatik.",
+    mota: "merkataritza",
+  },
+  {
+    id: "erronka-1",
+    titulua: "Ikasleek badakite baina pasilloetan/aisialdian ez dute egiten",
+    azpititulua: "Gelan erabiltzen dute baina espazio informaletan erdarara jotzen dute inertziaz.",
+    mota: "ikastetxea",
   },
   {
     id: "erronka-3",
@@ -69,8 +75,16 @@ export default function AuthPortal() {
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regPasswordConfirm, setRegPasswordConfirm] = useState("");
-  const [regErronka, setRegErronka] = useState(ERRONKA_AUKERAK[1].titulua);
+  const [regErronka, setRegErronka] = useState(ERRONKA_AUKERAK[0].titulua);
   const [customErronka, setCustomErronka] = useState("");
+  const [regXedea, setRegXedea] = useState<number>(20);
+  const [regHipotesia, setRegHipotesia] = useState("");
+  const [regPublikoa, setRegPublikoa] = useState<boolean>(false);
+
+  const sortedErronkak = [
+    ...ERRONKA_AUKERAK.filter((e) => e.mota === regMota),
+    ...ERRONKA_AUKERAK.filter((e) => e.mota !== regMota),
+  ];
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,7 +109,7 @@ export default function AuthPortal() {
     setErrorMessage("");
 
     if (!regIzena.trim()) {
-      setErrorMessage("Zentroaren edo erakundearen izena beharrezkoa da.");
+      setErrorMessage("Saltokiaren edo erakundearen izena beharrezkoa da.");
       return;
     }
     if (!regArduraduna.trim()) {
@@ -115,6 +129,12 @@ export default function AuthPortal() {
       return;
     }
 
+    if (!regHipotesia.trim()) {
+      setRegHipotesia(
+        `${regIzena.trim()} gunean 'Euskaraz barra-barra' txapa ikusgai erabiltzen badugu, euskarazko elkarrizketak %${regXedea} handituko dira.`
+      );
+    }
+
     setRegStep(2);
   };
 
@@ -123,6 +143,9 @@ export default function AuthPortal() {
     setIsSubmitting(true);
 
     const finalErronka = customErronka.trim() ? customErronka.trim() : regErronka;
+    const finalHipotesia = regHipotesia.trim()
+      ? regHipotesia.trim()
+      : `${regIzena.trim()} gunean 'Euskaraz barra-barra' txapa ikusgai erabiltzen badugu, euskarazko elkarrizketak %${regXedea} handituko dira.`;
 
     const result = await register({
       izena: regIzena.trim(),
@@ -131,6 +154,10 @@ export default function AuthPortal() {
       email: regEmail.trim(),
       password: regPassword.trim(),
       erronka_nagusia: finalErronka,
+      publikoa: regPublikoa ? 1 : 0,
+      hipotesia: finalHipotesia,
+      gunea: regIzena.trim(),
+      xede_portzentajea: regXedea,
     });
 
     setIsSubmitting(false);
@@ -140,10 +167,10 @@ export default function AuthPortal() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50/50 via-slate-50 to-emerald-50/30 flex flex-col justify-center py-10 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-b from-sky-50/50 via-slate-50 to-emerald-50/30 flex flex-col justify-center py-8 sm:px-6 lg:px-8">
       {/* Brand & Intro */}
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center px-4">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-600 via-teal-500 to-emerald-500 text-white shadow-lg shadow-emerald-500/25 mb-4">
+      <div className="sm:mx-auto sm:w-full sm:max-w-lg text-center px-4">
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-600 via-teal-500 to-emerald-500 text-white shadow-lg shadow-emerald-500/25 mb-3">
           <Sparkles className="w-8 h-8" />
         </div>
         <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
@@ -152,13 +179,38 @@ export default function AuthPortal() {
         <p className="mt-1 text-sm font-semibold text-emerald-800">
           Portaera-ekonomia eta esperimentazio arina • Bagera
         </p>
-        <p className="mt-2 text-xs sm:text-sm text-slate-600">
-          Euskararen erabilera aktibatzeko tresna praktikoa. Jarraitu zure saltoki edo zentroaren aurrerapena eta neurketak.
+        <p className="mt-1.5 text-xs sm:text-sm text-slate-600">
+          Euskararen erabilera aktibatzeko tresna praktikoa. Jarraitu zure saltoki edo zentroaren aurrerapena 3 urrats errazetan:
         </p>
+
+        {/* 3-Step Visual Journey Guide */}
+        <div className="mt-4 grid grid-cols-3 gap-2 text-left">
+          <div className="bg-white/90 border border-slate-200/80 rounded-2xl p-2.5 shadow-xs">
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-extrabold text-[10px] mb-1">
+              1
+            </span>
+            <p className="text-[11px] font-extrabold text-slate-900 leading-tight">Hipotesia definitu</p>
+            <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">Zure saltokiko erronka eta helburua zehaztu.</p>
+          </div>
+          <div className="bg-white/90 border border-slate-200/80 rounded-2xl p-2.5 shadow-xs">
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-sky-100 text-sky-800 font-extrabold text-[10px] mb-1">
+              2
+            </span>
+            <p className="text-[11px] font-extrabold text-slate-900 leading-tight">T0/T1/T2 Neurtu</p>
+            <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">10 minutuko behaketa erraza mugikorrarekin.</p>
+          </div>
+          <div className="bg-white/90 border border-slate-200/80 rounded-2xl p-2.5 shadow-xs">
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-indigo-100 text-indigo-800 font-extrabold text-[10px] mb-1">
+              3
+            </span>
+            <p className="text-[11px] font-extrabold text-slate-900 leading-tight">Eragina ikusi</p>
+            <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">Emaitza errealak modu pribatuan aztertu.</p>
+          </div>
+        </div>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-lg px-4">
-        <div className="bg-white py-8 px-6 sm:px-10 shadow-xl shadow-slate-200/60 rounded-3xl border border-slate-200/80">
+      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-lg px-4">
+        <div className="bg-white py-7 px-6 sm:px-10 shadow-xl shadow-slate-200/60 rounded-3xl border border-slate-200/80">
           
           {/* Main Role Selector: Eragileak (Publikoa) vs Bagera Admin */}
           <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1.5 rounded-2xl mb-6">
@@ -399,7 +451,7 @@ export default function AuthPortal() {
               {/* Stepper info */}
               <div className="flex items-center justify-between mb-5">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  {regStep === 1 ? "1/2 Urratsa: Zentroa & Kontua" : "2/2 Urratsa: Erronka Nagusia"}
+                  {regStep === 1 ? "1/2 Urratsa: Saltokia & Kontua" : "2/2 Urratsa: Erronka, Hipotesia & Pribatutasuna"}
                 </span>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
                   {regStep === 1 ? "50%" : "100%"}
@@ -411,7 +463,7 @@ export default function AuthPortal() {
                 <form onSubmit={handleRegStep1Submit} className="space-y-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Zentroaren edo Erakundearen Izena *
+                      Saltokiaren edo Erakundearen Izena *
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -422,7 +474,7 @@ export default function AuthPortal() {
                         required
                         value={regIzena}
                         onChange={(e) => setRegIzena(e.target.value)}
-                        placeholder="adib. Santo Tomas Lizeoa, Eroski..."
+                        placeholder="adib. Bretxako Harategia, Kaxilda, Zurriola..."
                         className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 text-sm transition"
                       />
                     </div>
@@ -430,13 +482,13 @@ export default function AuthPortal() {
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                      Zentro Mota *
+                      Eragile Mota *
                     </label>
                     <div className="grid grid-cols-2 gap-2">
                       {[
+                        { id: "merkataritza", label: "Merkataritza / Ostalaritza", icon: Store },
                         { id: "ikastetxea", label: "Ikastetxea", icon: GraduationCap },
-                        { id: "merkataritza", label: "Merkataritza", icon: Store },
-                        { id: "enpresa", label: "Enpresa", icon: Briefcase },
+                        { id: "enpresa", label: "Enpresa / Lan-gunea", icon: Briefcase },
                         { id: "aisialdia", label: "Aisialdia / Elkartea", icon: Building2 },
                       ].map((item) => {
                         const Icon = item.icon;
@@ -445,14 +497,18 @@ export default function AuthPortal() {
                           <button
                             type="button"
                             key={item.id}
-                            onClick={() => setRegMota(item.id as any)}
+                            onClick={() => {
+                              setRegMota(item.id as any);
+                              const matching = ERRONKA_AUKERAK.find((e) => e.mota === item.id);
+                              if (matching) setRegErronka(matching.titulua);
+                            }}
                             className={`flex items-center gap-2 p-2.5 rounded-xl border text-left text-xs font-semibold transition cursor-pointer ${
                               isSelected
                                 ? "bg-emerald-50 border-emerald-500 text-emerald-900 shadow-xs"
                                 : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
                             }`}
                           >
-                            <Icon className={`w-4 h-4 ${isSelected ? "text-emerald-600" : "text-slate-400"}`} />
+                            <Icon className={`w-4 h-4 shrink-0 ${isSelected ? "text-emerald-600" : "text-slate-400"}`} />
                             <span>{item.label}</span>
                           </button>
                         );
@@ -473,7 +529,7 @@ export default function AuthPortal() {
                         required
                         value={regArduraduna}
                         onChange={(e) => setRegArduraduna(e.target.value)}
-                        placeholder="adib. Mikel Irazusta"
+                        placeholder="adib. Ane Etxeberria"
                         className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 text-sm transition"
                       />
                     </div>
@@ -492,7 +548,7 @@ export default function AuthPortal() {
                         required
                         value={regEmail}
                         onChange={(e) => setRegEmail(e.target.value)}
-                        placeholder="adib. arloko.kidea@zentroa.eus"
+                        placeholder="adib. kaixo@saltokia.eus"
                         className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 text-sm transition"
                       />
                     </div>
@@ -534,27 +590,27 @@ export default function AuthPortal() {
                       type="submit"
                       className="w-full py-3 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm shadow-md shadow-sky-600/25 transition flex items-center justify-center gap-2 cursor-pointer"
                     >
-                      <span>Jarraitu Diagnostikora</span>
+                      <span>Jarraitu Hipotesi eta Erronkara</span>
                       <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
                 </form>
               )}
 
-              {/* STEP 2: Fast Diagnosis / Challenge */}
+              {/* STEP 2: Fast Diagnosis / Hypothesis / Privacy */}
               {regStep === 2 && (
                 <div className="space-y-4">
                   <div>
                     <h3 className="text-sm font-bold text-slate-900 mb-1 flex items-center gap-2">
                       <HelpCircle className="w-4 h-4 text-emerald-600" />
-                      Zein da zuen erronka nagusia?
+                      1. Zein da zuen erronka nagusia?
                     </h3>
-                    <p className="text-xs text-slate-500 mb-3">
-                      Aukeratu zure zentroko egoerara hurbilen dagoen portaera edo zehaztu zurea:
+                    <p className="text-xs text-slate-500 mb-2.5">
+                      Aukeratu zure saltoki edo erakundeko egoerara hurbilen dagoen portaera:
                     </p>
 
-                    <div className="space-y-2.5">
-                      {ERRONKA_AUKERAK.map((erronka) => {
+                    <div className="space-y-2">
+                      {sortedErronkak.map((erronka) => {
                         const isSelected = regErronka === erronka.titulua && !customErronka.trim();
                         return (
                           <div
@@ -563,7 +619,7 @@ export default function AuthPortal() {
                               setRegErronka(erronka.titulua);
                               setCustomErronka("");
                             }}
-                            className={`p-3 rounded-xl border text-left cursor-pointer transition flex items-start gap-3 ${
+                            className={`p-2.5 rounded-xl border text-left cursor-pointer transition flex items-start gap-2.5 ${
                               isSelected
                                 ? "bg-emerald-50/70 border-emerald-500 shadow-xs ring-1 ring-emerald-500"
                                 : "bg-white border-slate-200 hover:bg-slate-50"
@@ -583,8 +639,8 @@ export default function AuthPortal() {
                       })}
                     </div>
 
-                    {/* Custom challenge textarea */}
-                    <div className="mt-3">
+                    {/* Custom challenge input */}
+                    <div className="mt-2.5">
                       <label className="block text-xs font-semibold text-slate-600 mb-1">
                         Edo idatzi zuen erronka pertsonalizatua:
                       </label>
@@ -592,13 +648,73 @@ export default function AuthPortal() {
                         type="text"
                         value={customErronka}
                         onChange={(e) => setCustomErronka(e.target.value)}
-                        placeholder="Adib. Ikasleek pasilloetan musika jarrita gaztelaniaz egiten dute..."
+                        placeholder="Adib. Bezeroek lehen hitza gaztelaniaz egiten dute erakusmahaian..."
                         className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 transition"
                       />
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 pt-3">
+                  {/* Initial Hypothesis Preview & Editor */}
+                  <div className="bg-emerald-50/60 border border-emerald-200 rounded-2xl p-3.5 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-extrabold text-emerald-950 uppercase tracking-wider">
+                        2. Zure Hasierako Hipotesia (Editagarria)
+                      </label>
+                      <span className="text-[11px] font-bold text-emerald-800 bg-white px-2 py-0.5 rounded-full border border-emerald-200">
+                        Helburua: +{regXedea}%
+                      </span>
+                    </div>
+                    <textarea
+                      rows={2}
+                      value={regHipotesia}
+                      onChange={(e) => setRegHipotesia(e.target.value)}
+                      className="w-full px-3 py-2 text-xs font-medium text-slate-800 bg-white rounded-xl border border-emerald-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+                    />
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] text-emerald-800 font-semibold">Igoera-xedea:</span>
+                      {[15, 20, 25, 30].map((pct) => (
+                        <button
+                          key={pct}
+                          type="button"
+                          onClick={() => {
+                            setRegXedea(pct);
+                            setRegHipotesia(
+                              `${regIzena.trim() || "Gure saltokian"} 'Euskaraz barra-barra' txapa ikusgai erabiltzen badugu, euskarazko elkarrizketak %${pct} handituko dira.`
+                            );
+                          }}
+                          className={`px-2 py-0.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
+                            regXedea === pct
+                              ? "bg-emerald-600 text-white"
+                              : "bg-white text-emerald-800 border border-emerald-200 hover:bg-emerald-100"
+                          }`}
+                        >
+                          +{pct}%
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Privacy Choice */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={regPublikoa}
+                        onChange={(e) => setRegPublikoa(e.target.checked)}
+                        className="mt-0.5 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                      />
+                      <div>
+                        <span className="block text-xs font-bold text-slate-900">
+                          Erakutsi nire saltokiaren izena komunitateko beste eragileei
+                        </span>
+                        <span className="block text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                          Markatu gabe uzten baduzu (lehenetsia), beste eragileek kode anonimo bat bakarrik ikusiko dute (adib. <strong>Saltokia #4821</strong>). Edonoiz alda dezakezu zure panelean.
+                        </span>
+                      </div>
+                    </label>
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-2">
                     <button
                       type="button"
                       onClick={() => setRegStep(1)}
@@ -618,7 +734,7 @@ export default function AuthPortal() {
                         <span>Kontua sortzen...</span>
                       ) : (
                         <>
-                          <span>Sortu Kontua & Hasi Bidean Eragiten</span>
+                          <span>Sortu Kontua & Sartu Panelera</span>
                           <Sparkles className="w-4 h-4" />
                         </>
                       )}

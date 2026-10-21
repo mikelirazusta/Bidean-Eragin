@@ -19,6 +19,33 @@ export interface Eragilea {
   email: string;
   erronka_nagusia: string;
   sortze_data: string;
+  publikoa?: number; // 0 = Pribatua / Kode anonimoa (#ID), 1 = Izena publikoki ikusgai komunitatean
+}
+
+export function getPublicEragileLabel(
+  eragile: Eragilea,
+  viewerRole?: "admin" | "eragilea",
+  viewerEragileId?: string
+): string {
+  // Admin or the owner of this center always sees the real name
+  if (viewerRole === "admin" || (viewerEragileId && eragile.id === viewerEragileId)) {
+    return eragile.izena;
+  }
+  // If the center explicitly opted-in to show its name publicly
+  if (eragile.publikoa === 1) {
+    return eragile.izena;
+  }
+  // Otherwise, return a deterministic anonymous ID code
+  const suffix = eragile.id.replace(/[^a-zA-Z0-9]/g, "").slice(-4).toUpperCase() || "01";
+  const prefix =
+    eragile.mota === "merkataritza"
+      ? "Saltokia"
+      : eragile.mota === "ikastetxea"
+      ? "Ikastetxea"
+      : eragile.mota === "enpresa"
+      ? "Enpresa"
+      : "Eragilea";
+  return `${prefix} #${suffix}`;
 }
 
 export interface Pilotua {
@@ -98,7 +125,7 @@ const DEFAULT_ADMIN: User = {
   id: "user-admin",
   email: "admin@bagera.eus",
   password: "bagera2026",
-  name: "Mikel (Bagera Admin)",
+  name: "Bagera Koordinazioa",
   role: "admin",
   eragile_id: undefined,
   created_at: new Date().toISOString(),
@@ -318,10 +345,30 @@ function createFallbackStore() {
             return { changes: 1 };
           }
           if (q.startsWith("INSERT INTO eragileak")) {
-            const [id, izena, mota, arduraduna, email, erronka_nagusia, sortze_data] = params;
-            store.eragileak.push({ id, izena, mota, arduraduna, email, erronka_nagusia, sortze_data });
+            if (params.length >= 8) {
+              const [id, izena, mota, arduraduna, email, erronka_nagusia, sortze_data, publikoa] = params;
+              store.eragileak.push({ id, izena, mota, arduraduna, email, erronka_nagusia, sortze_data, publikoa: Number(publikoa || 0) });
+            } else {
+              const [id, izena, mota, arduraduna, email, erronka_nagusia, sortze_data] = params;
+              store.eragileak.push({ id, izena, mota, arduraduna, email, erronka_nagusia, sortze_data, publikoa: 0 });
+            }
             save();
             return { changes: 1 };
+          }
+          if (q.startsWith("UPDATE eragileak SET izena = ?, mota = ?, arduraduna = ?, email = ?, erronka_nagusia = ?, publikoa = ? WHERE id = ?")) {
+            const [izena, mota, arduraduna, email, erronka_nagusia, publikoa, id] = params;
+            const er = store.eragileak.find((e) => e.id === id);
+            if (er) {
+              er.izena = izena;
+              er.mota = mota;
+              er.arduraduna = arduraduna;
+              er.email = email;
+              er.erronka_nagusia = erronka_nagusia;
+              er.publikoa = Number(publikoa || 0);
+              save();
+              return { changes: 1 };
+            }
+            return { changes: 0 };
           }
           if (q.startsWith("UPDATE eragileak SET izena = ?, mota = ?, arduraduna = ?, email = ?, erronka_nagusia = ? WHERE id = ?")) {
             const [izena, mota, arduraduna, email, erronka_nagusia, id] = params;
@@ -505,7 +552,8 @@ function initSqliteTables(db: any) {
       arduraduna TEXT NOT NULL,
       email TEXT NOT NULL,
       erronka_nagusia TEXT NOT NULL,
-      sortze_data TEXT NOT NULL
+      sortze_data TEXT NOT NULL,
+      publikoa INTEGER NOT NULL DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS pilotuak (
@@ -587,6 +635,9 @@ function initSqliteTables(db: any) {
     db.exec("ALTER TABLE pilotuak ADD COLUMN sortzaile_id TEXT;");
   } catch {}
   try {
+    db.exec("ALTER TABLE eragileak ADD COLUMN publikoa INTEGER NOT NULL DEFAULT 0;");
+  } catch {}
+  try {
     db.exec("ALTER TABLE users ADD COLUMN password TEXT DEFAULT 'bagera2026';");
   } catch {}
   try {
@@ -611,8 +662,11 @@ function initSqliteTables(db: any) {
         DEFAULT_ADMIN.eragile_id ?? null,
         DEFAULT_ADMIN.created_at
       );
-    } else if (!adminUser.password) {
-      db.prepare("UPDATE users SET password = ? WHERE email = ?").run("bagera2026", "admin@bagera.eus");
+    } else {
+      if (!adminUser.password) {
+        db.prepare("UPDATE users SET password = ? WHERE email = ?").run("bagera2026", "admin@bagera.eus");
+      }
+      db.prepare("UPDATE users SET name = ? WHERE email = ?").run("Bagera Koordinazioa", "admin@bagera.eus");
     }
   } catch {}
 
@@ -860,8 +914,8 @@ export function importDbSnapshot(snapshot: MemoryStoreData) {
     for (const er of eragileakToInsert) {
       database
         .prepare(
-          `INSERT INTO eragileak (id, izena, mota, arduraduna, email, erronka_nagusia, sortze_data)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`
+          `INSERT INTO eragileak (id, izena, mota, arduraduna, email, erronka_nagusia, sortze_data, publikoa)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
         )
         .run(
           er.id,
@@ -870,7 +924,8 @@ export function importDbSnapshot(snapshot: MemoryStoreData) {
           er.arduraduna,
           er.email || "",
           er.erronka_nagusia,
-          er.sortze_data
+          er.sortze_data,
+          Number(er.publikoa || 0)
         );
     }
 
@@ -882,6 +937,10 @@ export function importDbSnapshot(snapshot: MemoryStoreData) {
       usersToInsert.unshift(DEFAULT_ADMIN);
     }
     for (const u of usersToInsert) {
+      const normalizedName =
+        u.email.toLowerCase() === DEFAULT_ADMIN.email.toLowerCase()
+          ? "Bagera Koordinazioa"
+          : u.name;
       database
         .prepare(
           `INSERT INTO users (id, email, password, name, role, eragile_id, created_at)
@@ -891,7 +950,7 @@ export function importDbSnapshot(snapshot: MemoryStoreData) {
           u.id,
           u.email,
           u.password || "bagera2026",
-          u.name,
+          normalizedName,
           u.role,
           u.eragile_id || null,
           u.created_at || new Date().toISOString()
