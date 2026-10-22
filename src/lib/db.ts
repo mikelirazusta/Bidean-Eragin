@@ -54,6 +54,7 @@ export interface PilotuMateriala {
   fitxategi_izena: string;
   mota: string;
   tamaina?: number;
+  chunk_count?: number;
   data_url: string;
   sortze_data: string;
 }
@@ -1035,6 +1036,243 @@ async function writeSnapshotToNetlifyBlobs(snapshot: MemoryStoreData): Promise<b
     console.warn("Errorea Netlify Blobs-en datuak gordetzean:", e);
   }
   return false;
+}
+
+const LOCAL_BLOBS_DIR = path.join("/tmp", "bidean_eragin_blobs");
+
+function ensureLocalBlobsDir() {
+  try {
+    if (!fs.existsSync(LOCAL_BLOBS_DIR)) {
+      fs.mkdirSync(LOCAL_BLOBS_DIR, { recursive: true });
+    }
+  } catch {}
+}
+
+export async function writeCustomBlobJson(key: string, value: unknown): Promise<boolean> {
+  const safeKey = key.replace(/[^a-zA-Z0-9_-]/g, "_");
+  const payload = JSON.stringify(value);
+
+  try {
+    ensureLocalBlobsDir();
+    fs.writeFileSync(path.join(LOCAL_BLOBS_DIR, `${safeKey}.json`), payload, "utf-8");
+  } catch {}
+
+  const ctx = getNetlifyBlobsContext();
+  if (!ctx || !ctx.siteID || !ctx.token) return true;
+
+  try {
+    const baseUrl = ctx.uncachedEdgeURL || ctx.edgeURL;
+    if (baseUrl) {
+      let urlPath = `/${ctx.siteID}/${BLOB_STORE_NAME}/${safeKey}`;
+      if (ctx.region) {
+        urlPath = `/region:${ctx.region}${urlPath}`;
+      }
+      const url = new URL(urlPath, baseUrl).toString();
+      const res = await fetch(url, {
+        method: "PUT",
+        headers: {
+          authorization: `Bearer ${ctx.token}`,
+          "content-type": "application/json",
+          "cache-control": "max-age=0, stale-while-revalidate=60",
+        },
+        body: payload,
+      });
+      return res.status === 200;
+    } else {
+      const apiUrl = new URL(
+        `/api/v1/blobs/${ctx.siteID}/${BLOB_STORE_NAME}/${safeKey}`,
+        ctx.apiURL || "https://api.netlify.com"
+      );
+      if (ctx.region) apiUrl.searchParams.set("region", ctx.region);
+      const signedRes = await fetch(apiUrl.toString(), {
+        method: "PUT",
+        headers: {
+          authorization: `Bearer ${ctx.token}`,
+          accept: "application/json;type=signed-url",
+        },
+      });
+      if (signedRes.status === 200) {
+        const { url: signedUrl } = await signedRes.json();
+        const putRes = await fetch(signedUrl, {
+          method: "PUT",
+          headers: {
+            "content-type": "application/json",
+            "cache-control": "max-age=0, stale-while-revalidate=60",
+          },
+          body: payload,
+        });
+        return putRes.status === 200;
+      }
+    }
+  } catch (e) {
+    console.warn(`Errorea Netlify Blobs-en (${safeKey}) gordetzean:`, e);
+  }
+  return false;
+}
+
+export async function readCustomBlobJson<T = any>(key: string, preferLocalCache = false): Promise<T | null> {
+  const safeKey = key.replace(/[^a-zA-Z0-9_-]/g, "_");
+  const localFile = path.join(LOCAL_BLOBS_DIR, `${safeKey}.json`);
+
+  if (preferLocalCache) {
+    try {
+      if (fs.existsSync(localFile)) {
+        return JSON.parse(fs.readFileSync(localFile, "utf-8")) as T;
+      }
+    } catch {}
+  }
+
+  const ctx = getNetlifyBlobsContext();
+  if (ctx && ctx.siteID && ctx.token) {
+    try {
+      const baseUrl = ctx.uncachedEdgeURL || ctx.edgeURL;
+      if (baseUrl) {
+        let urlPath = `/${ctx.siteID}/${BLOB_STORE_NAME}/${safeKey}`;
+        if (ctx.region) {
+          urlPath = `/region:${ctx.region}${urlPath}`;
+        }
+        const url = new URL(urlPath, baseUrl).toString();
+        const res = await fetch(url, {
+          method: "GET",
+          headers: { authorization: `Bearer ${ctx.token}` },
+          cache: "no-store",
+        });
+        if (res.status === 200) {
+          const parsed = (await res.json()) as T;
+          try {
+            ensureLocalBlobsDir();
+            fs.writeFileSync(localFile, JSON.stringify(parsed), "utf-8");
+          } catch {}
+          return parsed;
+        }
+      } else {
+        const apiUrl = new URL(
+          `/api/v1/blobs/${ctx.siteID}/${BLOB_STORE_NAME}/${safeKey}`,
+          ctx.apiURL || "https://api.netlify.com"
+        );
+        if (ctx.region) apiUrl.searchParams.set("region", ctx.region);
+        const signedRes = await fetch(apiUrl.toString(), {
+          method: "GET",
+          headers: {
+            authorization: `Bearer ${ctx.token}`,
+            accept: "application/json;type=signed-url",
+          },
+          cache: "no-store",
+        });
+        if (signedRes.status === 200) {
+          const { url: signedUrl } = await signedRes.json();
+          const dataRes = await fetch(signedUrl, { method: "GET", cache: "no-store" });
+          if (dataRes.status === 200) {
+            const parsed = (await dataRes.json()) as T;
+            try {
+              ensureLocalBlobsDir();
+              fs.writeFileSync(localFile, JSON.stringify(parsed), "utf-8");
+            } catch {}
+            return parsed;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn(`Errorea Netlify Blobs-etik (${safeKey}) irakurtzean:`, e);
+    }
+  }
+
+  try {
+    if (fs.existsSync(localFile)) {
+      return JSON.parse(fs.readFileSync(localFile, "utf-8")) as T;
+    }
+  } catch {}
+
+  return null;
+}
+
+export interface StoredMaterialMeta {
+  id: string;
+  izena: string;
+  fitxategi_izena: string;
+  mota: string;
+  tamaina: number;
+  totalChunks: number;
+  sortze_data: string;
+}
+
+export async function saveMaterialChunkToStore(params: {
+  id: string;
+  izena: string;
+  fitxategi_izena: string;
+  mota: string;
+  tamaina: number;
+  chunkIndex: number;
+  totalChunks: number;
+  chunkData: string;
+  sortze_data?: string;
+}): Promise<boolean> {
+  const { id, izena, fitxategi_izena, mota, tamaina, chunkIndex, totalChunks, chunkData, sortze_data } = params;
+  const chunkSaved = await writeCustomBlobJson(`mat-chunk-${id}-${chunkIndex}`, { chunkData });
+  if (!chunkSaved) return false;
+
+  if (chunkIndex === totalChunks - 1 || totalChunks === 1) {
+    const meta: StoredMaterialMeta = {
+      id,
+      izena,
+      fitxategi_izena,
+      mota: mota || "application/pdf",
+      tamaina: tamaina || 0,
+      totalChunks,
+      sortze_data: sortze_data || new Date().toISOString(),
+    };
+    await writeCustomBlobJson(`mat-meta-${id}`, meta);
+  }
+  return true;
+}
+
+export async function getMaterialMetaFromStore(id: string): Promise<StoredMaterialMeta | null> {
+  return readCustomBlobJson<StoredMaterialMeta>(`mat-meta-${id}`, false);
+}
+
+export async function getMaterialChunkFromStore(id: string, chunkIndex: number): Promise<string | null> {
+  const res = await readCustomBlobJson<{ chunkData: string }>(`mat-chunk-${id}-${chunkIndex}`, true);
+  return res?.chunkData || null;
+}
+
+export async function offloadInlineMaterialsToStore(
+  materialak: PilotuMateriala[]
+): Promise<PilotuMateriala[]> {
+  const CHUNK_CHAR_SIZE = 1400000; // ~1.4 MB per chunk
+  const result: PilotuMateriala[] = [];
+
+  for (const mat of materialak) {
+    if (mat.data_url && mat.data_url.startsWith("data:")) {
+      const commaIdx = mat.data_url.indexOf(",");
+      const base64Raw = commaIdx >= 0 ? mat.data_url.slice(commaIdx + 1) : mat.data_url;
+      const totalChunks = Math.max(1, Math.ceil(base64Raw.length / CHUNK_CHAR_SIZE));
+
+      for (let i = 0; i < totalChunks; i++) {
+        const slice = base64Raw.slice(i * CHUNK_CHAR_SIZE, (i + 1) * CHUNK_CHAR_SIZE);
+        await saveMaterialChunkToStore({
+          id: mat.id,
+          izena: mat.izena,
+          fitxategi_izena: mat.fitxategi_izena,
+          mota: mat.mota || "application/pdf",
+          tamaina: mat.tamaina || Math.round((base64Raw.length * 3) / 4),
+          chunkIndex: i,
+          totalChunks,
+          chunkData: slice,
+          sortze_data: mat.sortze_data,
+        });
+      }
+
+      result.push({
+        ...mat,
+        chunk_count: totalChunks,
+        data_url: `/api/materialak?id=${encodeURIComponent(mat.id)}`,
+      });
+    } else {
+      result.push(mat);
+    }
+  }
+
+  return result;
 }
 
 export function getUiTexts(): Record<string, string> {

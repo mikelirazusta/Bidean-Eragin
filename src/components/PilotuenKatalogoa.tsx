@@ -73,7 +73,11 @@ export default function PilotuenKatalogoa() {
   const [showMaterialsPilot, setShowMaterialsPilot] = useState<Pilotua | null>(null);
   const [previewMaterialId, setPreviewMaterialId] = useState<string | null>(null);
   const [isUploadingDirectMaterial, setIsUploadingDirectMaterial] = useState<boolean>(false);
+  const [isUploadingModalFiles, setIsUploadingModalFiles] = useState<boolean>(false);
+  const [uploadProgressText, setUploadProgressText] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [resolvedBlobUrls, setResolvedBlobUrls] = useState<Record<string, string>>({});
+  const [isLoadingPreviewId, setIsLoadingPreviewId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
   const [editingPilotId, setEditingPilotId] = useState<string | null>(null);
   const [deletingPilotId, setDeletingPilotId] = useState<string | null>(null);
@@ -96,54 +100,188 @@ export default function PilotuenKatalogoa() {
   const [newMaterialak, setNewMaterialak] = useState<PilotuMateriala[]>([]);
   const [isSubmittingPilot, setIsSubmittingPilot] = useState(false);
 
+  const ensureMaterialUrl = async (mat: PilotuMateriala): Promise<string> => {
+    if (resolvedBlobUrls[mat.id]) {
+      return resolvedBlobUrls[mat.id];
+    }
+    if (mat.data_url && mat.data_url.startsWith("data:")) {
+      return mat.data_url;
+    }
+    // If file is large (> 3.5 MB or > 2 chunks), reassemble chunks in browser into a Blob URL
+    const needsChunkFetch =
+      (mat.chunk_count && mat.chunk_count > 2) ||
+      (mat.tamaina && mat.tamaina > 3500000);
+
+    if (!needsChunkFetch) {
+      return mat.data_url || `/api/materialak?id=${encodeURIComponent(mat.id)}`;
+    }
+
+    try {
+      setIsLoadingPreviewId(mat.id);
+      let totalChunks = mat.chunk_count || 1;
+      if (!mat.chunk_count) {
+        const metaRes = await fetch(`/api/materialak?id=${encodeURIComponent(mat.id)}&meta=1`);
+        const metaJson = await metaRes.json();
+        if (metaJson.success && metaJson.meta?.totalChunks) {
+          totalChunks = metaJson.meta.totalChunks;
+        }
+      }
+
+      const chunkPromises: Promise<string>[] = [];
+      for (let i = 0; i < totalChunks; i++) {
+        chunkPromises.push(
+          fetch(`/api/materialak?id=${encodeURIComponent(mat.id)}&chunk=${i}`).then(async (r) => {
+            const j = await r.json();
+            if (!j.success || typeof j.chunkData !== "string") {
+              throw new Error("Errorea zatia deskargatzean");
+            }
+            return j.chunkData as string;
+          })
+        );
+      }
+
+      const chunks = await Promise.all(chunkPromises);
+      const fullBase64 = chunks.join("");
+      const binaryStr = atob(fullBase64);
+      const bytes = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) {
+        bytes[i] = binaryStr.charCodeAt(i);
+      }
+      const blob = new Blob([bytes], { type: mat.mota || "application/pdf" });
+      const blobUrl = URL.createObjectURL(blob);
+      setResolvedBlobUrls((prev) => ({ ...prev, [mat.id]: blobUrl }));
+      return blobUrl;
+    } catch (e) {
+      console.error("Errorea PDF handia berreraikitzean:", e);
+      return mat.data_url || `/api/materialak?id=${encodeURIComponent(mat.id)}`;
+    } finally {
+      setIsLoadingPreviewId(null);
+    }
+  };
+
   const readFilesAsMaterials = async (files: FileList | null): Promise<PilotuMateriala[]> => {
     if (!files || files.length === 0) return [];
     setUploadError(null);
     const items: PilotuMateriala[] = [];
+    const CHUNK_CHAR_SIZE = 1400000; // ~1.4 MB per HTTP request (avoids serverless 6MB payload limit)
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      if (file.size > 12 * 1024 * 1024) {
-        setUploadError(`"${file.name}" handiegia da (gehienez 12 MB fitxategiko).`);
+      if (file.size > 25 * 1024 * 1024) {
+        setUploadError(`"${file.name}" handiegia da (gehienez 25 MB fitxategiko).`);
         continue;
       }
+
+      setUploadProgressText(`"${file.name}" irakurtzen... (${i + 1}/${files.length})`);
+
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(String(reader.result || ""));
         reader.onerror = () => reject(new Error("Errorea fitxategia irakurtzean"));
         reader.readAsDataURL(file);
       });
+
+      const commaIdx = dataUrl.indexOf(",");
+      const base64Raw = commaIdx >= 0 ? dataUrl.slice(commaIdx + 1) : dataUrl;
+      const totalChunks = Math.max(1, Math.ceil(base64Raw.length / CHUNK_CHAR_SIZE));
+      const matId = `mat-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`;
       const cleanTitle = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+      const sortzeData = new Date().toISOString();
+
+      let uploadFailed = false;
+      for (let c = 0; c < totalChunks; c++) {
+        const pct = Math.round(((c + 1) / totalChunks) * 100);
+        setUploadProgressText(
+          totalChunks > 1
+            ? `"${file.name}" hodeira igotzen... (%${pct})`
+            : `"${file.name}" hodeira igotzen...`
+        );
+
+        const slice = base64Raw.slice(c * CHUNK_CHAR_SIZE, (c + 1) * CHUNK_CHAR_SIZE);
+        try {
+          const res = await fetch("/api/materialak", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: matId,
+              izena: cleanTitle || file.name,
+              fitxategi_izena: file.name,
+              mota: file.type || "application/pdf",
+              tamaina: file.size,
+              chunkIndex: c,
+              totalChunks,
+              chunkData: slice,
+              sortze_data: sortzeData,
+            }),
+          });
+          const json = await res.json();
+          if (!res.ok || !json.success) {
+            uploadFailed = true;
+            setUploadError(
+              json.error || `"${file.name}" fitxategia igotzean errorea gertatu da.`
+            );
+            break;
+          }
+        } catch (err) {
+          console.error("Errorea fitxategiaren zatia igotzean:", err);
+          uploadFailed = true;
+          setUploadError(`Errorea "${file.name}" zerbitzarira igotzean. Saiatu berriro.`);
+          break;
+        }
+      }
+
+      if (uploadFailed) continue;
+
+      try {
+        const localUrl = URL.createObjectURL(file);
+        setResolvedBlobUrls((prev) => ({ ...prev, [matId]: localUrl }));
+      } catch {}
+
       items.push({
-        id: `mat-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`,
+        id: matId,
         izena: cleanTitle || file.name,
         fitxategi_izena: file.name,
         mota: file.type || "application/pdf",
         tamaina: file.size,
-        data_url: dataUrl,
-        sortze_data: new Date().toISOString(),
+        chunk_count: totalChunks,
+        data_url: `/api/materialak?id=${encodeURIComponent(matId)}`,
+        sortze_data: sortzeData,
       });
     }
+
+    setUploadProgressText(null);
     return items;
   };
 
   const handleModalFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const added = await readFilesAsMaterials(e.target.files);
-    if (added.length > 0) {
-      setNewMaterialak((prev) => [...prev, ...added]);
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
+    setIsUploadingModalFiles(true);
+    try {
+      const added = await readFilesAsMaterials(fileList);
+      if (added.length > 0) {
+        setNewMaterialak((prev) => [...prev, ...added]);
+      }
+    } finally {
+      setIsUploadingModalFiles(false);
+      e.target.value = "";
     }
-    e.target.value = "";
   };
 
   const handleDirectUploadInMaterialsModal = async (
     e: React.ChangeEvent<HTMLInputElement>,
     pilotu: Pilotua
   ) => {
-    const added = await readFilesAsMaterials(e.target.files);
-    e.target.value = "";
-    if (added.length === 0) return;
-
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
     setIsUploadingDirectMaterial(true);
+    const added = await readFilesAsMaterials(fileList);
+    e.target.value = "";
+    if (added.length === 0) {
+      setIsUploadingDirectMaterial(false);
+      return;
+    }
+
     const existing = parsePilotuMaterialak(pilotu.materialak_json);
     const combined = [...existing, ...added];
     const updated = await updatePilotua({
@@ -154,6 +292,8 @@ export default function PilotuenKatalogoa() {
     if (updated) {
       setShowMaterialsPilot(updated);
       setPreviewMaterialId(added[0].id);
+    } else {
+      setUploadError("Ezin izan dira material berriak pilotuan gorde. Saiatu berriro.");
     }
   };
 
@@ -192,6 +332,7 @@ export default function PilotuenKatalogoa() {
     ]);
     setNewMaterialak([]);
     setUploadError(null);
+    setUploadProgressText(null);
     setShowCreateModal(true);
   };
 
@@ -206,6 +347,7 @@ export default function PilotuenKatalogoa() {
     setNewKolorea(pilotu.kolorea || "emerald");
     setNewMaterialak(parsePilotuMaterialak(pilotu.materialak_json));
     setUploadError(null);
+    setUploadProgressText(null);
     try {
       const parsed = JSON.parse(pilotu.urratsak_json || "[]");
       if (Array.isArray(parsed) && parsed.length > 0) {
@@ -291,8 +433,13 @@ export default function PilotuenKatalogoa() {
 
   const handleCreatePilotSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newIzena.trim() || !newAzpititulua.trim() || !newDeskribapena.trim()) return;
+    if (isUploadingModalFiles) return;
+    if (!newIzena.trim() || !newAzpititulua.trim() || !newDeskribapena.trim()) {
+      setUploadError("Pilotuaren izena, azpititulua eta deskribapena bete behar dira.");
+      return;
+    }
 
+    setUploadError(null);
     setIsSubmittingPilot(true);
     let savedPilot: Pilotua | null = null;
 
@@ -332,6 +479,8 @@ export default function PilotuenKatalogoa() {
       setNewDeskribapena("");
       setNewAdibidea("");
       setNewMaterialak([]);
+    } else {
+      setUploadError("Ezin izan dira aldaketak gorde. Saiatu berriro mesedez.");
     }
   };
 
@@ -487,12 +636,15 @@ export default function PilotuenKatalogoa() {
 
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
                     setUploadError(null);
-                    setPreviewMaterialId(
-                      pilotuMaterialak.length > 0 ? pilotuMaterialak[0].id : null
-                    );
                     setShowMaterialsPilot(pilotu);
+                    if (pilotuMaterialak.length > 0) {
+                      setPreviewMaterialId(pilotuMaterialak[0].id);
+                      await ensureMaterialUrl(pilotuMaterialak[0]);
+                    } else {
+                      setPreviewMaterialId(null);
+                    }
                   }}
                   className="w-full py-2.5 px-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer"
                 >
@@ -729,18 +881,33 @@ export default function PilotuenKatalogoa() {
                     </p>
                   </div>
 
-                  <label className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer shrink-0 self-start sm:self-auto">
+                  <label
+                    className={`px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer shrink-0 self-start sm:self-auto ${
+                      isUploadingModalFiles ? "opacity-70 pointer-events-none" : ""
+                    }`}
+                  >
                     <Upload className="w-3.5 h-3.5" />
-                    <span>+ Igo PDF / Irudiak</span>
+                    <span>
+                      {isUploadingModalFiles
+                        ? uploadProgressText || "PDFa igotzen..."
+                        : "+ Igo PDF / Irudiak"}
+                    </span>
                     <input
                       type="file"
                       accept=".pdf,application/pdf,image/*"
                       multiple
+                      disabled={isUploadingModalFiles}
                       onChange={handleModalFileSelect}
                       className="hidden"
                     />
                   </label>
                 </div>
+
+                {uploadProgressText && (
+                  <div className="p-2.5 rounded-xl bg-emerald-100/80 border border-emerald-300 text-emerald-900 text-xs font-bold flex items-center gap-2 animate-pulse">
+                    <span>⏳ {uploadProgressText}</span>
+                  </div>
+                )}
 
                 {uploadError && (
                   <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
@@ -773,7 +940,7 @@ export default function PilotuenKatalogoa() {
                             />
                             <p className="text-[10px] text-slate-400 truncate">
                               {mat.fitxategi_izena}{" "}
-                              {mat.tamaina ? `• ${formatFileSize(mat.tamaina)}` : ""}
+                              {mat.tamaina ? `• ${formatFileSize(mat.tamaina)}` : ""} • Prest gordetzeko ✓
                             </p>
                           </div>
                         </div>
@@ -812,10 +979,12 @@ export default function PilotuenKatalogoa() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmittingPilot}
+                  disabled={isSubmittingPilot || isUploadingModalFiles}
                   className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-md shadow-emerald-600/30 flex items-center gap-2 transition cursor-pointer disabled:opacity-50"
                 >
-                  {isSubmittingPilot
+                  {isUploadingModalFiles
+                    ? "PDFak igotzen..."
+                    : isSubmittingPilot
                     ? "Gordetzen..."
                     : editingPilotId
                     ? "Gorde Aldaketak"
@@ -858,6 +1027,9 @@ export default function PilotuenKatalogoa() {
             {(() => {
               const attachedMaterials = parsePilotuMaterialak(showMaterialsPilot.materialak_json);
               const activePreviewMat = attachedMaterials.find((m) => m.id === previewMaterialId);
+              const activePreviewUrl = activePreviewMat
+                ? resolvedBlobUrls[activePreviewMat.id] || activePreviewMat.data_url
+                : "";
 
               return (
                 <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-4">
@@ -875,7 +1047,9 @@ export default function PilotuenKatalogoa() {
                     <label className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer shrink-0 self-start sm:self-auto">
                       <Upload className="w-3.5 h-3.5" />
                       <span>
-                        {isUploadingDirectMaterial ? "Igotzen..." : "+ Igo PDF / Material Berria"}
+                        {isUploadingDirectMaterial
+                          ? uploadProgressText || "Igotzen..."
+                          : "+ Igo PDF / Material Berria"}
                       </span>
                       <input
                         type="file"
@@ -888,6 +1062,12 @@ export default function PilotuenKatalogoa() {
                     </label>
                   </div>
 
+                  {uploadProgressText && (
+                    <div className="p-2.5 rounded-xl bg-emerald-100/80 border border-emerald-300 text-emerald-900 text-xs font-bold flex items-center gap-2 animate-pulse">
+                      <span>⏳ {uploadProgressText}</span>
+                    </div>
+                  )}
+
                   {uploadError && (
                     <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
                       {uploadError}
@@ -898,6 +1078,16 @@ export default function PilotuenKatalogoa() {
                     <div className="space-y-2.5">
                       {attachedMaterials.map((mat) => {
                         const isPreviewing = previewMaterialId === mat.id;
+                        const directDownloadUrl =
+                          resolvedBlobUrls[mat.id] ||
+                          (mat.data_url?.startsWith("/api/materialak")
+                            ? `${mat.data_url}&download=1`
+                            : mat.data_url);
+                        const isLargeChunked =
+                          !resolvedBlobUrls[mat.id] &&
+                          ((mat.chunk_count && mat.chunk_count > 2) ||
+                            (mat.tamaina && mat.tamaina > 3500000));
+
                         return (
                           <div
                             key={mat.id}
@@ -921,9 +1111,14 @@ export default function PilotuenKatalogoa() {
                             <div className="flex items-center gap-2 shrink-0">
                               <button
                                 type="button"
-                                onClick={() =>
-                                  setPreviewMaterialId(isPreviewing ? null : mat.id)
-                                }
+                                onClick={async () => {
+                                  if (isPreviewing) {
+                                    setPreviewMaterialId(null);
+                                  } else {
+                                    await ensureMaterialUrl(mat);
+                                    setPreviewMaterialId(mat.id);
+                                  }
+                                }}
                                 className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 border transition cursor-pointer ${
                                   isPreviewing
                                     ? "bg-indigo-600 text-white border-indigo-600"
@@ -931,17 +1126,44 @@ export default function PilotuenKatalogoa() {
                                 }`}
                               >
                                 <Eye className="w-3.5 h-3.5" />
-                                <span>{isPreviewing ? "Ezkutatu" : "Aurreikusi"}</span>
+                                <span>
+                                  {isLoadingPreviewId === mat.id
+                                    ? "Kargatzen..."
+                                    : isPreviewing
+                                    ? "Ezkutatu"
+                                    : "Aurreikusi"}
+                                </span>
                               </button>
 
-                              <a
-                                href={mat.data_url}
-                                download={mat.fitxategi_izena || `${mat.izena}.pdf`}
-                                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs transition"
-                              >
-                                <Download className="w-3.5 h-3.5" />
-                                <span>Deskargatu</span>
-                              </a>
+                              {isLargeChunked ? (
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    const url = await ensureMaterialUrl(mat);
+                                    const a = document.createElement("a");
+                                    a.href = url;
+                                    a.download = mat.fitxategi_izena || `${mat.izena}.pdf`;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                  }}
+                                  className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
+                                >
+                                  <Download className="w-3.5 h-3.5" />
+                                  <span>
+                                    {isLoadingPreviewId === mat.id ? "Deskargatzen..." : "Deskargatu"}
+                                  </span>
+                                </button>
+                              ) : (
+                                <a
+                                  href={directDownloadUrl}
+                                  download={mat.fitxategi_izena || `${mat.izena}.pdf`}
+                                  className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs transition"
+                                >
+                                  <Download className="w-3.5 h-3.5" />
+                                  <span>Deskargatu</span>
+                                </a>
+                              )}
 
                               <button
                                 type="button"
@@ -975,14 +1197,14 @@ export default function PilotuenKatalogoa() {
                           {activePreviewMat.mota?.startsWith("image/") ? (
                             <div className="p-4 flex justify-center bg-slate-900">
                               <img
-                                src={activePreviewMat.data_url}
+                                src={activePreviewUrl}
                                 alt={activePreviewMat.izena}
                                 className="max-h-[460px] object-contain rounded-lg"
                               />
                             </div>
                           ) : (
                             <iframe
-                              src={activePreviewMat.data_url}
+                              src={activePreviewUrl}
                               title={activePreviewMat.izena}
                               className="w-full h-[460px] bg-white"
                             />

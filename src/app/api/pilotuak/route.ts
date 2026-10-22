@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
-import db, { Pilotua, syncDbFromCloud, syncDbToCloud } from "@/lib/db";
+import db, {
+  Pilotua,
+  syncDbFromCloud,
+  syncDbToCloud,
+  offloadInlineMaterialsToStore,
+} from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -50,7 +55,10 @@ export async function POST(request: Request) {
           "4. T1 neurketa egin (lehen asteko eragina).",
           "5. T2 neurketa egin 14-21 egunera (ohitura egonkortzea)."
         ];
-    const materialakJson = Array.isArray(materialak) ? JSON.stringify(materialak) : "[]";
+    const cleanMaterials = Array.isArray(materialak)
+      ? await offloadInlineMaterialsToStore(materialak)
+      : [];
+    const materialakJson = JSON.stringify(cleanMaterials);
 
     const insertPilot = db.prepare(`
       INSERT INTO pilotuak (id, izena, azpititulua, deskribapena, mota, adibidea, urratsak_json, ikonoa, kolorea, sortzaile_id, materialak_json)
@@ -134,7 +142,7 @@ export async function PATCH(request: Request) {
     const updatedKolorea = kolorea !== undefined ? String(kolorea).trim() : existing.kolorea;
     const updatedMaterialakJson =
       Array.isArray(materialak)
-        ? JSON.stringify(materialak)
+        ? JSON.stringify(await offloadInlineMaterialsToStore(materialak))
         : existing.materialak_json || "[]";
 
     db.prepare(
