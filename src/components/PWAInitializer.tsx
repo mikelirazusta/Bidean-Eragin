@@ -14,16 +14,25 @@ export default function PWAInitializer() {
   // Register Service Worker & Install Prompt Listener
   useEffect(() => {
     if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker
-          .register("/sw.js")
-          .then((reg) => {
-            console.log("Service Worker erregistratuta:", reg.scope);
-          })
-          .catch((err) => {
-            console.warn("SW erregistro errore:", err);
+      // Purge any legacy v1/v2/v3/v4 caches so the latest UI always loads
+      if ("caches" in window) {
+        caches.keys().then((keys) => {
+          keys.forEach((key) => {
+            if (key !== "bidean-eragin-v5") {
+              caches.delete(key);
+            }
           });
-      });
+        });
+      }
+
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then((reg) => {
+          reg.update().catch(() => {});
+        })
+        .catch((err) => {
+          console.warn("SW erregistro errore:", err);
+        });
 
       // Listen for browser install prompt (Android, Chrome, Edge)
       const handleBeforeInstall = (e: any) => {

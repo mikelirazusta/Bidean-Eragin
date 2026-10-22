@@ -1,9 +1,8 @@
 // Service Worker for Bidean Eragin PWA
 // Provides offline-first caching for static assets, pages, and cached data
 
-const CACHE_NAME = "bidean-eragin-v1";
+const CACHE_NAME = "bidean-eragin-v5";
 const STATIC_ASSETS = [
-  "/",
   "/manifest.json",
   "/tailwind.css",
   "/icons/icon.svg",
@@ -16,13 +15,13 @@ const STATIC_ASSETS = [
 
 // Install Event: pre-cache static assets
 self.addEventListener("install", (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches
       .open(CACHE_NAME)
       .then((cache) => {
         return cache.addAll(STATIC_ASSETS);
       })
-      .then(() => self.skipWaiting())
       .catch((err) => {
         console.warn("SW install pre-cache error:", err);
       })
@@ -45,7 +44,7 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Fetch Event: Offline-first & Stale-While-Revalidate strategies
+// Fetch Event: Network-first with offline cache fallback so updates appear immediately
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -58,7 +57,7 @@ self.addEventListener("fetch", (event) => {
   // 1. Navigation requests (HTML pages): Network-first with cache fallback
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request)
+      fetch(request, { cache: "no-store" })
         .then((response) => {
           if (response && response.status === 200) {
             const clone = response.clone();
@@ -67,7 +66,6 @@ self.addEventListener("fetch", (event) => {
           return response;
         })
         .catch(async () => {
-          // If offline, serve cached page shell (SPA)
           const cachedResponse = await caches.match(request);
           if (cachedResponse) return cachedResponse;
           const fallback = await caches.match("/");
@@ -81,7 +79,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 2. Next.js chunks, scripts, styles, fonts, and images: Stale-While-Revalidate
+  // 2. Next.js chunks, scripts, styles, fonts, and images: Network-first with cache fallback
   if (
     url.pathname.startsWith("/_next/") ||
     url.pathname.endsWith(".css") ||
@@ -92,19 +90,19 @@ self.addEventListener("fetch", (event) => {
     url.pathname.endsWith(".woff2")
   ) {
     event.respondWith(
-      caches.match(request).then((cached) => {
-        const fetchPromise = fetch(request)
-          .then((networkResponse) => {
-            if (networkResponse && networkResponse.status === 200) {
-              const clone = networkResponse.clone();
-              caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-            }
-            return networkResponse;
-          })
-          .catch(() => cached);
-
-        return cached || fetchPromise;
-      })
+      fetch(request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return networkResponse;
+        })
+        .catch(async () => {
+          const cached = await caches.match(request);
+          if (cached) return cached;
+          return Response.error();
+        })
     );
     return;
   }
