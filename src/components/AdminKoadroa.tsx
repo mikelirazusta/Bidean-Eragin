@@ -35,8 +35,8 @@ import {
   Unlock,
   FileText,
 } from "lucide-react";
-import { useApp } from "@/context/AppContext";
-import { Eragilea, Esperimentua, Neurketa, getPublicEragileLabel, DEFAULT_UI_TEXTS } from "@/lib/db";
+import { useApp, getPublicEragileLabel, DEFAULT_UI_TEXTS } from "@/context/AppContext";
+import type { Eragilea, Esperimentua, Neurketa } from "@/lib/db";
 
 const UI_TEXT_FIELDS: Array<{
   section: string;

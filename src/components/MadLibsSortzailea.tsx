@@ -14,7 +14,7 @@ import {
   MessageCircleHeart,
   HelpCircle,
 } from "lucide-react";
-import { Pilotua } from "@/lib/db";
+import type { Pilotua } from "@/lib/db";
 import { useApp } from "@/context/AppContext";
 
 interface MadLibsProps {

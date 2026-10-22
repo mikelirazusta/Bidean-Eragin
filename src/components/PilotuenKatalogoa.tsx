@@ -29,8 +29,8 @@ import {
   Eye,
   Paperclip,
 } from "lucide-react";
-import { useApp } from "@/context/AppContext";
-import { Pilotua, PilotuMateriala, parsePilotuMaterialak } from "@/lib/db";
+import { useApp, parsePilotuMaterialak } from "@/context/AppContext";
+import type { Pilotua, PilotuMateriala } from "@/lib/db";
 import MadLibsSortzailea from "./MadLibsSortzailea";
 
 const AVAILABLE_ICONS = [

@@ -11,7 +11,7 @@ import AdminKoadroa from "@/components/AdminKoadroa";
 import AuthPortal from "@/components/AuthPortal";
 import PWAInitializer from "@/components/PWAInitializer";
 import { Heart, LogOut } from "lucide-react";
-import { Pilotua, Eragilea, Esperimentua, Neurketa, Nudge } from "@/lib/db";
+import type { Pilotua, Eragilea, Esperimentua, Neurketa, Nudge } from "@/lib/db";
 
 interface MainClientAppProps {
   initialData?: {

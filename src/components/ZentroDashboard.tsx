@@ -28,8 +28,8 @@ import {
   Users,
   Compass,
 } from "lucide-react";
-import { useApp } from "@/context/AppContext";
-import { Esperimentua, Neurketa, getPublicEragileLabel } from "@/lib/db";
+import { useApp, getPublicEragileLabel } from "@/context/AppContext";
+import type { Esperimentua, Neurketa } from "@/lib/db";
 
 export interface PhaseStats {
   unea: "T0" | "T1" | "T2";

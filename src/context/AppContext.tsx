@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import confetti from "canvas-confetti";
-import {
+import type {
   Eragilea,
   Pilotua,
   PilotuMateriala,
@@ -10,7 +10,6 @@ import {
   Neurketa,
   Nudge,
   User,
-  DEFAULT_UI_TEXTS,
 } from "@/lib/db";
 import {
   getPendingNeurketak,
@@ -21,6 +20,74 @@ import {
   clearPendingNeurketak,
   clearCachedBootstrapData,
 } from "@/lib/offlineStore";
+
+export const DEFAULT_UI_TEXTS: Record<string, string> = {
+  app_title: "Bidean Eragin",
+  app_subtitle: "Portaera-ekonomia eta esperimentazio arina • Bagera",
+  auth_intro:
+    "Euskararen erabilera aktibatzeko tresna praktikoa. Jarraitu zure saltoki edo zentroaren aurrerapena 3 urrats errazetan:",
+  auth_step1_title: "Hipotesia definitu",
+  auth_step1_desc: "Zure saltokiko erronka eta helburua zehaztu.",
+  auth_step2_title: "T0 / T1 / T2 neurtu",
+  auth_step2_desc: "10 minutuko neurketa erraza mugikorrarekin.",
+  auth_step3_title: "Eragina ikusi",
+  auth_step3_desc: "Emaitza errealak modu pribatuan aztertu.",
+  nav_panela: "Nire Saltokia",
+  nav_behaketa: "Neurtu (T0/T1/T2)",
+  nav_katalogoa: "Pilotuak",
+  nav_komunitatea: "Komunitatea",
+  nav_admin: "Bagera Admin",
+  counter_badge: "Zuzeneko Neurketa • Kontagailua",
+  counter_title: "Hizkuntza-Ohituren Kontagailua",
+  counter_subtitle:
+    "Aukeratu iraupena, sakatu Hasi eta erregistratu entzuten dituzun elkarrizketak modu diskretuan.",
+  counter_start_btn: "Hasi Saioa",
+  counter_pause_btn: "Pausatu",
+  counter_save_btn: "Amaitu eta Gorde",
+  counter_btn_euskaraz: "Euskaraz",
+  counter_btn_erdaraz: "Erdaraz",
+  counter_btn_elebi: "Elebi (Nahastua)",
+  dashboard_step1_title: "1. Urratsa: Egin T0 hasierako neurketa (txapa jarri aurretik)",
+  dashboard_step1_desc:
+    "Txapak jarri aurretik, neurtu 10-30 minutuz gaur egungo elkarrizketak zein hizkuntzatan diren (abiapuntua ezagutzeko).",
+  dashboard_step2_title: "2. Urratsa: Jarri 'Euskaraz barra-barra' txapa ikusgai eta neurtu T1",
+  dashboard_step3_title: "3. Urratsa: Egin T2 neurketa ohitura sendotu dela egiaztatzeko",
+  katalogoa_title: "Aukeratu edo sortu zure esku-hartze pilotua",
+  katalogoa_subtitle: "Hautatu pilotu bat zure espazioan esperimentu kontrolatu bat abiatzeko.",
+};
+
+export function getPublicEragileLabel(
+  eragile: Eragilea,
+  viewerRole?: "admin" | "eragilea",
+  viewerEragileId?: string
+): string {
+  if (viewerRole === "admin" || (viewerEragileId && eragile.id === viewerEragileId)) {
+    return eragile.izena;
+  }
+  if (eragile.publikoa === 1) {
+    return eragile.izena;
+  }
+  const suffix = eragile.id.replace(/[^a-zA-Z0-9]/g, "").slice(-4).toUpperCase() || "01";
+  const prefix =
+    eragile.mota === "merkataritza"
+      ? "Saltokia"
+      : eragile.mota === "ikastetxea"
+      ? "Ikastetxea"
+      : eragile.mota === "enpresa"
+      ? "Enpresa"
+      : "Eragilea";
+  return `${prefix} #${suffix}`;
+}
+
+export function parsePilotuMaterialak(materialak_json?: string): PilotuMateriala[] {
+  if (!materialak_json) return [];
+  try {
+    const parsed = JSON.parse(materialak_json);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
 
 interface AppContextType {
   currentUser: User | null;
