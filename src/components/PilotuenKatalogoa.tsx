@@ -24,9 +24,13 @@ import {
   Tag,
   Pencil,
   Trash2,
+  Upload,
+  Download,
+  Eye,
+  Paperclip,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
-import { Pilotua } from "@/lib/db";
+import { Pilotua, PilotuMateriala, parsePilotuMaterialak } from "@/lib/db";
 import MadLibsSortzailea from "./MadLibsSortzailea";
 
 const AVAILABLE_ICONS = [
@@ -47,6 +51,13 @@ const AVAILABLE_COLORS = [
   { id: "rose", label: "Gorrixka", bg: "bg-rose-500", ring: "ring-rose-400" },
 ];
 
+function formatFileSize(bytes?: number): string {
+  if (!bytes) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
 export default function PilotuenKatalogoa() {
   const {
     pilotuak,
@@ -59,6 +70,9 @@ export default function PilotuenKatalogoa() {
   } = useApp();
   const [selectedPilot, setSelectedPilot] = useState<Pilotua | null>(null);
   const [showMaterialsPilot, setShowMaterialsPilot] = useState<Pilotua | null>(null);
+  const [previewMaterialId, setPreviewMaterialId] = useState<string | null>(null);
+  const [isUploadingDirectMaterial, setIsUploadingDirectMaterial] = useState<boolean>(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
   const [editingPilotId, setEditingPilotId] = useState<string | null>(null);
   const [deletingPilotId, setDeletingPilotId] = useState<string | null>(null);
@@ -78,7 +92,86 @@ export default function PilotuenKatalogoa() {
     "4. T1 neurketa egin (lehen asteko eragina jasotzeko).",
     "5. T2 neurketa egin 14-21 egunera (ohitura finkatu dela neurtzeko).",
   ]);
+  const [newMaterialak, setNewMaterialak] = useState<PilotuMateriala[]>([]);
   const [isSubmittingPilot, setIsSubmittingPilot] = useState(false);
+
+  const readFilesAsMaterials = async (files: FileList | null): Promise<PilotuMateriala[]> => {
+    if (!files || files.length === 0) return [];
+    setUploadError(null);
+    const items: PilotuMateriala[] = [];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (file.size > 12 * 1024 * 1024) {
+        setUploadError(`"${file.name}" handiegia da (gehienez 12 MB fitxategiko).`);
+        continue;
+      }
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(new Error("Errorea fitxategia irakurtzean"));
+        reader.readAsDataURL(file);
+      });
+      const cleanTitle = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+      items.push({
+        id: `mat-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`,
+        izena: cleanTitle || file.name,
+        fitxategi_izena: file.name,
+        mota: file.type || "application/pdf",
+        tamaina: file.size,
+        data_url: dataUrl,
+        sortze_data: new Date().toISOString(),
+      });
+    }
+    return items;
+  };
+
+  const handleModalFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const added = await readFilesAsMaterials(e.target.files);
+    if (added.length > 0) {
+      setNewMaterialak((prev) => [...prev, ...added]);
+    }
+    e.target.value = "";
+  };
+
+  const handleDirectUploadInMaterialsModal = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    pilotu: Pilotua
+  ) => {
+    const added = await readFilesAsMaterials(e.target.files);
+    e.target.value = "";
+    if (added.length === 0) return;
+
+    setIsUploadingDirectMaterial(true);
+    const existing = parsePilotuMaterialak(pilotu.materialak_json);
+    const combined = [...existing, ...added];
+    const updated = await updatePilotua({
+      id: pilotu.id,
+      materialak: combined,
+    });
+    setIsUploadingDirectMaterial(false);
+    if (updated) {
+      setShowMaterialsPilot(updated);
+      setPreviewMaterialId(added[0].id);
+    }
+  };
+
+  const handleDeleteDirectMaterial = async (pilotu: Pilotua, matId: string) => {
+    const existing = parsePilotuMaterialak(pilotu.materialak_json);
+    const filtered = existing.filter((m) => m.id !== matId);
+    setIsUploadingDirectMaterial(true);
+    const updated = await updatePilotua({
+      id: pilotu.id,
+      materialak: filtered,
+    });
+    setIsUploadingDirectMaterial(false);
+    if (updated) {
+      setShowMaterialsPilot(updated);
+      if (previewMaterialId === matId) {
+        setPreviewMaterialId(null);
+      }
+    }
+  };
 
   const handleOpenCreateModal = () => {
     setEditingPilotId(null);
@@ -96,6 +189,8 @@ export default function PilotuenKatalogoa() {
       "4. T1 neurketa egin (lehen asteko eragina jasotzeko).",
       "5. T2 neurketa egin 14-21 egunera (ohitura finkatu dela neurtzeko).",
     ]);
+    setNewMaterialak([]);
+    setUploadError(null);
     setShowCreateModal(true);
   };
 
@@ -108,6 +203,8 @@ export default function PilotuenKatalogoa() {
     setNewAdibidea(pilotu.adibidea);
     setNewIkonoa(pilotu.ikonoa || "BadgeCheck");
     setNewKolorea(pilotu.kolorea || "emerald");
+    setNewMaterialak(parsePilotuMaterialak(pilotu.materialak_json));
+    setUploadError(null);
     try {
       const parsed = JSON.parse(pilotu.urratsak_json || "[]");
       if (Array.isArray(parsed) && parsed.length > 0) {
@@ -209,6 +306,7 @@ export default function PilotuenKatalogoa() {
         urratsak: newUrratsak.filter((u) => u.trim().length > 0),
         ikonoa: newIkonoa,
         kolorea: newKolorea,
+        materialak: newMaterialak,
       });
     } else {
       savedPilot = await createPilotua({
@@ -220,6 +318,7 @@ export default function PilotuenKatalogoa() {
         urratsak: newUrratsak.filter((u) => u.trim().length > 0),
         ikonoa: newIkonoa,
         kolorea: newKolorea,
+        materialak: newMaterialak,
       });
     }
 
@@ -231,6 +330,7 @@ export default function PilotuenKatalogoa() {
       setNewAzpititulua("");
       setNewDeskribapena("");
       setNewAdibidea("");
+      setNewMaterialak([]);
     }
   };
 
@@ -277,6 +377,7 @@ export default function PilotuenKatalogoa() {
           const theme = getPilotTheme(pilotu.kolorea, pilotu.ikonoa, pilotu.id);
           const Icon = theme.icon;
           const urratsak: string[] = JSON.parse(pilotu.urratsak_json || "[]");
+          const pilotuMaterialak = parsePilotuMaterialak(pilotu.materialak_json);
           const activeExpCount = esperimentuak.filter(
             (e) => e.pilotu_id === pilotu.id
           ).length;
@@ -313,29 +414,27 @@ export default function PilotuenKatalogoa() {
                   <h3 className="text-xl font-bold text-slate-900 group-hover:text-emerald-800 transition">
                     {pilotu.izena}
                   </h3>
-                  {currentUser?.role === "admin" && (
-                    <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEditPilot(pilotu)}
+                      className="p-1.5 rounded-lg bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-700 transition cursor-pointer"
+                      title="Editatu pilotua eta PDF materialak"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    {currentUser?.role === "admin" && pilotu.id !== "barra-barra-txapak" && (
                       <button
                         type="button"
-                        onClick={() => handleOpenEditPilot(pilotu)}
-                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-700 transition cursor-pointer"
-                        title="Editatu pilotua"
+                        onClick={() => handleDeletePilot(pilotu)}
+                        disabled={deletingPilotId === pilotu.id}
+                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-700 transition cursor-pointer disabled:opacity-50"
+                        title="Ezabatu pilotua"
                       >
-                        <Pencil className="w-3.5 h-3.5" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
-                      {pilotu.id !== "barra-barra-txapak" && (
-                        <button
-                          type="button"
-                          onClick={() => handleDeletePilot(pilotu)}
-                          disabled={deletingPilotId === pilotu.id}
-                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-700 transition cursor-pointer disabled:opacity-50"
-                          title="Ezabatu pilotua"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
                 <p className="text-xs font-semibold text-slate-500 mt-1 mb-3">
                   {pilotu.azpititulua}
@@ -387,11 +486,21 @@ export default function PilotuenKatalogoa() {
 
                 <button
                   type="button"
-                  onClick={() => setShowMaterialsPilot(pilotu)}
+                  onClick={() => {
+                    setUploadError(null);
+                    setPreviewMaterialId(
+                      pilotuMaterialak.length > 0 ? pilotuMaterialak[0].id : null
+                    );
+                    setShowMaterialsPilot(pilotu);
+                  }}
                   className="w-full py-2.5 px-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer"
                 >
-                  <FileText className="w-3.5 h-3.5 text-slate-500" />
-                  <span>Ikusi Materialak & Txapak (PDF/Irudiak)</span>
+                  <Paperclip className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>
+                    {pilotuMaterialak.length > 0
+                      ? `Materialak & PDFak (${pilotuMaterialak.length} fitxategi)`
+                      : "Ikusi / Igo Materialak (PDF/Irudiak)"}
+                  </span>
                 </button>
               </div>
             </div>
@@ -429,10 +538,10 @@ export default function PilotuenKatalogoa() {
         />
       )}
 
-      {/* ===================== MODAL: SORTU PILOTU BERRIA ===================== */}
+      {/* ===================== MODAL: SORTU / EDITATU PILOTUA ===================== */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 my-8">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 my-8 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
               <div className="flex items-center gap-2.5">
                 <div className="p-2.5 rounded-2xl bg-emerald-50 text-emerald-600">
@@ -441,13 +550,13 @@ export default function PilotuenKatalogoa() {
                 <div>
                   <h3 className="font-bold text-slate-900 text-lg">
                     {editingPilotId
-                      ? "Editatu Pilotua"
+                      ? "Editatu Pilotua eta Materialak"
                       : "Sortu Pilotu Berria (Errezetak)"}
                   </h3>
                   <p className="text-xs text-slate-500">
                     {editingPilotId
-                      ? "Aldatu pilotuaren izena, deskribapena edo urratsak"
-                      : "Definitu zure zentrorako esku-hartze berritzaile bat"}
+                      ? "Aldatu pilotuaren izena, deskribapena, urratsak edo erantsi PDF materialak"
+                      : "Definitu zure zentrorako esku-hartze berritzaile bat eta igo PDF materialak"}
                   </p>
                 </div>
               </div>
@@ -606,6 +715,88 @@ export default function PilotuenKatalogoa() {
                 </div>
               </div>
 
+              {/* PDF & Materials Upload Section */}
+              <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <label className="text-xs font-extrabold text-emerald-950 uppercase tracking-wider flex items-center gap-1.5">
+                      <Paperclip className="w-4 h-4 text-emerald-600" />
+                      <span>Pilotuaren Materialak (PDF / Irudiak)</span>
+                    </label>
+                    <p className="text-[11px] text-slate-600 mt-0.5">
+                      Igo pilotu honen txantiloiak, kartelak edo gida praktikoak PDF edo irudi formatuan.
+                    </p>
+                  </div>
+
+                  <label className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer shrink-0 self-start sm:self-auto">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>+ Igo PDF / Irudiak</span>
+                    <input
+                      type="file"
+                      accept=".pdf,application/pdf,image/*"
+                      multiple
+                      onChange={handleModalFileSelect}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                {uploadError && (
+                  <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
+                    {uploadError}
+                  </div>
+                )}
+
+                {newMaterialak.length > 0 ? (
+                  <div className="space-y-2 pt-1">
+                    {newMaterialak.map((mat, idx) => (
+                      <div
+                        key={mat.id}
+                        className="flex items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-emerald-200 shadow-2xs"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                          <div className="p-2 rounded-lg bg-emerald-100 text-emerald-700 shrink-0">
+                            <FileText className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <input
+                              type="text"
+                              value={mat.izena}
+                              onChange={(e) => {
+                                const updated = [...newMaterialak];
+                                updated[idx] = { ...mat, izena: e.target.value };
+                                setNewMaterialak(updated);
+                              }}
+                              placeholder="Materialaren izenburua..."
+                              className="w-full text-xs font-bold text-slate-900 border-b border-transparent focus:border-emerald-500 focus:outline-hidden bg-transparent"
+                            />
+                            <p className="text-[10px] text-slate-400 truncate">
+                              {mat.fitxategi_izena}{" "}
+                              {mat.tamaina ? `• ${formatFileSize(mat.tamaina)}` : ""}
+                            </p>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setNewMaterialak((prev) => prev.filter((m) => m.id !== mat.id))
+                          }
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                          title="Kendu fitxategi hau"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-slate-500 italic">
+                    Ez dago PDF fitxategirik erantsita oraindik. Sakatu &ldquo;+ Igo PDF / Irudiak&rdquo; botoia gehitzeko.
+                  </p>
+                )}
+              </div>
+
               {/* Submit / Cancel Buttons */}
               <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
                 <button
@@ -639,7 +830,7 @@ export default function PilotuenKatalogoa() {
       {/* ===================== MODAL: MATERIALAK & TXAPAK PREVIEW ===================== */}
       {showMaterialsPilot && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 my-8">
+          <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 my-8 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
@@ -661,6 +852,154 @@ export default function PilotuenKatalogoa() {
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {/* Direct PDF Upload & Attached Materials List */}
+            {(() => {
+              const attachedMaterials = parsePilotuMaterialak(showMaterialsPilot.materialak_json);
+              const activePreviewMat = attachedMaterials.find((m) => m.id === previewMaterialId);
+
+              return (
+                <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h4 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                        <Paperclip className="w-4 h-4 text-emerald-600" />
+                        <span>Pilotuaren PDF eta Dokumentu Erantsiak ({attachedMaterials.length})</span>
+                      </h4>
+                      <p className="text-xs text-slate-600 mt-0.5">
+                        Deskargatu, aurreikusi edo igo PDF fitxategi berriak pilotu honetarako.
+                      </p>
+                    </div>
+
+                    <label className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition cursor-pointer shrink-0 self-start sm:self-auto">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>
+                        {isUploadingDirectMaterial ? "Igotzen..." : "+ Igo PDF / Material Berria"}
+                      </span>
+                      <input
+                        type="file"
+                        accept=".pdf,application/pdf,image/*"
+                        multiple
+                        disabled={isUploadingDirectMaterial}
+                        onChange={(e) => handleDirectUploadInMaterialsModal(e, showMaterialsPilot)}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  {uploadError && (
+                    <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
+                      {uploadError}
+                    </div>
+                  )}
+
+                  {attachedMaterials.length > 0 ? (
+                    <div className="space-y-2.5">
+                      {attachedMaterials.map((mat) => {
+                        const isPreviewing = previewMaterialId === mat.id;
+                        return (
+                          <div
+                            key={mat.id}
+                            className="bg-white rounded-xl p-3 border border-emerald-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-700 shrink-0">
+                                <FileText className="w-5 h-5" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-xs sm:text-sm font-bold text-slate-900 truncate">
+                                  {mat.izena}
+                                </p>
+                                <p className="text-[11px] text-slate-500 truncate">
+                                  {mat.fitxategi_izena}{" "}
+                                  {mat.tamaina ? `• ${formatFileSize(mat.tamaina)}` : ""}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setPreviewMaterialId(isPreviewing ? null : mat.id)
+                                }
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 border transition cursor-pointer ${
+                                  isPreviewing
+                                    ? "bg-indigo-600 text-white border-indigo-600"
+                                    : "bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200"
+                                }`}
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                                <span>{isPreviewing ? "Ezkutatu" : "Aurreikusi"}</span>
+                              </button>
+
+                              <a
+                                href={mat.data_url}
+                                download={mat.fitxategi_izena || `${mat.izena}.pdf`}
+                                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs transition"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                                <span>Deskargatu</span>
+                              </a>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleDeleteDirectMaterial(showMaterialsPilot, mat.id)
+                                }
+                                disabled={isUploadingDirectMaterial}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                                title="Ezabatu PDF hau"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {/* Inline PDF / Image Preview */}
+                      {activePreviewMat && (
+                        <div className="mt-3 rounded-2xl overflow-hidden border border-slate-300 bg-slate-900">
+                          <div className="px-4 py-2 bg-slate-800 text-white text-xs font-bold flex items-center justify-between">
+                            <span>📄 Aurreikuspena: {activePreviewMat.izena}</span>
+                            <button
+                              type="button"
+                              onClick={() => setPreviewMaterialId(null)}
+                              className="text-slate-300 hover:text-white text-xs cursor-pointer"
+                            >
+                              Itxi aurreikuspena ✕
+                            </button>
+                          </div>
+                          {activePreviewMat.mota?.startsWith("image/") ? (
+                            <div className="p-4 flex justify-center bg-slate-900">
+                              <img
+                                src={activePreviewMat.data_url}
+                                alt={activePreviewMat.izena}
+                                className="max-h-[460px] object-contain rounded-lg"
+                              />
+                            </div>
+                          ) : (
+                            <iframe
+                              src={activePreviewMat.data_url}
+                              title={activePreviewMat.izena}
+                              className="w-full h-[460px] bg-white"
+                            />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-white/80 rounded-xl p-3.5 border border-dashed border-emerald-300 text-center">
+                      <p className="text-xs font-semibold text-slate-600">
+                        Oraindik ez da PDF fitxategirik igo pilotu honetarako. Goiko{" "}
+                        <strong>&ldquo;+ Igo PDF / Material Berria&rdquo;</strong> botoia sakatuta igo ditzakezu.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Poster / Material Previews based on Pilot */}
             {showMaterialsPilot.id === "barra-barra-txapak" ? (

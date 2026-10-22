@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import confetti from "canvas-confetti";
-import { Eragilea, Pilotua, Esperimentua, Neurketa, Nudge, User } from "@/lib/db";
+import { Eragilea, Pilotua, PilotuMateriala, Esperimentua, Neurketa, Nudge, User } from "@/lib/db";
 import {
   getPendingNeurketak,
   savePendingNeurketa,
@@ -67,6 +67,7 @@ interface AppContextType {
     urratsak?: string[];
     ikonoa?: string;
     kolorea?: string;
+    materialak?: PilotuMateriala[];
   }) => Promise<Pilotua | null>;
   createEsperimentua: (data: {
     pilotu_id: string;
@@ -108,6 +109,7 @@ interface AppContextType {
     urratsak?: string[];
     ikonoa?: string;
     kolorea?: string;
+    materialak?: PilotuMateriala[];
   }) => Promise<Pilotua | null>;
   deletePilotua: (id: string) => Promise<boolean>;
   updateEsperimentua: (data: {
@@ -486,6 +488,7 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
     urratsak?: string[];
     ikonoa?: string;
     kolorea?: string;
+    materialak?: PilotuMateriala[];
   }) => {
     try {
       const res = await fetch("/api/pilotuak", {
@@ -649,6 +652,7 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
     urratsak?: string[];
     ikonoa?: string;
     kolorea?: string;
+    materialak?: PilotuMateriala[];
   }) => {
     try {
       const res = await fetch("/api/pilotuak", {

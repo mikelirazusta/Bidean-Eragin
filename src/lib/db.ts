@@ -48,6 +48,26 @@ export function getPublicEragileLabel(
   return `${prefix} #${suffix}`;
 }
 
+export interface PilotuMateriala {
+  id: string;
+  izena: string;
+  fitxategi_izena: string;
+  mota: string;
+  tamaina?: number;
+  data_url: string;
+  sortze_data: string;
+}
+
+export function parsePilotuMaterialak(materialak_json?: string): PilotuMateriala[] {
+  if (!materialak_json) return [];
+  try {
+    const parsed = JSON.parse(materialak_json);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 export interface Pilotua {
   id: string;
   izena: string;
@@ -59,6 +79,7 @@ export interface Pilotua {
   ikonoa: string;
   kolorea: string;
   sortzaile_id?: string;
+  materialak_json?: string;
 }
 
 export interface Esperimentua {
@@ -406,10 +427,40 @@ function createFallbackStore() {
             return { changes: 1 };
           }
           if (q.startsWith("INSERT INTO pilotuak")) {
-            const [id, izena, azpititulua, deskribapena, mota, adibidea, urratsak_json, ikonoa, kolorea, sortzaile_id] = params;
-            store.pilotuak.push({ id, izena, azpititulua, deskribapena, mota, adibidea, urratsak_json, ikonoa, kolorea, sortzaile_id });
+            const [id, izena, azpititulua, deskribapena, mota, adibidea, urratsak_json, ikonoa, kolorea, sortzaile_id, materialak_json] = params;
+            store.pilotuak.push({
+              id,
+              izena,
+              azpititulua,
+              deskribapena,
+              mota,
+              adibidea,
+              urratsak_json,
+              ikonoa,
+              kolorea,
+              sortzaile_id,
+              materialak_json: materialak_json || "[]",
+            });
             save();
             return { changes: 1 };
+          }
+          if (q.startsWith("UPDATE pilotuak SET izena = ?, azpititulua = ?, deskribapena = ?, mota = ?, adibidea = ?, urratsak_json = ?, ikonoa = ?, kolorea = ?, materialak_json = ? WHERE id = ?")) {
+            const [izena, azpititulua, deskribapena, mota, adibidea, urratsak_json, ikonoa, kolorea, materialak_json, id] = params;
+            const p = store.pilotuak.find((pil) => pil.id === id);
+            if (p) {
+              p.izena = izena;
+              p.azpititulua = azpititulua;
+              p.deskribapena = deskribapena;
+              p.mota = mota;
+              p.adibidea = adibidea;
+              p.urratsak_json = urratsak_json;
+              p.ikonoa = ikonoa;
+              p.kolorea = kolorea;
+              p.materialak_json = materialak_json || "[]";
+              save();
+              return { changes: 1 };
+            }
+            return { changes: 0 };
           }
           if (q.startsWith("UPDATE pilotuak SET izena = ?, azpititulua = ?, deskribapena = ?, mota = ?, adibidea = ?, urratsak_json = ?, ikonoa = ?, kolorea = ? WHERE id = ?")) {
             const [izena, azpititulua, deskribapena, mota, adibidea, urratsak_json, ikonoa, kolorea, id] = params;
@@ -580,7 +631,9 @@ function initSqliteTables(db: any) {
       adibidea TEXT NOT NULL,
       urratsak_json TEXT NOT NULL,
       ikonoa TEXT NOT NULL,
-      kolorea TEXT NOT NULL
+      kolorea TEXT NOT NULL,
+      sortzaile_id TEXT,
+      materialak_json TEXT DEFAULT '[]'
     );
 
     CREATE TABLE IF NOT EXISTS esperimentuak (
@@ -648,6 +701,9 @@ function initSqliteTables(db: any) {
 
   try {
     db.exec("ALTER TABLE pilotuak ADD COLUMN sortzaile_id TEXT;");
+  } catch {}
+  try {
+    db.exec("ALTER TABLE pilotuak ADD COLUMN materialak_json TEXT DEFAULT '[]';");
   } catch {}
   try {
     db.exec("ALTER TABLE eragileak ADD COLUMN publikoa INTEGER NOT NULL DEFAULT 0;");
@@ -905,8 +961,8 @@ export function importDbSnapshot(snapshot: MemoryStoreData) {
     for (const p of pilotsToInsert) {
       database
         .prepare(
-          `INSERT INTO pilotuak (id, izena, azpititulua, deskribapena, mota, adibidea, urratsak_json, ikonoa, kolorea, sortzaile_id)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          `INSERT INTO pilotuak (id, izena, azpititulua, deskribapena, mota, adibidea, urratsak_json, ikonoa, kolorea, sortzaile_id, materialak_json)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         )
         .run(
           p.id,
@@ -918,7 +974,8 @@ export function importDbSnapshot(snapshot: MemoryStoreData) {
           p.urratsak_json,
           p.ikonoa,
           p.kolorea,
-          p.sortzaile_id || null
+          p.sortzaile_id || null,
+          p.materialak_json || "[]"
         );
     }
 

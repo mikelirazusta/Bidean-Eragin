@@ -30,6 +30,7 @@ export async function POST(request: Request) {
       ikonoa,
       kolorea,
       sortzaile_id,
+      materialak,
     } = body;
 
     if (!izena || !azpititulua || !deskribapena || !mota) {
@@ -49,10 +50,11 @@ export async function POST(request: Request) {
           "4. T1 neurketa egin (lehen asteko eragina).",
           "5. T2 neurketa egin 14-21 egunera (ohitura finkatzea)."
         ];
+    const materialakJson = Array.isArray(materialak) ? JSON.stringify(materialak) : "[]";
 
     const insertPilot = db.prepare(`
-      INSERT INTO pilotuak (id, izena, azpititulua, deskribapena, mota, adibidea, urratsak_json, ikonoa, kolorea, sortzaile_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO pilotuak (id, izena, azpititulua, deskribapena, mota, adibidea, urratsak_json, ikonoa, kolorea, sortzaile_id, materialak_json)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     insertPilot.run(
@@ -65,7 +67,8 @@ export async function POST(request: Request) {
       JSON.stringify(stepsArray),
       ikonoa || "Sparkles",
       kolorea || "emerald",
-      sortzaile_id || null
+      sortzaile_id || null,
+      materialakJson
     );
 
     const newPilot = db.prepare("SELECT * FROM pilotuak WHERE id = ?").get(pilotuId) as Pilotua;
@@ -100,6 +103,7 @@ export async function PATCH(request: Request) {
       urratsak,
       ikonoa,
       kolorea,
+      materialak,
     } = body;
 
     if (!id) {
@@ -128,9 +132,13 @@ export async function PATCH(request: Request) {
         : existing.urratsak_json;
     const updatedIkonoa = ikonoa !== undefined ? String(ikonoa).trim() : existing.ikonoa;
     const updatedKolorea = kolorea !== undefined ? String(kolorea).trim() : existing.kolorea;
+    const updatedMaterialakJson =
+      Array.isArray(materialak)
+        ? JSON.stringify(materialak)
+        : existing.materialak_json || "[]";
 
     db.prepare(
-      "UPDATE pilotuak SET izena = ?, azpititulua = ?, deskribapena = ?, mota = ?, adibidea = ?, urratsak_json = ?, ikonoa = ?, kolorea = ? WHERE id = ?"
+      "UPDATE pilotuak SET izena = ?, azpititulua = ?, deskribapena = ?, mota = ?, adibidea = ?, urratsak_json = ?, ikonoa = ?, kolorea = ?, materialak_json = ? WHERE id = ?"
     ).run(
       updatedIzena,
       updatedAzpititulua,
@@ -140,6 +148,7 @@ export async function PATCH(request: Request) {
       updatedUrratsakJson,
       updatedIkonoa,
       updatedKolorea,
+      updatedMaterialakJson,
       id
     );
 
