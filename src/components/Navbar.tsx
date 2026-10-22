@@ -38,6 +38,7 @@ export default function Navbar() {
     isLoading,
     isOnline,
     pendingSyncCount,
+    uiTexts,
   } = useApp();
 
   const [showNudgesModal, setShowNudgesModal] = useState(false);
@@ -79,14 +80,14 @@ export default function Navbar() {
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-lg text-slate-900 tracking-tight">
-                    Bidean Eragin
+                    {uiTexts.app_title || "Bidean Eragin"}
                   </span>
                   <span className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-semibold bg-emerald-100 text-emerald-800 rounded-full">
-                    Portaera-bultzadak
+                    Bagera
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 hidden md:block">
-                  Euskararen aktibazio zientifikoa
+                  {uiTexts.app_subtitle || "Euskararen erabilera sustatzeko esperimentu praktikoak"}
                 </p>
               </div>
             </button>
@@ -105,7 +106,7 @@ export default function Navbar() {
                   }`}
                 >
                   <ShieldCheck className="w-4 h-4" />
-                  Admin Koadroa
+                  {uiTexts.nav_admin || "Koordinazioa"}
                 </button>
 
                 <button
@@ -117,7 +118,7 @@ export default function Navbar() {
                   }`}
                 >
                   <Timer className="w-4 h-4" />
-                  Behatzaile Itsua (Neurtu)
+                  {uiTexts.nav_behaketa || "Neurtu"}
                 </button>
 
                 <button
@@ -129,7 +130,7 @@ export default function Navbar() {
                   }`}
                 >
                   <LayoutDashboard className="w-4 h-4" />
-                  Saltokiaren Panela
+                  {uiTexts.nav_panela || "Saltokiaren Panela"}
                 </button>
 
                 <button
@@ -141,7 +142,7 @@ export default function Navbar() {
                   }`}
                 >
                   <BookOpen className="w-4 h-4" />
-                  Pilotuak
+                  {uiTexts.nav_katalogoa || "Pilotuak eta Hipotesia"}
                 </button>
               </>
             ) : (
@@ -155,7 +156,7 @@ export default function Navbar() {
                   }`}
                 >
                   <LayoutDashboard className="w-4 h-4" />
-                  Panela
+                  {uiTexts.nav_panela || "Nire Panela"}
                 </button>
 
                 <button
@@ -167,7 +168,7 @@ export default function Navbar() {
                   }`}
                 >
                   <Timer className="w-4 h-4" />
-                  Behatzaile Itsua
+                  {uiTexts.nav_behaketa || "Neurtu"}
                 </button>
 
                 <button
@@ -179,7 +180,7 @@ export default function Navbar() {
                   }`}
                 >
                   <BookOpen className="w-4 h-4" />
-                  Pilotuak
+                  {uiTexts.nav_katalogoa || "Pilotuak eta Hipotesia"}
                 </button>
               </>
             )}
@@ -332,7 +333,7 @@ export default function Navbar() {
                   : "hover:bg-slate-100 text-slate-600"
               }`}
             >
-              <span>1. Pilotuak & Hipotesia</span>
+              <span>1. Pilotuak eta Hipotesia</span>
             </button>
             <span className="text-slate-300">→</span>
 
@@ -345,7 +346,7 @@ export default function Navbar() {
               }`}
             >
               <Timer className="w-3.5 h-3.5" />
-              <span>2. Behatzaile Itsua (T0/T1/T2)</span>
+              <span>2. Neurketak (T0/T1/T2)</span>
             </button>
             <span className="text-slate-300">→</span>
 
@@ -357,7 +358,7 @@ export default function Navbar() {
                   : "hover:bg-slate-100 text-slate-600"
               }`}
             >
-              <span>3. Emaitzak & Bultzadak</span>
+              <span>3. Emaitzak eta Bilakaera</span>
             </button>
           </div>
 

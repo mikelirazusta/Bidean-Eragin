@@ -30,10 +30,10 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
   const isDenda = activeEragilea?.mota === "merkataritza" || pilotu.id === "barra-barra-txapak";
 
   const defaultTaldea = isIkastetxe
-    ? "Jantokiko eta harrerako"
+    ? "Jantokiko eta harrerako langileek"
     : isDenda
-    ? "Saltokiko"
-    : "Lan-taldeko";
+    ? "Saltokiko langileek"
+    : "Lantaldeko kideek";
 
   const defaultPertsonak = isIkastetxe
     ? "ikasleekin"
@@ -53,7 +53,7 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
   const defaultEkintza =
     pilotu.id === "barra-barra-txapak"
       ? "'Euskaraz barra-barra' txapa soinean eramanda"
-      : `${pilotu.izena} aktibatuta`;
+      : `'${pilotu.izena}' dinamika aktibatuta`;
 
   const [taldea, setTaldea] = useState(defaultTaldea);
   const [pertsonak, setPertsonak] = useState(defaultPertsonak);
@@ -68,11 +68,11 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
     setEkintza(
       pilotu.id === "barra-barra-txapak"
         ? "'Euskaraz barra-barra' txapa soinean eramanda"
-        : `${pilotu.izena} aktibatuta`
+        : `'${pilotu.izena}' dinamika aktibatuta`
     );
   }, [pilotu]);
 
-  const generatedHypothesis = `Gure ustez, ${taldea || "..."} ${pertsonak || "..."}, ${gunea || "..."} ${ekintza} eginda, euskararen erabilera %${metrika} igoko da.`;
+  const generatedHypothesis = `Gure ustez, ${taldea || "..."} ${pertsonak || "..."}, ${gunea || "..."} ${ekintza}, euskararen erabilera %${metrika} igoko da.`;
   const fullHypothesis = isCustomMode && customHypothesis.trim() ? customHypothesis.trim() : generatedHypothesis;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -159,7 +159,7 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
                     required
                     value={taldea}
                     onChange={(e) => setTaldea(e.target.value)}
-                    placeholder="adib. Saltokiko"
+                    placeholder="adib. Saltokiko langileek"
                     className="bg-white font-bold text-sky-700 border-2 border-sky-300 rounded-lg px-2.5 py-1 text-sm focus:ring-2 focus:ring-sky-500 focus:outline-hidden shadow-xs min-w-[140px]"
                   />
                 </span>
@@ -193,7 +193,7 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
                 <span className="inline-block mx-1 font-bold text-slate-900 bg-slate-200 px-2 py-0.5 rounded-lg text-sm">
                   {ekintza}
                 </span>
-                <span> eginda, euskararen erabilera </span>
+                <span>, euskararen erabilera </span>
 
                 {/* Box 5: Metrika */}
                 <span className="inline-flex items-center mx-1">
@@ -208,7 +208,6 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
                     onChange={(e) => setMetrika(Number(e.target.value))}
                     className="bg-white font-extrabold text-amber-700 border-2 border-amber-400 rounded-lg px-2 py-1 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-hidden shadow-xs w-16 text-center"
                   />
-                  <span className="font-bold text-amber-700 ml-0.5">%</span>
                 </span>
 
                 <span> igoko da.</span>
@@ -252,10 +251,10 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
             <div className="mt-4 pt-3 border-t border-slate-200/80 flex flex-wrap items-center gap-2">
               <span className="text-[11px] font-semibold text-slate-500">Iradokizun azkarrak:</span>
               {[
-                { label: "Saltokiko mostradorea", t: "Saltokiko", p: "bezeroekin", g: "mostradorean eta ordainlekuan" },
-                { label: "Goizeko erosleak", t: "Goizeko", p: "erosleekin", g: "dendako sarreran" },
-                { label: "Ostalari eta bezeroak", t: "Barrako", p: "bezeroekin", g: "kafe-orduan" },
-                { label: "Ikastetxeko pasilloak", t: "DBH 1-2. Mailako", p: "ikasleekin", g: "pasillo eta jantokian" },
+                { label: "Saltokiko mostradorea", t: "Saltokiko langileek", p: "bezeroekin", g: "mostradorean eta ordainlekuan" },
+                { label: "Goizeko erosleak", t: "Goizeko saltzaileek", p: "erosleekin", g: "dendako sarreran" },
+                { label: "Ostalari eta bezeroak", t: "Barrako zerbitzariek", p: "bezeroekin", g: "kafe-orduan" },
+                { label: "Ikastetxeko pasilloak", t: "DBH 1-2. mailako irakasleek", p: "ikasleekin", g: "pasillo eta jantokian" },
               ].map((chip, idx) => (
                 <button
                   key={idx}
@@ -292,7 +291,7 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
                 &ldquo;{fullHypothesis}&rdquo;
               </p>
               <p className="text-xs text-emerald-800/80 mt-1.5">
-                💡 Esperimentua sortzean, zuzenean joango zara <strong>T0 neurketa itsua</strong> (oinarrizko marra) egitera.
+                💡 Esperimentua sortzean, zuzenean joango zara <strong>T0 hasierako neurketa</strong> (oinarrizko marra) egitera.
               </p>
             </div>
           </div>

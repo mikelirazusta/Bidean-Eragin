@@ -45,10 +45,10 @@ export async function POST(request: Request) {
       ? urratsak
       : [
           "1. Taldearekin dinamika eta erronka adostu.",
-          "2. T0 neurketa itsua egin (aurretik).",
-          "3. Pilotua martxan jarri espazioan.",
+          "2. T0 hasierako neurketa egin (aurretik).",
+          "3. Pilotua martxan jarri gunean.",
           "4. T1 neurketa egin (lehen asteko eragina).",
-          "5. T2 neurketa egin 14-21 egunera (ohitura finkatzea)."
+          "5. T2 neurketa egin 14-21 egunera (ohitura egonkortzea)."
         ];
     const materialakJson = Array.isArray(materialak) ? JSON.stringify(materialak) : "[]";
 

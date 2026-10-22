@@ -126,20 +126,56 @@ export interface Nudge {
 const DEFAULT_PILOT: Pilotua = {
   id: "barra-barra-txapak",
   izena: "Euskaraz barra-barra txapak",
-  azpititulua: "Langileek txapa eramatea komertzioetan lehen hitza eta konfiantza euskaraz pizteko",
+  azpititulua: "Langileek txapa bistan eramatea, bezeroek lehen hitza euskaraz egiteko konfiantza izan dezaten",
   deskribapena:
-    "Komertzio eta saltokietako langileek 'Euskaraz barra-barra' txapa ikusgai eramanez gero, bezeroak segurtasuna eta erosotasuna sentitzen du lehen agurra eta elkarrizketa osoa euskaraz egiteko, inertzia gaztelaniara jotzea saihestuz.",
+    "Saltoki eta ostalaritzako langileek 'Euskaraz barra-barra' txapa bistan eramaten dutenean, bezeroak badaki euskaraz artatuko dutela. Horrek segurtasuna ematen dio lehen agurra eta elkarrizketa euskaraz egiteko, gaztelaniarako inertzia hautsiz.",
   mota: "Merkataritza, ostalaritza eta saltokiak",
-  adibidea: "Langileak txapa paparrean duenean: bezeroak 'Egun on!' esan eta elkarrizketa naturaltasunez euskaraz abiatzen da.",
+  adibidea: "Langileak txapa paparrean daramanean, bezeroak 'Egun on!' esan eta elkarrizketa naturaltasunez euskaraz abiatzen da.",
   urratsak_json: JSON.stringify([
-    "1. Saltokiko langileekin dinamika adostu eta 'Euskaraz barra-barra' txapak banatu.",
-    "2. T0 neurketa itsua egin (txaparik gabe, bezeroen lehen hitza eta elkarrizketak neurtzeko).",
-    "3. Txapak soinean jarri eta bezeroei begi-bistara ikusgarri erakutsi.",
-    "4. T1 neurketa egin (txapekin lehen asteko eragina eta euskarazko agurrak neurtzeko).",
-    "5. T2 neurketa egin 14-21 egunera, portaera-ohitura sendotu dela balioztatzeko."
+    "1. Saltokiko lantaldearekin dinamika adostu eta 'Euskaraz barra-barra' txapak banatu.",
+    "2. T0 hasierako neurketa egin (txapa jarri aurretik, bezeroen lehen hitza eta elkarrizketak zein hizkuntzatan diren jasotzeko).",
+    "3. Txapak soinean eta leku ikusgarrian jarri.",
+    "4. T1 neurketa egin (txapa jarri eta lehen astean izandako eragina neurtzeko).",
+    "5. T2 neurketa egin 14-21 egunera, ohitura berria egonkortu dela egiaztatzeko."
   ]),
   ikonoa: "BadgeCheck",
   kolorea: "emerald",
+};
+
+export const DEFAULT_UI_TEXTS: Record<string, string> = {
+  app_title: "Bidean Eragin",
+  app_subtitle: "Euskararen erabilera sustatzeko esperimentu praktikoak • Bagera",
+  auth_intro:
+    "Euskararen erabilera sustatzeko eta neurtzeko tresna praktikoa. Jarraitu zure saltoki edo eragilearen bilakaera 3 urrats errazetan:",
+  auth_step1_title: "Hipotesia zehaztu",
+  auth_step1_desc: "Zure guneko erronka eta helburua finkatu.",
+  auth_step2_title: "T0 / T1 / T2 neurtu",
+  auth_step2_desc: "Behaketa erraza eta diskretua mugikorrarekin.",
+  auth_step3_title: "Bilakaera ikusi",
+  auth_step3_desc: "Emaitzak modu pribatuan eta argian aztertu.",
+  nav_panela: "Nire Panela",
+  nav_behaketa: "Neurtu",
+  nav_katalogoa: "Pilotuak eta Hipotesia",
+  nav_admin: "Koordinazioa",
+  counter_title: "Elkarrizketen Kontagailua",
+  counter_subtitle: "Zuzeneko behaketa-saioa",
+  counter_t0_desc:
+    "Pilotua martxan jarri aurretik euskaraz zenbat hitz egiten den neurtzen du, abiapuntua ezagutzeko.",
+  counter_t1_desc:
+    "Pilotua martxan jarri berritan egindako neurketa, lehen eragina ikusteko.",
+  counter_t2_desc:
+    "Handik 2-3 astera egindako neurketa, ohitura berria egonkortu den egiaztatzeko.",
+  counter_btn_euskaraz: "Euskaraz",
+  counter_btn_erdaraz: "Erdaraz",
+  counter_btn_elebi: "Elebi (bi hizkuntzatan)",
+  dashboard_step1_title: "1. Urratsa: Egin T0 hasierako neurketa (txapa jarri aurretik)",
+  dashboard_step2_title: "2. Urratsa: Jarri 'Euskaraz barra-barra' txapa bistan eta neurtu T1",
+  dashboard_step3_title: "3. Urratsa: Egin T2 neurketa ohitura egonkortu dela egiaztatzeko",
+  katalogoa_title: "Esku-hartze Pilotuak",
+  katalogoa_subtitle:
+    "Aukeratu zure gunean probatu nahi duzun dinamika, deskargatu materialak eta zehaztu hipotesia.",
+  footer_text:
+    "Bidean Eragin — Bagera Euskaltzaleen Elkartea • Euskararen erabilera neurgarria eta praktikoa",
 };
 
 const DEFAULT_ADMIN: User = {
@@ -159,6 +195,7 @@ interface MemoryStoreData {
   esperimentuak: Esperimentua[];
   neurketak: Neurketa[];
   nudges: Nudge[];
+  ui_texts?: Record<string, string>;
 }
 
 function createFallbackStore() {
@@ -170,6 +207,7 @@ function createFallbackStore() {
     esperimentuak: [],
     neurketak: [],
     nudges: [],
+    ui_texts: { ...DEFAULT_UI_TEXTS },
   };
 
   try {
@@ -231,6 +269,18 @@ function createFallbackStore() {
           if (q.includes("FROM eragileak WHERE id = ?")) {
             return store.eragileak.find((e) => e.id === params[0]);
           }
+          if (q.includes("FROM eragileak WHERE LOWER(email) = ?")) {
+            const emailParam = String(params[0]).toLowerCase();
+            return store.eragileak.find((e) => (e.email || "").toLowerCase() === emailParam);
+          }
+          if (q.includes("FROM eragileak WHERE LOWER(izena) = ?")) {
+            const nameParam = String(params[0]).toLowerCase();
+            return store.eragileak.find(
+              (e) =>
+                (e.izena || "").toLowerCase() === nameParam ||
+                (e.arduraduna || "").toLowerCase() === nameParam
+            );
+          }
           // Esperimentuak
           if (q.includes("FROM esperimentuak") && q.includes("WHERE e.id = ?")) {
             const exp = store.esperimentuak.find((e) => e.id === params[0]);
@@ -265,6 +315,10 @@ function createFallbackStore() {
           return undefined;
         },
         all: (...params: any[]): any[] => {
+          if (q.includes("FROM ui_texts")) {
+            const map = { ...DEFAULT_UI_TEXTS, ...(store.ui_texts || {}) };
+            return Object.entries(map).map(([key, value]) => ({ key, value }));
+          }
           if (q.includes("FROM esperimentuak WHERE eragile_id = ?")) {
             return store.esperimentuak.filter((e) => e.eragile_id === params[0]);
           }
@@ -298,11 +352,33 @@ function createFallbackStore() {
           return [];
         },
         run: (...params: any[]): { changes: number } => {
+          if (q.startsWith("INSERT OR REPLACE INTO ui_texts")) {
+            const [key, value] = params;
+            if (!store.ui_texts) store.ui_texts = { ...DEFAULT_UI_TEXTS };
+            store.ui_texts[String(key)] = String(value);
+            save();
+            return { changes: 1 };
+          }
+          if (q === "DELETE FROM ui_texts") {
+            store.ui_texts = { ...DEFAULT_UI_TEXTS };
+            save();
+            return { changes: 1 };
+          }
           if (q.startsWith("INSERT INTO users")) {
             const [id, email, password, name, role, eragile_id, created_at] = params;
             store.users.push({ id, email, password, name, role, eragile_id, created_at });
             save();
             return { changes: 1 };
+          }
+          if (q.startsWith("UPDATE users SET eragile_id = ? WHERE id = ?")) {
+            const [eragile_id, id] = params;
+            const u = store.users.find((user) => user.id === id);
+            if (u) {
+              u.eragile_id = eragile_id;
+              save();
+              return { changes: 1 };
+            }
+            return { changes: 0 };
           }
           if (q.startsWith("UPDATE users SET password = ? WHERE email = ?")) {
             const [password, email] = params;
@@ -677,6 +753,11 @@ function initSqliteTables(db: any) {
       sortze_data TEXT NOT NULL,
       FOREIGN KEY(eragile_id) REFERENCES eragileak(id)
     );
+
+    CREATE TABLE IF NOT EXISTS ui_texts (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
   `);
 
   try {
@@ -747,6 +828,32 @@ function initSqliteTables(db: any) {
     db.prepare("DELETE FROM users WHERE id = 'user-1792052519787'").run();
     db.prepare("DELETE FROM pilotuak WHERE id IN ('erreferenteak', 'kriseilua', 'agur-txartelak')").run();
     db.prepare("DELETE FROM users WHERE role = 'eragilea' AND (eragile_id IS NULL OR eragile_id NOT IN (SELECT id FROM eragileak))").run();
+
+    // Clean up any legacy 'itsua' / 'Itsua' wording in existing rows
+    db.prepare("UPDATE neurketak SET behatzailea = 'Behatzailea' WHERE behatzailea = 'Behatzaile Itsua'").run();
+    const existingPilots = db.prepare("SELECT * FROM pilotuak").all() as Pilotua[];
+    for (const p of existingPilots) {
+      if (p.urratsak_json && p.urratsak_json.toLowerCase().includes("itsu")) {
+        const cleaned = p.urratsak_json
+          .replace(/neurketa itsua/gi, "hasierako neurketa")
+          .replace(/behaketa itsua/gi, "hasierako behaketa")
+          .replace(/behatzaile itsua/gi, "behatzailea");
+        db.prepare("UPDATE pilotuak SET urratsak_json = ? WHERE id = ?").run(cleaned, p.id);
+      }
+    }
+    const existingNudges = db.prepare("SELECT * FROM nudges").all() as Nudge[];
+    for (const nd of existingNudges) {
+      if ((nd.titulua && nd.titulua.toLowerCase().includes("itsu")) || (nd.mezua && nd.mezua.toLowerCase().includes("itsu"))) {
+        const cleanTitle = (nd.titulua || "")
+          .replace(/Aurre-neurketa Itsua/gi, "Hasierako Neurketa")
+          .replace(/neurketa itsua/gi, "hasierako neurketa")
+          .replace(/behaketa itsua/gi, "hasierako behaketa");
+        const cleanMsg = (nd.mezua || "")
+          .replace(/neurketa itsua/gi, "hasierako neurketa")
+          .replace(/behaketa itsua/gi, "hasierako behaketa");
+        db.prepare("UPDATE nudges SET titulua = ?, mezua = ? WHERE id = ?").run(cleanTitle, cleanMsg, nd.id);
+      }
+    }
   } catch {}
 }
 
@@ -930,6 +1037,37 @@ async function writeSnapshotToNetlifyBlobs(snapshot: MemoryStoreData): Promise<b
   return false;
 }
 
+export function getUiTexts(): Record<string, string> {
+  try {
+    const database = initDb();
+    const rows = database.prepare("SELECT * FROM ui_texts").all() as Array<{ key: string; value: string }>;
+    const merged: Record<string, string> = { ...DEFAULT_UI_TEXTS };
+    for (const r of rows) {
+      if (r.key && typeof r.value === "string") {
+        merged[r.key] = r.value;
+      }
+    }
+    return merged;
+  } catch {
+    return { ...DEFAULT_UI_TEXTS };
+  }
+}
+
+export function saveUiTexts(updates: Record<string, string>, resetAll = false): Record<string, string> {
+  const database = initDb();
+  if (resetAll) {
+    database.prepare("DELETE FROM ui_texts").run();
+    return { ...DEFAULT_UI_TEXTS };
+  }
+  const stmt = database.prepare("INSERT OR REPLACE INTO ui_texts (key, value) VALUES (?, ?)");
+  for (const [k, v] of Object.entries(updates)) {
+    if (typeof v === "string") {
+      stmt.run(k, v);
+    }
+  }
+  return getUiTexts();
+}
+
 export function exportDbSnapshot(): MemoryStoreData {
   const database = initDb();
   const users = database.prepare("SELECT * FROM users").all() as User[];
@@ -938,7 +1076,8 @@ export function exportDbSnapshot(): MemoryStoreData {
   const esperimentuak = database.prepare("SELECT * FROM esperimentuak").all() as Esperimentua[];
   const neurketak = database.prepare("SELECT * FROM neurketak ORDER BY data_ordu DESC").all() as Neurketa[];
   const nudges = database.prepare("SELECT * FROM nudges ORDER BY sortze_data DESC").all() as Nudge[];
-  return { users, eragileak, pilotuak, esperimentuak, neurketak, nudges };
+  const ui_texts = getUiTexts();
+  return { users, eragileak, pilotuak, esperimentuak, neurketak, nudges, ui_texts };
 }
 
 export function importDbSnapshot(snapshot: MemoryStoreData) {
@@ -959,6 +1098,10 @@ export function importDbSnapshot(snapshot: MemoryStoreData) {
       pilotsToInsert.unshift(DEFAULT_PILOT);
     }
     for (const p of pilotsToInsert) {
+      const cleanedSteps = (p.urratsak_json || DEFAULT_PILOT.urratsak_json)
+        .replace(/neurketa itsua/gi, "hasierako neurketa")
+        .replace(/behaketa itsua/gi, "hasierako behaketa")
+        .replace(/behatzaile itsua/gi, "behatzailea");
       database
         .prepare(
           `INSERT INTO pilotuak (id, izena, azpititulua, deskribapena, mota, adibidea, urratsak_json, ikonoa, kolorea, sortzaile_id, materialak_json)
@@ -971,7 +1114,7 @@ export function importDbSnapshot(snapshot: MemoryStoreData) {
           p.deskribapena,
           p.mota,
           p.adibidea,
-          p.urratsak_json,
+          cleanedSteps,
           p.ikonoa,
           p.kolorea,
           p.sortzaile_id || null,
@@ -1006,6 +1149,18 @@ export function importDbSnapshot(snapshot: MemoryStoreData) {
       usersToInsert.unshift(DEFAULT_ADMIN);
     }
     for (const u of usersToInsert) {
+      // Ensure eragilea users are linked to their matching center if eragile_id was missing
+      let resolvedEragileId = u.eragile_id || null;
+      if (u.role === "eragilea" && !resolvedEragileId) {
+        const matchedCenter = eragileakToInsert.find(
+          (er) =>
+            (er.email && u.email && er.email.toLowerCase() === u.email.toLowerCase()) ||
+            (er.izena && u.name && er.izena.toLowerCase() === u.name.toLowerCase())
+        );
+        if (matchedCenter) {
+          resolvedEragileId = matchedCenter.id;
+        }
+      }
       database
         .prepare(
           `INSERT INTO users (id, email, password, name, role, eragile_id, created_at)
@@ -1017,7 +1172,7 @@ export function importDbSnapshot(snapshot: MemoryStoreData) {
           u.password || "bagera2026",
           u.name || "Bagera Koordinazioa",
           u.role,
-          u.eragile_id || null,
+          resolvedEragileId,
           u.created_at || new Date().toISOString()
         );
     }
@@ -1033,7 +1188,7 @@ export function importDbSnapshot(snapshot: MemoryStoreData) {
           e.id,
           e.eragile_id,
           e.pilotu_id,
-          e.hipotesia,
+          (e.hipotesia || "").replace(/eramanda eginda/g, "eramanda"),
           e.taldea,
           e.pertsonak,
           e.gunea,
@@ -1045,6 +1200,10 @@ export function importDbSnapshot(snapshot: MemoryStoreData) {
 
     const neurketakToInsert = Array.isArray(snapshot.neurketak) ? snapshot.neurketak : [];
     for (const n of neurketakToInsert) {
+      const cleanedObserver =
+        !n.behatzailea || n.behatzailea === "Behatzaile Itsua"
+          ? "Behatzailea"
+          : n.behatzailea;
       database
         .prepare(
           `INSERT INTO neurketak (id, esperimentu_id, unea, euskaraz_count, erdaraz_count, elebi_count, iraupena_segundotan, data_ordu, oharrak, behatzailea)
@@ -1060,12 +1219,19 @@ export function importDbSnapshot(snapshot: MemoryStoreData) {
           n.iraupena_segundotan || 600,
           n.data_ordu,
           n.oharrak || "",
-          n.behatzailea || "Behatzaile Itsua"
+          cleanedObserver
         );
     }
 
     const nudgesToInsert = Array.isArray(snapshot.nudges) ? snapshot.nudges : [];
     for (const nd of nudgesToInsert) {
+      const cleanTitle = (nd.titulua || "")
+        .replace(/Aurre-neurketa Itsua/gi, "Hasierako Neurketa")
+        .replace(/neurketa itsua/gi, "hasierako neurketa")
+        .replace(/behaketa itsua/gi, "hasierako behaketa");
+      const cleanMsg = (nd.mezua || "")
+        .replace(/neurketa itsua/gi, "hasierako neurketa")
+        .replace(/behaketa itsua/gi, "hasierako behaketa");
       database
         .prepare(
           `INSERT INTO nudges (id, eragile_id, titulua, mezua, mota, epemuga, irakurria, ekintza_esteka, sortze_data)
@@ -1074,14 +1240,23 @@ export function importDbSnapshot(snapshot: MemoryStoreData) {
         .run(
           nd.id,
           nd.eragile_id,
-          nd.titulua,
-          nd.mezua,
+          cleanTitle,
+          cleanMsg,
           nd.mota,
           nd.epemuga || new Date().toISOString(),
           nd.irakurria || 0,
           nd.ekintza_esteka || "",
           nd.sortze_data
         );
+    }
+
+    if (snapshot.ui_texts && typeof snapshot.ui_texts === "object") {
+      const stmt = database.prepare("INSERT OR REPLACE INTO ui_texts (key, value) VALUES (?, ?)");
+      for (const [k, v] of Object.entries(snapshot.ui_texts)) {
+        if (typeof v === "string") {
+          stmt.run(k, v);
+        }
+      }
     }
   });
   apply();
@@ -1133,8 +1308,9 @@ export function getInitialData() {
     `).all() as (Esperimentua & { eragile_izena: string })[];
     const neurketak = database.prepare("SELECT * FROM neurketak ORDER BY data_ordu DESC").all() as Neurketa[];
     const nudges = database.prepare("SELECT * FROM nudges ORDER BY sortze_data DESC").all() as Nudge[];
+    const uiTexts = getUiTexts();
 
-    return { pilotuak, eragileak, esperimentuak, neurketak, nudges };
+    return { pilotuak, eragileak, esperimentuak, neurketak, nudges, uiTexts };
   } catch (err) {
     console.error("Errorea getInitialData kargatzean:", err);
     return {
@@ -1143,6 +1319,7 @@ export function getInitialData() {
       esperimentuak: [],
       neurketak: [],
       nudges: [],
+      uiTexts: { ...DEFAULT_UI_TEXTS },
     };
   }
 }

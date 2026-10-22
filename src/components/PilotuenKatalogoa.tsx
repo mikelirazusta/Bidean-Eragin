@@ -67,6 +67,7 @@ export default function PilotuenKatalogoa() {
     createPilotua,
     updatePilotua,
     deletePilotua,
+    uiTexts,
   } = useApp();
   const [selectedPilot, setSelectedPilot] = useState<Pilotua | null>(null);
   const [showMaterialsPilot, setShowMaterialsPilot] = useState<Pilotua | null>(null);
@@ -87,7 +88,7 @@ export default function PilotuenKatalogoa() {
   const [newKolorea, setNewKolorea] = useState("emerald");
   const [newUrratsak, setNewUrratsak] = useState([
     "1. Lantaldearekin erronka adostu eta materialak prestatu.",
-    "2. T0 neurketa itsua egin (esku-hartzea hasi aurretik).",
+    "2. T0 hasierako neurketa egin (esku-hartzea hasi aurretik).",
     "3. Pilotua espazioan aktibatu.",
     "4. T1 neurketa egin (lehen asteko eragina jasotzeko).",
     "5. T2 neurketa egin 14-21 egunera (ohitura finkatu dela neurtzeko).",
@@ -184,7 +185,7 @@ export default function PilotuenKatalogoa() {
     setNewKolorea("emerald");
     setNewUrratsak([
       "1. Lantaldearekin erronka adostu eta materialak prestatu.",
-      "2. T0 neurketa itsua egin (esku-hartzea hasi aurretik).",
+      "2. T0 hasierako neurketa egin (esku-hartzea hasi aurretik).",
       "3. Pilotua espazioan aktibatu.",
       "4. T1 neurketa egin (lehen asteko eragina jasotzeko).",
       "5. T2 neurketa egin 14-21 egunera (ohitura finkatu dela neurtzeko).",
@@ -345,7 +346,7 @@ export default function PilotuenKatalogoa() {
             <span>Pilotuen Katalogoa • Errezetak</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            Aukeratu edo sortu zure esku-hartze pilotua
+            {uiTexts.katalogoa_title || "Aukeratu edo sortu zure esku-hartze pilotua"}
           </h1>
           <p className="mt-2 text-slate-600 text-sm sm:text-base leading-relaxed">
             {activeEragilea ? (
@@ -354,7 +355,7 @@ export default function PilotuenKatalogoa() {
                 <em>&ldquo;{activeEragilea.erronka_nagusia}&rdquo;</em>) aurre egiteko.
               </span>
             ) : (
-              "Hautatu pilotu bat zure espazioan esperimentu kontrolatu bat abiatzeko."
+              uiTexts.katalogoa_subtitle || "Hautatu pilotu bat zure espazioan esperimentu kontrolatu bat abiatzeko."
             )}
           </p>
         </div>

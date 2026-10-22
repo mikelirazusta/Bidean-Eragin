@@ -1,7 +1,7 @@
 // Service Worker for Bidean Eragin PWA
 // Provides offline-first caching for static assets, pages, and cached data
 
-const CACHE_NAME = "bidean-eragin-v5";
+const CACHE_NAME = "bidean-eragin-v6";
 const STATIC_ASSETS = [
   "/manifest.json",
   "/tailwind.css",

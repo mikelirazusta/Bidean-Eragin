@@ -33,9 +33,60 @@ import {
   Printer,
   Lock,
   Unlock,
+  FileText,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
-import { Eragilea, Esperimentua, Neurketa, getPublicEragileLabel } from "@/lib/db";
+import { Eragilea, Esperimentua, Neurketa, getPublicEragileLabel, DEFAULT_UI_TEXTS } from "@/lib/db";
+
+const UI_TEXT_FIELDS: Array<{
+  section: string;
+  items: Array<{ key: string; label: string; multiline?: boolean }>;
+}> = [
+  {
+    section: "1. Sarrera Ataria eta Nabigazio Barra",
+    items: [
+      { key: "app_title", label: "Aplikazioaren Izenburua" },
+      { key: "app_subtitle", label: "Azpititulua (Goiburua)" },
+      { key: "auth_intro", label: "Sarrerako azalpen testua", multiline: true },
+      { key: "auth_step1_title", label: "1. Urratsa (Izenburua)" },
+      { key: "auth_step1_desc", label: "1. Urratsa (Azalpena)" },
+      { key: "auth_step2_title", label: "2. Urratsa (Izenburua)" },
+      { key: "auth_step2_desc", label: "2. Urratsa (Azalpena)" },
+      { key: "auth_step3_title", label: "3. Urratsa (Izenburua)" },
+      { key: "auth_step3_desc", label: "3. Urratsa (Azalpena)" },
+      { key: "nav_panela", label: "Menu botoia: Nire Saltokia" },
+      { key: "nav_behaketa", label: "Menu botoia: Neurtu (T0/T1/T2)" },
+      { key: "nav_katalogoa", label: "Menu botoia: Pilotuak" },
+      { key: "nav_komunitatea", label: "Menu botoia: Komunitatea" },
+      { key: "nav_admin", label: "Menu botoia: Bagera Admin" },
+    ],
+  },
+  {
+    section: "2. Neurketa Kontagailua (T0 / T1 / T2)",
+    items: [
+      { key: "counter_badge", label: "Goiko etiketa (Kontagailua)" },
+      { key: "counter_title", label: "Kontagailuaren izenburua" },
+      { key: "counter_subtitle", label: "Kontagailuaren azalpena", multiline: true },
+      { key: "counter_start_btn", label: "Saioa hasteko botoia" },
+      { key: "counter_pause_btn", label: "Pausatzeko botoia" },
+      { key: "counter_save_btn", label: "Amaitu eta gordetzeko botoia" },
+      { key: "counter_btn_euskaraz", label: "Botoi berdea (Euskaraz)" },
+      { key: "counter_btn_erdaraz", label: "Botoi gorria (Erdaraz)" },
+      { key: "counter_btn_elebi", label: "Botoi horia (Elebi)" },
+    ],
+  },
+  {
+    section: "3. Saltokiaren Panela eta Pilotuen Katalogoa",
+    items: [
+      { key: "dashboard_step1_title", label: "Panela — 1. Urratsa (T0) Izenburua" },
+      { key: "dashboard_step1_desc", label: "Panela — 1. Urratsa (T0) Azalpena", multiline: true },
+      { key: "dashboard_step2_title", label: "Panela — 2. Urratsa (T1) Izenburua" },
+      { key: "dashboard_step3_title", label: "Panela — 3. Urratsa (T2) Izenburua" },
+      { key: "katalogoa_title", label: "Pilotuen Katalogoa — Izenburua" },
+      { key: "katalogoa_subtitle", label: "Pilotuen Katalogoa — Azpititulua", multiline: true },
+    ],
+  },
+];
 
 export default function AdminKoadroa() {
   const {
@@ -54,6 +105,8 @@ export default function AdminKoadroa() {
     deleteNeurketa,
     resetDemoData,
     updateAdminCredentials,
+    uiTexts,
+    updateUiTexts,
     setObservationConfig,
     setCurrentEragileId,
     setActiveTab,
@@ -63,6 +116,46 @@ export default function AdminKoadroa() {
   const [filterMota, setFilterMota] = useState("all");
   const [selectedEragileForNudge, setSelectedEragileForNudge] = useState<Eragilea | null>(null);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
+
+  // App UI Texts Editor Modal state
+  const [showTextEditorModal, setShowTextEditorModal] = useState(false);
+  const [draftTexts, setDraftTexts] = useState<Record<string, string>>({});
+  const [isSavingTexts, setIsSavingTexts] = useState(false);
+  const [textEditorSuccess, setTextEditorSuccess] = useState<string | null>(null);
+
+  const openTextEditorModal = () => {
+    setDraftTexts({ ...DEFAULT_UI_TEXTS, ...uiTexts });
+    setTextEditorSuccess(null);
+    setShowTextEditorModal(true);
+  };
+
+  const handleSaveTexts = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingTexts(true);
+    setTextEditorSuccess(null);
+    const ok = await updateUiTexts(draftTexts, false);
+    setIsSavingTexts(false);
+    if (ok) {
+      setTextEditorSuccess("Testuak ondo gorde eta eguneratu dira aplikazio osoan!");
+      setTimeout(() => {
+        setTextEditorSuccess(null);
+        setShowTextEditorModal(false);
+      }, 1200);
+    }
+  };
+
+  const handleResetDefaultTexts = async () => {
+    if (!window.confirm("Ziur zaude testu guztiak jatorrizko balioetara leheneratu nahi dituzula?")) {
+      return;
+    }
+    setIsSavingTexts(true);
+    const ok = await updateUiTexts({}, true);
+    setIsSavingTexts(false);
+    if (ok) {
+      setDraftTexts({ ...DEFAULT_UI_TEXTS });
+      setTextEditorSuccess("Testu lehenetsiak berrezarri dira!");
+    }
+  };
 
   // Admin Account / Password change modal state
   const [showAdminAccountModal, setShowAdminAccountModal] = useState(false);
@@ -172,12 +265,12 @@ export default function AdminKoadroa() {
     } else {
       setEditExpId(null);
       setEditPilotuId("barra-barra-txapak");
-      setEditTaldea("Saltokiko lantaldea");
-      setEditPertsonak("Bezeroak eta langileak");
-      setEditGunea("Saltokiaren mostradorea");
+      setEditTaldea("Saltokiko langileek");
+      setEditPertsonak("bezeroekin");
+      setEditGunea("saltokiko mostradorean");
       setEditXedePct(25);
       setEditHipotesia(
-        "Gure ustez, Saltokiko lantaldea Bezeroak eta langileak, Saltokiaren mostradorea 'Euskaraz barra-barra' txapa soinean eramanda, euskararen erabilera %25 igoko da."
+        "Gure ustez, saltokiko langileek bezeroekin, saltokiko mostradorean 'Euskaraz barra-barra' txapa soinean eramanda, euskararen erabilera %25 igoko da."
       );
       setEditEstatusa("T0_zain");
     }
@@ -203,9 +296,9 @@ export default function AdminKoadroa() {
         id: editExpId,
         pilotu_id: editPilotuId,
         hipotesia: editHipotesia.trim(),
-        taldea: editTaldea.trim() || "Saltokiko lantaldea",
-        pertsonak: editPertsonak.trim() || "Bezeroak eta langileak",
-        gunea: editGunea.trim() || "Saltokiaren mostradorea",
+        taldea: editTaldea.trim() || "Saltokiko langileek",
+        pertsonak: editPertsonak.trim() || "bezeroekin",
+        gunea: editGunea.trim() || "saltokiko mostradorean",
         xede_portzentajea: editXedePct,
         estatusa: editEstatusa,
       });
@@ -214,9 +307,9 @@ export default function AdminKoadroa() {
         eragile_id: eragileToEdit.id,
         pilotu_id: editPilotuId,
         hipotesia: editHipotesia.trim(),
-        taldea: editTaldea.trim() || "Saltokiko lantaldea",
-        pertsonak: editPertsonak.trim() || "Bezeroak eta langileak",
-        gunea: editGunea.trim() || "Saltokiaren mostradorea",
+        taldea: editTaldea.trim() || "Saltokiko langileek",
+        pertsonak: editPertsonak.trim() || "bezeroekin",
+        gunea: editGunea.trim() || "saltokiko mostradorean",
         xede_portzentajea: editXedePct,
       });
     }
@@ -228,7 +321,7 @@ export default function AdminKoadroa() {
   const openEditNeurketaModal = (n: Neurketa) => {
     setNeurketaToEdit(n);
     setEditNeuUnea(n.unea);
-    setEditNeuBehatzailea(n.behatzailea || "Behatzaile Itsua");
+    setEditNeuBehatzailea(n.behatzailea || "Behatzailea");
     setEditNeuEusk(n.euskaraz_count || 0);
     setEditNeuErd(n.erdaraz_count || 0);
     setEditNeuElebi(n.elebi_count || 0);
@@ -242,7 +335,7 @@ export default function AdminKoadroa() {
     await updateNeurketa({
       id: neurketaToEdit.id,
       unea: editNeuUnea,
-      behatzailea: editNeuBehatzailea.trim() || "Behatzaile Itsua",
+      behatzailea: editNeuBehatzailea.trim() || "Behatzailea",
       euskaraz_count: editNeuEusk,
       erdaraz_count: editNeuErd,
       elebi_count: editNeuElebi,
@@ -278,9 +371,9 @@ export default function AdminKoadroa() {
   const [postName, setPostName] = useState("");
   const [postManager, setPostManager] = useState("");
   const [postErronka, setPostErronka] = useState("Dendan lehen hitza eta elkarrizketa euskaraz piztea, txapak erabilita.");
-  const [postTaldea, setPostTaldea] = useState("Saltokiko lantaldea");
-  const [postPertsonak, setPostPertsonak] = useState("Bezeroak eta langileak");
-  const [postGunea, setPostGunea] = useState("Saltokiaren mostradorea");
+  const [postTaldea, setPostTaldea] = useState("Saltokiko langileek");
+  const [postPertsonak, setPostPertsonak] = useState("bezeroekin");
+  const [postGunea, setPostGunea] = useState("saltokiko mostradorean");
   const [postTargetPct, setPostTargetPct] = useState(25);
   const [postHipotesia, setPostHipotesia] = useState(
     "Langileek 'Euskaraz barra-barra' txapa soinean eramanda, saltokiaren mostradorean bezeroen lehen hitza eta elkarrizketak euskaraz %25 igoko dira."
@@ -506,6 +599,16 @@ export default function AdminKoadroa() {
 
               <button
                 type="button"
+                onClick={openTextEditorModal}
+                className="px-3.5 py-2.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
+                title="Moldatu aplikazio osoko testuak eta etiketak erraz"
+              >
+                <FileText className="w-3.5 h-3.5 text-sky-600" />
+                <span>Testuak Moldatu</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={openAdminAccountModal}
                 className="px-3.5 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
                 title="Aldatu Bagerako administratzailearen helbide elektronikoa eta pasahitza"
@@ -557,7 +660,7 @@ export default function AdminKoadroa() {
             </div>
           </div>
           <div className="text-3xl font-black text-emerald-600">{totalNeurketak}</div>
-          <p className="text-[11px] text-slate-500 mt-1">T0, T1 eta T2 behaketa itsuak</p>
+          <p className="text-[11px] text-slate-500 mt-1">T0, T1 eta T2 neurketa-saioak</p>
         </div>
 
         {/* KPI 3: Average Growth */}
@@ -1326,7 +1429,7 @@ export default function AdminKoadroa() {
                   <button
                     type="button"
                     onClick={() => {
-                      const generated = `Gure ustez, ${editTaldea || "Saltokiko lantaldea"} ${editPertsonak || "Bezeroak eta langileak"}, ${editGunea || "Saltokiaren mostradorea"} 'Euskaraz barra-barra' txapa soinean eramanda, euskararen erabilera %${editXedePct} igoko da.`;
+                      const generated = `Gure ustez, ${editTaldea || "saltokiko langileek"} ${editPertsonak || "bezeroekin"}, ${editGunea || "saltokiko mostradorean"} 'Euskaraz barra-barra' txapa soinean eramanda, euskararen erabilera %${editXedePct} igoko da.`;
                       setEditHipotesia(generated);
                     }}
                     className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 bg-white px-2.5 py-1 rounded-lg border border-emerald-200 shadow-2xs transition cursor-pointer"
@@ -1899,7 +2002,7 @@ export default function AdminKoadroa() {
                     type="button"
                     onClick={() =>
                       setPostHipotesia(
-                        `Gure ustez, ${postTaldea || "Saltokiko lantaldea"} ${postPertsonak || "Bezeroak eta langileak"}, ${postGunea || "Saltokiaren mostradorea"} 'Euskaraz barra-barra' txapa soinean eramanda, euskararen erabilera %${postTargetPct} igoko da.`
+                        `Gure ustez, ${postTaldea || "saltokiko langileek"} ${postPertsonak || "bezeroekin"}, ${postGunea || "saltokiko mostradorean"} 'Euskaraz barra-barra' txapa soinean eramanda, euskararen erabilera %${postTargetPct} igoko da.`
                       )
                     }
                     className="text-[10px] font-bold text-emerald-700 hover:underline cursor-pointer"
@@ -1931,6 +2034,124 @@ export default function AdminKoadroa() {
                 >
                   {isCreatingPost ? "Sortzen..." : "Sortu Postua & Hipotesia →"}
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* App UI Texts Editor Modal */}
+      {showTextEditorModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 my-8 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 rounded-2xl bg-sky-100 text-sky-700">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-extrabold text-slate-900">
+                    Aplikazioko Testuak eta Hizkuntza Moldatu
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Zuzendu edo egokitu aplikazioko izenburuak, botoiak eta azalpenak kodea ukitu gabe.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowTextEditorModal(false)}
+                className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {textEditorSuccess && (
+              <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>{textEditorSuccess}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveTexts} className="space-y-6">
+              {UI_TEXT_FIELDS.map((group) => (
+                <div
+                  key={group.section}
+                  className="bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-200/80 space-y-3"
+                >
+                  <h4 className="text-xs font-extrabold uppercase tracking-wider text-sky-900">
+                    {group.section}
+                  </h4>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {group.items.map((item) => (
+                      <div
+                        key={item.key}
+                        className={item.multiline ? "sm:col-span-2" : ""}
+                      >
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          {item.label}
+                        </label>
+                        {item.multiline ? (
+                          <textarea
+                            rows={2}
+                            value={draftTexts[item.key] ?? DEFAULT_UI_TEXTS[item.key] ?? ""}
+                            onChange={(e) =>
+                              setDraftTexts((prev) => ({
+                                ...prev,
+                                [item.key]: e.target.value,
+                              }))
+                            }
+                            className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-sky-500 focus:outline-hidden"
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            value={draftTexts[item.key] ?? DEFAULT_UI_TEXTS[item.key] ?? ""}
+                            onChange={(e) =>
+                              setDraftTexts((prev) => ({
+                                ...prev,
+                                [item.key]: e.target.value,
+                              }))
+                            }
+                            className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-sky-500 focus:outline-hidden"
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={handleResetDefaultTexts}
+                  disabled={isSavingTexts}
+                  className="px-3.5 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 rounded-xl border border-rose-200 transition cursor-pointer inline-flex items-center gap-1.5"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Leheneratu Jatorrizko Testuak</span>
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowTextEditorModal(false)}
+                    className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                  >
+                    Utzi
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSavingTexts}
+                    className="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>{isSavingTexts ? "Gordetzen..." : "Gorde Testu Guztiak"}</span>
+                  </button>
+                </div>
               </div>
             </form>
           </div>

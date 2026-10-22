@@ -18,7 +18,7 @@ export default function PWAInitializer() {
       if ("caches" in window) {
         caches.keys().then((keys) => {
           keys.forEach((key) => {
-            if (key !== "bidean-eragin-v5") {
+            if (key !== "bidean-eragin-v6") {
               caches.delete(key);
             }
           });

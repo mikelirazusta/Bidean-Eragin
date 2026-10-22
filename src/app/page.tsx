@@ -11,6 +11,7 @@ export default async function Home() {
     esperimentuak: [],
     neurketak: [],
     nudges: [],
+    uiTexts: {},
   };
 
   try {

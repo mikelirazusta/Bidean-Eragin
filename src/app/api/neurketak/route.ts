@@ -55,7 +55,7 @@ export async function POST(request: Request) {
       Number(iraupena_segundotan) || 600,
       data_ordu,
       oharrak || "",
-      behatzailea || "Behatzaile Itsua"
+      behatzailea || "Behatzailea"
     );
 
     // Get experiment and Eragile details
@@ -194,7 +194,7 @@ export async function PATCH(request: Request) {
     const updatedErd = erdaraz_count !== undefined ? Math.max(0, Number(erdaraz_count)) : existing.erdaraz_count;
     const updatedElebi = elebi_count !== undefined ? Math.max(0, Number(elebi_count)) : existing.elebi_count;
     const updatedOharrak = oharrak !== undefined ? String(oharrak) : existing.oharrak;
-    const updatedBehatzailea = behatzailea !== undefined ? String(behatzailea).trim() : (existing.behatzailea || "Behatzaile Itsua");
+    const updatedBehatzailea = behatzailea !== undefined ? String(behatzailea).trim() : (existing.behatzailea || "Behatzailea");
 
     db.prepare(
       "UPDATE neurketak SET unea = ?, euskaraz_count = ?, erdaraz_count = ?, elebi_count = ?, oharrak = ?, behatzailea = ? WHERE id = ?"

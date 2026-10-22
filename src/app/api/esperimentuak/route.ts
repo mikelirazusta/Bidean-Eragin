@@ -55,7 +55,7 @@ export async function POST(request: Request) {
       "nudge-" + Date.now(),
       eragile_id,
       "Hipotesia prest dago! 🧪 Hurrengo urratsa: T0 neurketa",
-      `Zientzialari modua aktibatuta! Egin 10 minutuko behaketa itsua espazioan, esku-hartzea hasi AURRETIKO abiapuntua neurtzeko.`,
+      `Egin hasierako behaketa (T0) zure gunean, pilotua martxan jarri aurretiko abiapuntua neurtzeko.`,
       "abisua",
       new Date(Date.now() + 86400000 * 2).toISOString(),
       0,

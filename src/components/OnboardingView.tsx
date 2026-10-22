@@ -90,7 +90,7 @@ export default function OnboardingView() {
           Eman izena & Aktibatu Euskara
         </h1>
         <p className="mt-2 text-sm sm:text-base text-slate-600 max-w-xl mx-auto">
-          Zure saltoki edo erakundeak hipotesiak sortu, behaketa itsuak egin eta emaitzetan oinarritutako portaera-aldaketak bultzatuko ditu.
+          Zure saltoki edo erakundeak hipotesiak sortu, zuzeneko neurketak egin eta emaitzetan oinarritutako portaera-aldaketak bultzatuko ditu.
         </p>
 
         {/* Step Indicator */}

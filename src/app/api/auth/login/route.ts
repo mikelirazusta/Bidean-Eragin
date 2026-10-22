@@ -35,8 +35,45 @@ export async function POST(request: Request) {
     }
 
     let eragilea: Eragilea | null = null;
-    if (user.eragile_id) {
-      eragilea = db.prepare("SELECT * FROM eragileak WHERE id = ?").get(user.eragile_id) as Eragilea | null;
+    let resolvedEragileId = user.eragile_id;
+
+    if (user.role === "eragilea") {
+      if (resolvedEragileId) {
+        eragilea = db.prepare("SELECT * FROM eragileak WHERE id = ?").get(resolvedEragileId) as Eragilea | null;
+      }
+      if (!eragilea) {
+        eragilea =
+          (db.prepare("SELECT * FROM eragileak WHERE LOWER(email) = ?").get(cleanEmail) as Eragilea | null) ||
+          (db.prepare("SELECT * FROM eragileak WHERE LOWER(izena) = ?").get((user.name || "").trim().toLowerCase()) as Eragilea | null) ||
+          null;
+
+        if (!eragilea) {
+          // Create a dedicated center for this eragilea user so they never see another center
+          const newCenterId = "zentro-" + Date.now();
+          const nowIso = new Date().toISOString();
+          const centerName = (user.name || cleanEmail.split("@")[0] || "Saltokia").trim();
+          db.prepare(`
+            INSERT INTO eragileak (id, izena, mota, arduraduna, email, erronka_nagusia, sortze_data, publikoa)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `).run(
+            newCenterId,
+            centerName,
+            "merkataritza",
+            centerName,
+            cleanEmail,
+            "Dendan lehen hitza eta elkarrizketak euskaraz sustatzea",
+            nowIso,
+            0
+          );
+          eragilea = db.prepare("SELECT * FROM eragileak WHERE id = ?").get(newCenterId) as Eragilea | null;
+        }
+
+        if (eragilea) {
+          resolvedEragileId = eragilea.id;
+          db.prepare("UPDATE users SET eragile_id = ? WHERE id = ?").run(resolvedEragileId, user.id);
+          await syncDbToCloud();
+        }
+      }
     }
 
     // Do not return password to client
@@ -45,7 +82,7 @@ export async function POST(request: Request) {
       email: user.email,
       name: user.name,
       role: user.role,
-      eragile_id: user.eragile_id,
+      eragile_id: resolvedEragileId,
       created_at: user.created_at,
     };
 

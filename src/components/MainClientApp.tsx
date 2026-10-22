@@ -20,11 +20,12 @@ interface MainClientAppProps {
     esperimentuak: (Esperimentua & { eragile_izena?: string })[];
     neurketak: Neurketa[];
     nudges: Nudge[];
+    uiTexts?: Record<string, string>;
   };
 }
 
 function MainContent() {
-  const { currentUser, activeTab, userRole, setActiveTab, setUserRole, logout, activeEragilea } = useApp();
+  const { currentUser, activeTab, logout, activeEragilea, uiTexts } = useApp();
 
   // Wall: If user is not authenticated, ONLY render AuthPortal
   if (!currentUser) {
@@ -46,10 +47,10 @@ function MainContent() {
       {/* Footer */}
       <footer className="border-t border-slate-200 bg-white py-6 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-800">Bidean Eragin</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-bold text-slate-800">{uiTexts.app_title || "Bidean Eragin"}</span>
             <span>•</span>
-            <span>Portaera-ekonomia eta esperimentazio arina</span>
+            <span>{uiTexts.footer_text || "Bagera Euskaltzaleen Elkartea • Euskararen erabilera neurgarria eta praktikoa"}</span>
             {activeEragilea && (
               <>
                 <span className="hidden sm:inline">•</span>

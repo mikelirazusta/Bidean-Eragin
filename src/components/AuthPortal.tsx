@@ -55,7 +55,7 @@ const ERRONKA_AUKERAK = [
 ];
 
 export default function AuthPortal() {
-  const { login, register } = useApp();
+  const { login, register, uiTexts } = useApp();
 
   const [portalRole, setPortalRole] = useState<"admin" | "eragilea">("eragilea");
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
@@ -174,13 +174,13 @@ export default function AuthPortal() {
           <Sparkles className="w-8 h-8" />
         </div>
         <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-          Bidean Eragin
+          {uiTexts.app_title || "Bidean Eragin"}
         </h1>
         <p className="mt-1 text-sm font-semibold text-emerald-800">
-          Portaera-ekonomia eta esperimentazio arina • Bagera
+          {uiTexts.app_subtitle || "Portaera-ekonomia eta esperimentazio arina • Bagera"}
         </p>
         <p className="mt-1.5 text-xs sm:text-sm text-slate-600">
-          Euskararen erabilera aktibatzeko tresna praktikoa. Jarraitu zure saltoki edo zentroaren aurrerapena 3 urrats errazetan:
+          {uiTexts.auth_intro || "Euskararen erabilera aktibatzeko tresna praktikoa. Jarraitu zure saltoki edo zentroaren aurrerapena 3 urrats errazetan:"}
         </p>
 
         {/* 3-Step Visual Journey Guide */}
@@ -189,22 +189,34 @@ export default function AuthPortal() {
             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-extrabold text-[10px] mb-1">
               1
             </span>
-            <p className="text-[11px] font-extrabold text-slate-900 leading-tight">Hipotesia definitu</p>
-            <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">Zure saltokiko erronka eta helburua zehaztu.</p>
+            <p className="text-[11px] font-extrabold text-slate-900 leading-tight">
+              {uiTexts.auth_step1_title || "Hipotesia definitu"}
+            </p>
+            <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">
+              {uiTexts.auth_step1_desc || "Zure saltokiko erronka eta helburua zehaztu."}
+            </p>
           </div>
           <div className="bg-white/90 border border-slate-200/80 rounded-2xl p-2.5 shadow-xs">
             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-sky-100 text-sky-800 font-extrabold text-[10px] mb-1">
               2
             </span>
-            <p className="text-[11px] font-extrabold text-slate-900 leading-tight">T0/T1/T2 Neurtu</p>
-            <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">10 minutuko behaketa erraza mugikorrarekin.</p>
+            <p className="text-[11px] font-extrabold text-slate-900 leading-tight">
+              {uiTexts.auth_step2_title || "T0 / T1 / T2 neurtu"}
+            </p>
+            <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">
+              {uiTexts.auth_step2_desc || "10 minutuko neurketa erraza mugikorrarekin."}
+            </p>
           </div>
           <div className="bg-white/90 border border-slate-200/80 rounded-2xl p-2.5 shadow-xs">
             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-indigo-100 text-indigo-800 font-extrabold text-[10px] mb-1">
               3
             </span>
-            <p className="text-[11px] font-extrabold text-slate-900 leading-tight">Eragina ikusi</p>
-            <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">Emaitza errealak modu pribatuan aztertu.</p>
+            <p className="text-[11px] font-extrabold text-slate-900 leading-tight">
+              {uiTexts.auth_step3_title || "Eragina ikusi"}
+            </p>
+            <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">
+              {uiTexts.auth_step3_desc || "Emaitza errealak modu pribatuan aztertu."}
+            </p>
           </div>
         </div>
       </div>
@@ -270,7 +282,7 @@ export default function AuthPortal() {
                   <span>Bagera Koordinazio Gunea</span>
                 </div>
                 <p className="text-indigo-800 leading-relaxed">
-                  Bagerako lantaldeak komertzio guztiak gainbegiratu, postu berriak gehitu eta gaurko T0 neurketa itsuak zuzenean egiteko sarbidea.
+                  Bagerako lantaldeak saltoki eta zentro guztiak gainbegiratu, postu berriak gehitu eta neurketak zuzenean egiteko sarbidea.
                 </p>
               </div>
 

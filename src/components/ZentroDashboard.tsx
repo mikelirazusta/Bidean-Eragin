@@ -88,6 +88,7 @@ export default function ZentroDashboard() {
     updateEragilea,
     createEsperimentua,
     currentUser,
+    uiTexts,
   } = useApp();
 
   // Find all experiments for this organization
@@ -210,8 +211,8 @@ export default function ZentroDashboard() {
       step: 2,
       title: "T0 Neurtu (Oinarrizko marra)",
       desc: t0Stats
-        ? `${t0Stats.count === 1 ? "Hasierako saio 1 eginda" : `${t0Stats.count} saio eginda (batez bestekoa: %${t0Stats.pct})`}. ${t0Stats.totalInteractions} interakzio neurtuta.`
-        : "Esku-hartzea hasi AURRETIKO hasierako behaketa.",
+        ? `${t0Stats.count === 1 ? "Hasierako saio 1 eginda" : `${t0Stats.count} saio eginda (batez bestekoa: %${t0Stats.pct})`}. ${t0Stats.totalInteractions} elkarrizketa neurtuta.`
+        : "Esku-hartzea hasi AURRETIKO hasierako neurketa.",
       completed: !!t0Stats,
       current: !t0Stats,
       actionPhase: "T0" as const,
@@ -344,20 +345,20 @@ export default function ZentroDashboard() {
               {!currentExp
                 ? "1. Urratsa: Aktibatu zure hasierako hipotesia beheko taulan"
                 : !t0Stats
-                ? "1. Urratsa: Egin T0 Behaketa Itsua (txapa jarri aurretik)"
+                ? uiTexts.dashboard_step1_title || "1. Urratsa: Egin T0 hasierako neurketa (txapa jarri aurretik)"
                 : !t1Stats
-                ? "2. Urratsa: Jarri 'Euskaraz barra-barra' txapa ikusgai eta neurtu T1"
+                ? uiTexts.dashboard_step2_title || "2. Urratsa: Jarri 'Euskaraz barra-barra' txapa ikusgai eta neurtu T1"
                 : !t2Stats
-                ? "3. Urratsa: Egin T2 Behaketa ohitura sendotu dela egiaztatzeko"
+                ? uiTexts.dashboard_step3_title || "3. Urratsa: Egin T2 neurketa ohitura sendotu dela egiaztatzeko"
                 : "Zorionak! Ziklo osoa (T0, T1 eta T2) osatu duzue"}
             </h2>
             <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
               {!currentExp
                 ? "Zehaztu esaldi bakarrean zer lortu nahi duzuen zuen saltokian, eta berehala hasi ahalko zarete neurtzen."
                 : !t0Stats
-                ? "Txapak jarri aurretik, neurtu 10-30 minutuz gaur egungo elkarrizketak zein hizkuntzatan diren (abiapuntua ezagutzeko)."
+                ? uiTexts.dashboard_step1_desc || "Txapak jarri aurretik, neurtu 10-30 minutuz gaur egungo elkarrizketak zein hizkuntzatan diren (abiapuntua ezagutzeko)."
                 : !t1Stats
-                ? `T0 oinarria baduzue (%${t0Stats.pct} euskara). Orain jarri txapak paparrean eta egin T1 behaketa berehalako eragina neurtzeko.`
+                ? `T0 oinarria baduzue (%${t0Stats.pct} euskara). Orain jarri txapak paparrean eta egin T1 neurketa berehalako eragina neurtzeko.`
                 : !t2Stats
                 ? `T1 neurketan %${t1Stats.pct} jaso duzue. Egin T2 neurketa 14-21 egunera portaera berria egonkortu den ikusteko.`
                 : "Nahi baduzue, saio gehiago gehitu ditzakezue batez bestekoa sendotzeko edo PDF txostena inprimatu."}
@@ -1013,7 +1014,7 @@ export default function ZentroDashboard() {
                     </span>
                   ) : (
                     <span>
-                      Esperimentua prest dago. Lehenik eta behin, egin hasierako T0 behaketa itsua espazioan.
+                      Esperimentua prest dago. Lehenik eta behin, egin hasierako T0 neurketa zure gunean.
                     </span>
                   )}
                 </p>
@@ -1230,7 +1231,7 @@ export default function ZentroDashboard() {
                                 {minutes} min
                               </td>
                               <td className="py-2.5 text-slate-600 max-w-[120px] truncate" title={neu.behatzailea}>
-                                {neu.behatzailea || "Behatzaile Itsua"}
+                                {neu.behatzailea || "Behatzailea"}
                               </td>
                               <td className="py-2.5 text-slate-400">
                                 {new Date(neu.data_ordu).toLocaleDateString("eu-ES")}

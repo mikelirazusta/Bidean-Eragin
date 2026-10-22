@@ -2,7 +2,16 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import confetti from "canvas-confetti";
-import { Eragilea, Pilotua, PilotuMateriala, Esperimentua, Neurketa, Nudge, User } from "@/lib/db";
+import {
+  Eragilea,
+  Pilotua,
+  PilotuMateriala,
+  Esperimentua,
+  Neurketa,
+  Nudge,
+  User,
+  DEFAULT_UI_TEXTS,
+} from "@/lib/db";
 import {
   getPendingNeurketak,
   savePendingNeurketa,
@@ -27,6 +36,8 @@ interface AppContextType {
   esperimentuak: (Esperimentua & { eragile_izena?: string })[];
   neurketak: Neurketa[];
   nudges: Nudge[];
+  uiTexts: Record<string, string>;
+  updateUiTexts: (updates: Record<string, string>, resetAll?: boolean) => Promise<boolean>;
   isLoading: boolean;
   activeEragilea: Eragilea | undefined;
   activeEsperimentua: (Esperimentua & { eragile_izena?: string }) | undefined;
@@ -174,13 +185,14 @@ interface AppProviderProps {
     esperimentuak: (Esperimentua & { eragile_izena?: string })[];
     neurketak: Neurketa[];
     nudges: Nudge[];
+    uiTexts?: Record<string, string>;
   };
 }
 
 export function AppProvider({ children, initialData }: AppProviderProps) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<"eragilea" | "admin">("eragilea");
-  const [currentEragileId, setCurrentEragileId] = useState<string>("");
+  const [currentEragileId, setCurrentEragileIdState] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"panela" | "katalogoa" | "behaketa" | "onboarding" | "admin">("panela");
   const [isLoading, setIsLoading] = useState<boolean>(!initialData);
 
@@ -189,6 +201,10 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
   const [esperimentuak, setEsperimentuak] = useState<(Esperimentua & { eragile_izena?: string })[]>(initialData?.esperimentuak || []);
   const [neurketak, setNeurketak] = useState<Neurketa[]>(initialData?.neurketak || []);
   const [nudges, setNudges] = useState<Nudge[]>(initialData?.nudges || []);
+  const [uiTexts, setUiTexts] = useState<Record<string, string>>({
+    ...DEFAULT_UI_TEXTS,
+    ...(initialData?.uiTexts || {}),
+  });
 
   const [observationConfig, setObservationConfig] = useState<{ expId?: string; phase: "T0" | "T1" | "T2" }>({
     phase: "T0",
@@ -197,6 +213,20 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
 
   const [isOnline, setIsOnline] = useState<boolean>(true);
   const [pendingSyncCount, setPendingSyncCount] = useState<number>(0);
+
+  // Guarded setter: non-admin users can never switch to another center's ID
+  const setCurrentEragileId = useCallback(
+    (id: string) => {
+      if (currentUser?.role === "eragilea") {
+        if (currentUser.eragile_id) {
+          setCurrentEragileIdState(currentUser.eragile_id);
+        }
+        return;
+      }
+      setCurrentEragileIdState(id);
+    },
+    [currentUser]
+  );
 
   // Restore authenticated session from localStorage on client mount
   useEffect(() => {
@@ -213,7 +243,7 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
           setCurrentUser(parsed);
           setUserRole(parsed.role);
           if (parsed.role === "eragilea" && parsed.eragile_id) {
-            setCurrentEragileId(parsed.eragile_id);
+            setCurrentEragileIdState(parsed.eragile_id);
           } else if (parsed.role === "admin") {
             setActiveTab("admin");
           }
@@ -281,26 +311,43 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
         setEsperimentuak(json.data.esperimentuak || []);
         setNeurketak(json.data.neurketak || []);
         setNudges(json.data.nudges || []);
+        if (json.data.uiTexts && typeof json.data.uiTexts === "object") {
+          setUiTexts({ ...DEFAULT_UI_TEXTS, ...json.data.uiTexts });
+        }
 
         // Cache snapshot to localStorage for offline mode
         saveCachedBootstrapData(json.data);
 
-        // If an eragilea is logged in, verify their center still exists; if deleted, log them out cleanly
+        // If an eragilea is logged in, verify their center still exists; never fall back to another center
         if (currentUser?.role === "eragilea") {
-          const exists = loadedEragileak.some((e) => e.id === currentUser.eragile_id);
-          if (!exists) {
+          let targetCenter = loadedEragileak.find((e) => e.id === currentUser.eragile_id);
+          if (!targetCenter) {
+            targetCenter = loadedEragileak.find(
+              (e) =>
+                (e.email && currentUser.email && e.email.toLowerCase() === currentUser.email.toLowerCase()) ||
+                (e.izena && currentUser.name && e.izena.toLowerCase() === currentUser.name.toLowerCase())
+            );
+          }
+          if (!targetCenter) {
             setCurrentUser(null);
-            setCurrentEragileId("");
+            setCurrentEragileIdState("");
             try {
               localStorage.removeItem("bidean_eragin_session");
             } catch {}
-          } else if (currentUser.eragile_id) {
-            setCurrentEragileId(currentUser.eragile_id);
+          } else {
+            if (currentUser.eragile_id !== targetCenter.id) {
+              const updatedUser = { ...currentUser, eragile_id: targetCenter.id };
+              setCurrentUser(updatedUser);
+              try {
+                localStorage.setItem("bidean_eragin_session", JSON.stringify(updatedUser));
+              } catch {}
+            }
+            setCurrentEragileIdState(targetCenter.id);
           }
         } else if (loadedEragileak.length > 0 && !currentEragileId) {
-          setCurrentEragileId(loadedEragileak[0].id);
+          setCurrentEragileIdState(loadedEragileak[0].id);
         } else if (loadedEragileak.length === 0 && currentEragileId) {
-          setCurrentEragileId("");
+          setCurrentEragileIdState("");
         }
       }
     } catch (e) {
@@ -365,7 +412,7 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
 
         if (json.user.role === "eragilea") {
           if (json.user.eragile_id) {
-            setCurrentEragileId(json.user.eragile_id);
+            setCurrentEragileIdState(json.user.eragile_id);
           }
           setActiveTab("panela");
         } else {
@@ -411,7 +458,7 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
         await refreshData();
 
         if (json.user.eragile_id) {
-          setCurrentEragileId(json.user.eragile_id);
+          setCurrentEragileIdState(json.user.eragile_id);
         }
         if (json.esperimentua?.id) {
           setObservationConfig({ expId: json.esperimentua.id, phase: "T0" });
@@ -430,7 +477,7 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
   // Auth: Logout
   const logout = () => {
     setCurrentUser(null);
-    setCurrentEragileId("");
+    setCurrentEragileIdState("");
     setUserRole("eragilea");
     setActiveTab("panela");
     try {
@@ -438,10 +485,16 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
     } catch {}
   };
 
-  // Target eragile ID is strictly the agent's center if logged in as eragilea
+  // Target eragile ID is strictly the agent's center if logged in as eragilea (never fall back to another center)
   const effectiveEragileId =
-    currentUser?.role === "eragilea" && currentUser.eragile_id
-      ? currentUser.eragile_id
+    currentUser?.role === "eragilea"
+      ? currentUser.eragile_id ||
+        eragileak.find(
+          (e) =>
+            (e.email && currentUser.email && e.email.toLowerCase() === currentUser.email.toLowerCase()) ||
+            (e.izena && currentUser.name && e.izena.toLowerCase() === currentUser.name.toLowerCase())
+        )?.id ||
+        ""
       : currentEragileId;
 
   const activeEragilea =
@@ -577,12 +630,12 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
       const newEragilea = jsonEragile.data as Eragilea;
 
       const xedea = data.xede_portzentajea || 25;
-      const taldeaVal = data.taldea?.trim() || "Saltokiko lantaldea";
-      const pertsonakVal = data.pertsonak?.trim() || "Bezeroak eta langileak";
-      const guneaVal = data.gunea?.trim() || "Saltokiaren mostradorea";
+      const taldeaVal = data.taldea?.trim() || "Saltokiko lantaldeak";
+      const pertsonakVal = data.pertsonak?.trim() || "bezeroekin";
+      const guneaVal = data.gunea?.trim() || "mostradorean";
       const hipotesiaVal =
         data.hipotesia?.trim() ||
-        `Gure ustez, ${taldeaVal} ${pertsonakVal}, ${guneaVal} 'Euskaraz barra-barra' txapa soinean eramanda, euskararen erabilera %${xedea} igoko da.`;
+        `Gure ustez, ${taldeaVal} ${pertsonakVal} ${guneaVal} 'Euskaraz barra-barra' txapa bistan eramanda, euskarazko elkarrizketak %${xedea} ugarituko dira.`;
 
       // 2. Create experiment with 'barra-barra-txapak' pilot
       const resExp = await fetch("/api/esperimentuak", {
@@ -939,6 +992,24 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
     }
   };
 
+  const updateUiTexts = async (updates: Record<string, string>, resetAll = false) => {
+    try {
+      const res = await fetch("/api/bootstrap", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uiTexts: updates, resetAll }),
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        setUiTexts({ ...DEFAULT_UI_TEXTS, ...json.data });
+        return true;
+      }
+    } catch (e) {
+      console.error("Errorea testuak eguneratzean:", e);
+    }
+    return false;
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -955,6 +1026,8 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
         esperimentuak,
         neurketak,
         nudges,
+        uiTexts,
+        updateUiTexts,
         isLoading,
         activeEragilea,
         activeEsperimentua,

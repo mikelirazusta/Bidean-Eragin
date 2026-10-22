@@ -40,6 +40,7 @@ export default function BehatzaileKontagailua() {
     setCurrentEragileId,
     setActiveTab,
     isOnline,
+    uiTexts,
   } = useApp();
 
   const isAdmin = currentUser?.role === "admin";
@@ -67,10 +68,12 @@ export default function BehatzaileKontagailua() {
     setIsRefreshingStandList(false);
   };
 
-  // Strict privacy: non-admin users only see and measure their own center's experiments
+  // Strict privacy: non-admin users ONLY see and measure their own center's experiments
   const availableEsperimentuak = isAdmin
     ? esperimentuak
-    : esperimentuak.filter((e) => e.eragile_id === activeEragilea?.id);
+    : activeEragilea?.id
+    ? esperimentuak.filter((e) => e.eragile_id === activeEragilea.id)
+    : [];
 
   const currentExp =
     availableEsperimentuak.find((e) => e.id === observationConfig.expId) ||
@@ -109,17 +112,17 @@ export default function BehatzaileKontagailua() {
   // Modal for saving
   const [showSaveModal, setShowSaveModal] = useState<boolean>(false);
   const [notes, setNotes] = useState<string>("");
-  const [behatzailea, setBehatzailea] = useState<string>("Behatzaile Itsua");
+  const [behatzailea, setBehatzailea] = useState<string>("Behatzailea");
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
   // Quick Stand Modal state
   const [showNewStandModal, setShowNewStandModal] = useState<boolean>(false);
   const [newStandName, setNewStandName] = useState<string>("");
   const [newStandManager, setNewStandManager] = useState<string>("");
-  const [newStandGunea, setNewStandGunea] = useState<string>("Saltokiaren mostradorea");
+  const [newStandGunea, setNewStandGunea] = useState<string>("Saltokiko mostradorea");
   const [newStandTargetPct, setNewStandTargetPct] = useState<number>(25);
   const [newStandHipotesia, setNewStandHipotesia] = useState<string>(
-    "Langileek 'Euskaraz barra-barra' txapa soinean eramanda, saltokiaren mostradorean bezeroen lehen hitza eta elkarrizketak euskaraz %25 igoko dira."
+    "Langileek 'Euskaraz barra-barra' txapa bistan eramanda, saltokiko mostradorean bezeroen lehen hitza eta elkarrizketak euskaraz %25 ugarituko dira."
   );
   const [isCreatingStand, setIsCreatingStand] = useState<boolean>(false);
 
@@ -127,10 +130,12 @@ export default function BehatzaileKontagailua() {
   useEffect(() => {
     try {
       const saved = localStorage.getItem("bidean_behatzaile_izena");
-      if (saved) {
+      if (saved && saved !== "Behatzaile Itsua") {
         setBehatzailea(saved);
       } else if (currentUser?.name && !currentUser.name.includes("Admin") && !currentUser.name.includes("Koordinazioa")) {
         setBehatzailea(currentUser.name);
+      } else {
+        setBehatzailea("Behatzailea");
       }
     } catch {}
   }, [currentUser]);
@@ -445,7 +450,7 @@ export default function BehatzaileKontagailua() {
       elebi_count: elebiCount,
       iraupena_segundotan: durationToSave,
       oharrak: notes,
-      behatzailea: behatzailea.trim() || "Behatzaile Itsua",
+      behatzailea: behatzailea.trim() || "Behatzailea",
     });
 
     setIsSaving(false);
@@ -491,7 +496,7 @@ export default function BehatzaileKontagailua() {
           <div className="flex items-center gap-2">
             <Store className="w-4 h-4 text-emerald-400" />
             <span className="text-xs font-bold text-slate-200 uppercase tracking-wider">
-              {isAdmin ? "Gaurko Neurketaren Saltokia & Behatzailea" : "Zure Saltokiko Neurketa Gunea"}
+              {isAdmin ? "Gaurko Neurketaren Saltokia eta Behatzailea" : "Zure Saltokiko Neurketa Gunea"}
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -519,10 +524,10 @@ export default function BehatzaileKontagailua() {
                   ? "bg-emerald-500 text-slate-950 shadow-sm"
                   : "bg-slate-800 text-emerald-300 border border-emerald-500/30 hover:bg-slate-700"
               }`}
-              title="Modu ezkutua: pantaila ilundu eta kolore deigarriak ezkutatu inork ez nabaritzeko"
+              title="Modu diskretua: pantaila ilundu eta kolore deigarriak ezkutatu inork ez nabaritzeko"
             >
               {stealthMode ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-              <span>{stealthMode ? "Modu Ezkutua ON" : "🕵️ Modu Ezkutua"}</span>
+              <span>{stealthMode ? "Modu Diskretua ON" : "🕵️ Modu Diskretua"}</span>
             </button>
 
             {isAdmin && (
@@ -568,7 +573,7 @@ export default function BehatzaileKontagailua() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                📍 {isAdmin ? "Zein komertzio / postutan zaude?" : "Zure saltokia eta behaketa-gunea:"}
+                📍 {isAdmin ? "Zein saltoki edo postutan zaude?" : "Zure saltokia eta behaketa-gunea:"}
               </label>
               {isAdmin ? (
                 <select
@@ -585,7 +590,7 @@ export default function BehatzaileKontagailua() {
                 >
                   {availableEsperimentuak.map((exp) => (
                     <option key={exp.id} value={exp.id}>
-                      {exp.eragile_izena || "Saltokia"} ({exp.gunea || exp.taldea || "Komertzioa"})
+                      {exp.eragile_izena || "Saltokia"} ({exp.gunea || exp.taldea || "Saltokia"})
                     </option>
                   ))}
                 </select>
@@ -598,7 +603,7 @@ export default function BehatzaileKontagailua() {
 
             <div>
               <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                👤 Behatzailearen izena (nor zara?):
+                👤 Behatzailearen izena (nor ari da neurtzen?):
               </label>
               <input
                 type="text"
@@ -622,10 +627,10 @@ export default function BehatzaileKontagailua() {
             </div>
             <div>
               <h1 className="font-bold text-slate-900 text-base sm:text-lg">
-                Behatzaile Itsua (Kontagailua)
+                {uiTexts.counter_title || "Elkarrizketen Kontagailua"}
               </h1>
               <p className="text-xs text-slate-500">
-                {activeEragilea?.izena || "Zentroa"} • Zuzeneko neurketa itsua
+                {activeEragilea?.izena || "Zure gunea"} • {uiTexts.counter_subtitle || "Zuzeneko behaketa-saioa"}
               </p>
             </div>
           </div>
@@ -664,17 +669,20 @@ export default function BehatzaileKontagailua() {
                 <strong>T0 (Hasierako argazkia):</strong>
               )}
               {phase === "T1" && (
-                <strong>T1 (Berehalako eragina):</strong>
+                <strong>T1 (Lehen eragina):</strong>
               )}
               {phase === "T2" && (
-                <strong>T2 (Ohitura sendotua):</strong>
+                <strong>T2 (Ohitura egonkortua):</strong>
               )}{" "}
               {phase === "T0" &&
-                "Pilotua jarri AURRETIKO hizkuntza-erabilera neurtu. Oinarrizko marra ezartzen du."}
+                (uiTexts.counter_t0_desc ||
+                  "Pilotua martxan jarri aurretik euskaraz zenbat hitz egiten den neurtzen du, abiapuntua ezagutzeko.")}
               {phase === "T1" &&
-                "Esku-hartzea abian jarri ondorengo lehen neurketa. Berehalako eragina jasotzen du."}
+                (uiTexts.counter_t1_desc ||
+                  "Pilotua martxan jarri berritan egindako neurketa, lehen eragina ikusteko.")}
               {phase === "T2" &&
-                "14-21 egun igarota egindako neurketa. Portaera berria finkatu den aztertzen du."}
+                (uiTexts.counter_t2_desc ||
+                  "Handik 2-3 astera egindako neurketa, ohitura berria egonkortu den egiaztatzeko.")}
             </span>
           </div>
 
@@ -691,11 +699,11 @@ export default function BehatzaileKontagailua() {
               <span>
                 {existingPhaseCount > 0 ? (
                   <span>
-                    Dagoeneko <strong>{existingPhaseCount} saio</strong> erregistratuta fase honetarako (une honetako batez bestekoa: <strong>%{currentPhaseAvg}</strong>). Saio berri honek batez bestekoa fintzeko balioko du!
+                    Dagoeneko <strong>{existingPhaseCount} saio</strong> jaso dira fase honetan (orain arteko batez bestekoa: <strong>%{currentPhaseAvg}</strong>). Saio berri honek batez bestekoa aberastuko du!
                   </span>
                 ) : (
                   <span>
-                    Fase honetako <strong>1. neurketa saioa</strong> egitera zoaz.
+                    Fase honetako <strong>1. behaketa-saioa</strong> egitera zoaz.
                   </span>
                 )}
               </span>
@@ -730,7 +738,7 @@ export default function BehatzaileKontagailua() {
               <span>Aukeratu Behaketaren Iraupena:</span>
             </label>
             <span className="text-[11px] text-slate-500 font-medium">
-              Ez behartu: nahi adina luza dezakezu!
+              Nahi beste denboraz neur dezakezu
             </span>
           </div>
 
@@ -805,13 +813,13 @@ export default function BehatzaileKontagailua() {
               <span>
                 {sessionActive
                   ? isPaused
-                    ? "Geldituta (Pausa)"
+                    ? "Etenda"
                     : timerMode === "countdown"
                     ? `Atzerako kontua (${selectedMinutes} min)`
                     : "Denbora librea (aurrera)"
                   : timerMode === "countdown"
-                  ? `Hautatutako Iraupena: ${selectedMinutes} min`
-                  : "Modu Librea (Mugarik gabe)"}
+                  ? `Hautatutako iraupena: ${selectedMinutes} min`
+                  : "Modu librea (mugarik gabe)"}
               </span>
               {wakeLockActive && (
                 <span className="px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[9px] font-bold">
@@ -833,7 +841,7 @@ export default function BehatzaileKontagailua() {
               className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/30 transition cursor-pointer"
             >
               <Play className="w-4 h-4 fill-current" />
-              <span>Hasi Sesioa</span>
+              <span>Hasi Saioa</span>
             </button>
           ) : (
             <>
@@ -858,7 +866,7 @@ export default function BehatzaileKontagailua() {
               <button
                 onClick={handleStopAndSave}
                 className="px-3.5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs flex items-center gap-1 shadow-md shadow-emerald-500/30 transition cursor-pointer"
-                title="Gelditu eta gorde neurketa"
+                title="Amaitu eta gorde neurketa"
               >
                 <Save className="w-4 h-4" />
                 <span>Gorde</span>
@@ -872,11 +880,11 @@ export default function BehatzaileKontagailua() {
       <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 mb-5 flex items-center justify-between">
         <div>
           <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-            Guztira Jasota
+            Jasotako Elkarrizketak
           </span>
           <span className="text-2xl font-black text-slate-900">
             {totalInteractions}{" "}
-            <span className="text-xs font-semibold text-slate-400">interakzio</span>
+            <span className="text-xs font-semibold text-slate-400">elkarrizketa</span>
           </span>
         </div>
 
@@ -1043,7 +1051,7 @@ export default function BehatzaileKontagailua() {
               </div>
               <div className="text-left">
                 <span className="text-2xl sm:text-3xl font-extrabold tracking-tight block">
-                  Euskaraz
+                  {uiTexts.counter_btn_euskaraz || "Euskaraz"}
                 </span>
                 <span className="text-xs text-emerald-100 font-medium">
                   Sakatze bakoitzeko +1 (Bibrazio 1)
@@ -1089,7 +1097,7 @@ export default function BehatzaileKontagailua() {
               </div>
               <div className="text-left">
                 <span className="text-xl sm:text-2xl font-extrabold tracking-tight block">
-                  Erdaraz
+                  {uiTexts.counter_btn_erdaraz || "Erdaraz"}
                 </span>
                 <span className="text-xs text-rose-100 font-medium">
                   Gaztelania / Beste bat (2 bibrazio)
@@ -1135,7 +1143,7 @@ export default function BehatzaileKontagailua() {
               </div>
               <div className="text-left">
                 <span className="text-lg sm:text-xl font-extrabold tracking-tight block">
-                  Elebi (Nahastua)
+                  {uiTexts.counter_btn_elebi || "Elebi (Nahastua)"}
                 </span>
                 <span className="text-xs text-amber-950/70 font-medium">
                   Euskara eta erdara txandakatuta (3 bibrazio)
@@ -1217,7 +1225,7 @@ export default function BehatzaileKontagailua() {
 
             <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-200 mb-4 text-center">
               <span className="text-xs font-semibold text-emerald-800 block">
-                Saio honetako euskara erabilera: <strong>%{euskaraPct}</strong> ({totalInteractions} interakziotatik)
+                Saio honetako euskara erabilera: <strong>%{euskaraPct}</strong> ({totalInteractions} elkarrizketatatik)
               </span>
               {existingPhaseCount > 0 && (
                 <span className="text-[11px] text-emerald-700 mt-1 block">

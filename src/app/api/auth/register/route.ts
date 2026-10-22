@@ -118,8 +118,8 @@ export async function POST(request: Request) {
       insertNudge.run(
         "nudge-" + Date.now(),
         zentroId,
-        "1. Urratsa: Egin T0 Aurre-neurketa Itsua 🕵️",
-        `Zure hipotesia prest dago! Txapak jarri aurretik, egin 10 minutuko lehen behaketa (T0) gaur egungo abiapuntua ezagutzeko.`,
+        "1. Urratsa: Egin T0 Hasierako Neurketa 📊",
+        `Zure hipotesia prest dago! Txapak jarri aurretik, egin lehen behaketa (T0) gaur egungo abiapuntua ezagutzeko.`,
         "neurketa_t0",
         new Date(Date.now() + 86400000 * 3).toISOString(),
         0,
