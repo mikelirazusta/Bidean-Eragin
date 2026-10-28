@@ -130,7 +130,7 @@ export default function Navbar() {
                   }`}
                 >
                   <LayoutDashboard className="w-4 h-4" />
-                  {uiTexts.nav_panela || "Saltokiaren Panela"}
+                  {uiTexts.nav_panela || "Entitatearen panela"}
                 </button>
 
                 <button
@@ -142,7 +142,7 @@ export default function Navbar() {
                   }`}
                 >
                   <BookOpen className="w-4 h-4" />
-                  {uiTexts.nav_katalogoa || "Pilotuak eta Hipotesia"}
+                  {uiTexts.nav_katalogoa || "Pilotuak eta hipotesia"}
                 </button>
               </>
             ) : (
@@ -156,7 +156,7 @@ export default function Navbar() {
                   }`}
                 >
                   <LayoutDashboard className="w-4 h-4" />
-                  {uiTexts.nav_panela || "Nire Panela"}
+                  {uiTexts.nav_panela || "Nire panela"}
                 </button>
 
                 <button
@@ -180,7 +180,7 @@ export default function Navbar() {
                   }`}
                 >
                   <BookOpen className="w-4 h-4" />
-                  {uiTexts.nav_katalogoa || "Pilotuak eta Hipotesia"}
+                  {uiTexts.nav_katalogoa || "Pilotuak eta hipotesia"}
                 </button>
               </>
             )}
@@ -207,7 +207,7 @@ export default function Navbar() {
             {isAdmin && (
               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 border border-indigo-200 text-xs font-bold text-indigo-900">
                 <ShieldCheck className="w-4 h-4 text-indigo-600" />
-                <span className="hidden sm:inline">Bagera Admin</span>
+                <span className="hidden sm:inline">Bagera admin</span>
               </div>
             )}
 
@@ -241,7 +241,7 @@ export default function Navbar() {
                     <div className="flex items-center gap-2">
                       <Bell className="w-4 h-4 text-emerald-600" />
                       <h4 className="font-bold text-sm text-slate-900">
-                        Bultzadak eta Gogorarazpenak
+                        Bultzadak eta gogorarazpenak
                       </h4>
                     </div>
                     <span className="text-xs text-slate-500">
@@ -287,8 +287,10 @@ export default function Navbar() {
                               <button
                                 onClick={() => {
                                   setShowNudgesModal(false);
-                                  if (nudge.ekintza_esteka?.includes("behaketa")) {
+                                  if (nudge.ekintza_esteka?.includes("behaketa") || nudge.ekintza_esteka?.includes("kontagailua")) {
                                     setActiveTab("behaketa");
+                                  } else if (nudge.ekintza_esteka?.includes("katalogoa")) {
+                                    setActiveTab("katalogoa");
                                   } else {
                                     setActiveTab("panela");
                                   }
@@ -322,7 +324,7 @@ export default function Navbar() {
         <div className="hidden md:flex items-center justify-between py-2 border-t border-slate-100 text-xs">
           <div className="flex items-center gap-1.5 text-slate-500">
             <span className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px] mr-1">
-              Metodologia Zikloa:
+              Metodologia-zikloa:
             </span>
 
             <button
@@ -333,7 +335,7 @@ export default function Navbar() {
                   : "hover:bg-slate-100 text-slate-600"
               }`}
             >
-              <span>1. Pilotuak eta Hipotesia</span>
+              <span>1. Pilotuak eta hipotesia</span>
             </button>
             <span className="text-slate-300">→</span>
 
@@ -358,7 +360,7 @@ export default function Navbar() {
                   : "hover:bg-slate-100 text-slate-600"
               }`}
             >
-              <span>3. Emaitzak eta Bilakaera</span>
+              <span>3. Emaitzak eta bilakaera</span>
             </button>
           </div>
 
@@ -366,7 +368,7 @@ export default function Navbar() {
             {isAdmin ? (
               eragileak.length > 0 ? (
                 <div className="flex items-center gap-1.5">
-                  <span className="text-slate-400 font-semibold">Saltoki aktiboa:</span>
+                  <span className="text-slate-400 font-semibold">Entitate aktiboa:</span>
                   <select
                     value={activeEragilea?.id || ""}
                     onChange={(e) => {
@@ -385,7 +387,7 @@ export default function Navbar() {
                   </select>
                 </div>
               ) : (
-                <span className="text-slate-400 italic">Saltokirik ez</span>
+                <span className="text-slate-400 italic">Entitaterik ez</span>
               )
             ) : activeEragilea ? (
               <span className="text-slate-700 font-bold bg-white border border-slate-200 px-3 py-1 rounded-lg flex items-center gap-1.5 shadow-2xs">

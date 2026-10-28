@@ -38,13 +38,11 @@ export function getPublicEragileLabel(
   // Otherwise, return a deterministic anonymous ID code
   const suffix = eragile.id.replace(/[^a-zA-Z0-9]/g, "").slice(-4).toUpperCase() || "01";
   const prefix =
-    eragile.mota === "merkataritza"
-      ? "Saltokia"
-      : eragile.mota === "ikastetxea"
+    eragile.mota === "ikastetxea"
       ? "Ikastetxea"
       : eragile.mota === "enpresa"
       ? "Enpresa"
-      : "Eragilea";
+      : "Entitatea";
   return `${prefix} #${suffix}`;
 }
 
@@ -127,14 +125,14 @@ export interface Nudge {
 const DEFAULT_PILOT: Pilotua = {
   id: "barra-barra-txapak",
   izena: "Euskaraz barra-barra txapak",
-  azpititulua: "Langileek txapa bistan eramatea, bezeroek lehen hitza euskaraz egiteko konfiantza izan dezaten",
+  azpititulua: "Langileek txapa bistan eramatea, herritarrek lehen hitza euskaraz egiteko konfiantza izan dezaten",
   deskribapena:
-    "Saltoki eta ostalaritzako langileek 'Euskaraz barra-barra' txapa bistan eramaten dutenean, bezeroak badaki euskaraz artatuko dutela. Horrek segurtasuna ematen dio lehen agurra eta elkarrizketa euskaraz egiteko, gaztelaniarako inertzia hautsiz.",
-  mota: "Merkataritza, ostalaritza eta saltokiak",
-  adibidea: "Langileak txapa paparrean daramanean, bezeroak 'Egun on!' esan eta elkarrizketa naturaltasunez euskaraz abiatzen da.",
+    "Entitateetako langileek 'Euskaraz barra-barra' txapa bistan eramaten dutenean, herritarrak badaki euskaraz artatuko dutela. Horrek segurtasuna ematen dio lehen agurra eta elkarrizketa euskaraz egiteko, gaztelaniarako inertzia hautsiz.",
+  mota: "Merkataritza, ostalaritza eta harrera-guneak",
+  adibidea: "Langileak txapa paparrean daramanean, herritarrak 'Egun on!' esan eta elkarrizketa naturaltasunez euskaraz abiatzen da.",
   urratsak_json: JSON.stringify([
-    "1. Saltokiko lantaldearekin dinamika adostu eta 'Euskaraz barra-barra' txapak banatu.",
-    "2. T0 hasierako neurketa egin (txapa jarri aurretik, bezeroen lehen hitza eta elkarrizketak zein hizkuntzatan diren jasotzeko).",
+    "1. Entitateko lantaldearekin dinamika adostu eta 'Euskaraz barra-barra' txapak banatu.",
+    "2. T0 hasierako neurketa egin (txapa jarri aurretik, lehen hitza eta elkarrizketak zein hizkuntzatan diren jasotzeko).",
     "3. Txapak soinean eta leku ikusgarrian jarri.",
     "4. T1 neurketa egin (txapa jarri eta lehen astean izandako eragina neurtzeko).",
     "5. T2 neurketa egin 14-21 egunera, ohitura berria egonkortu dela egiaztatzeko."
@@ -147,19 +145,24 @@ export const DEFAULT_UI_TEXTS: Record<string, string> = {
   app_title: "Bidean Eragin",
   app_subtitle: "Euskararen erabilera sustatzeko esperimentu praktikoak • Bagera",
   auth_intro:
-    "Euskararen erabilera sustatzeko eta neurtzeko tresna praktikoa. Jarraitu zure saltoki edo eragilearen bilakaera 3 urrats errazetan:",
+    "Euskararen erabilera sustatzeko eta neurtzeko tresna praktikoa. Jarraitu zure entitatearen bilakaera 3 urrats errazetan:",
   auth_step1_title: "Hipotesia zehaztu",
-  auth_step1_desc: "Zure guneko erronka eta helburua finkatu.",
+  auth_step1_desc: "Zure entitateko erronka eta helburua finkatu.",
   auth_step2_title: "T0 / T1 / T2 neurtu",
   auth_step2_desc: "Behaketa erraza eta diskretua mugikorrarekin.",
   auth_step3_title: "Bilakaera ikusi",
   auth_step3_desc: "Emaitzak modu pribatuan eta argian aztertu.",
-  nav_panela: "Nire Panela",
+  nav_panela: "Nire panela",
   nav_behaketa: "Neurtu",
-  nav_katalogoa: "Pilotuak eta Hipotesia",
+  nav_katalogoa: "Pilotuak eta hipotesia",
+  nav_komunitatea: "Komunitatea",
   nav_admin: "Koordinazioa",
-  counter_title: "Elkarrizketen Kontagailua",
+  counter_badge: "Zuzeneko neurketa • Kontagailua",
+  counter_title: "Elkarrizketen kontagailua",
   counter_subtitle: "Zuzeneko behaketa-saioa",
+  counter_start_btn: "Hasi saioa",
+  counter_pause_btn: "Pausatu",
+  counter_save_btn: "Amaitu eta gorde",
   counter_t0_desc:
     "Pilotua martxan jarri aurretik euskaraz zenbat hitz egiten den neurtzen du, abiapuntua ezagutzeko.",
   counter_t1_desc:
@@ -169,12 +172,14 @@ export const DEFAULT_UI_TEXTS: Record<string, string> = {
   counter_btn_euskaraz: "Euskaraz",
   counter_btn_erdaraz: "Erdaraz",
   counter_btn_elebi: "Elebi (bi hizkuntzatan)",
-  dashboard_step1_title: "1. Urratsa: Egin T0 hasierako neurketa (txapa jarri aurretik)",
-  dashboard_step2_title: "2. Urratsa: Jarri 'Euskaraz barra-barra' txapa bistan eta neurtu T1",
-  dashboard_step3_title: "3. Urratsa: Egin T2 neurketa ohitura egonkortu dela egiaztatzeko",
-  katalogoa_title: "Esku-hartze Pilotuak",
+  dashboard_step1_title: "1. urratsa: egin T0 hasierako neurketa (pilotuaren aurretik)",
+  dashboard_step1_desc:
+    "Pilotua martxan jarri aurretik, neurtu 10-30 minutuz gaur egungo elkarrizketak zein hizkuntzatan diren (abiapuntua ezagutzeko).",
+  dashboard_step2_title: "2. urratsa: jarri pilotua martxan eta neurtu T1",
+  dashboard_step3_title: "3. urratsa: egin T2 neurketa ohitura egonkortu dela egiaztatzeko",
+  katalogoa_title: "Esku-hartze pilotuak",
   katalogoa_subtitle:
-    "Aukeratu zure gunean probatu nahi duzun dinamika, deskargatu materialak eta zehaztu hipotesia.",
+    "Aukeratu zure entitatean probatu nahi duzun dinamika, deskargatu materialak eta zehaztu hipotesia.",
   footer_text:
     "Bidean Eragin — Bagera Euskaltzaleen Elkartea • Euskararen erabilera neurgarria eta praktikoa",
 };
@@ -306,6 +311,13 @@ function createFallbackStore() {
             };
           }
           // Neurketak
+          if (q.includes("COUNT(*) as c FROM neurketak WHERE esperimentu_id = ? AND unea = ? AND id != ?")) {
+            const [expId, unea, excludeId] = params;
+            const c = store.neurketak.filter(
+              (n) => n.esperimentu_id === expId && n.unea === unea && n.id !== excludeId
+            ).length;
+            return { c };
+          }
           if (q.includes("FROM neurketak WHERE id = ?")) {
             return store.neurketak.find((n) => n.id === params[0]);
           }
@@ -1275,6 +1287,30 @@ export async function offloadInlineMaterialsToStore(
   return result;
 }
 
+const LEGACY_UI_TEXT_VALUES = new Set([
+  "Euskararen erabilera sustatzeko eta neurtzeko tresna praktikoa. Jarraitu zure saltoki edo eragilearen bilakaera 3 urrats errazetan:",
+  "Euskararen erabilera aktibatzeko tresna praktikoa. Jarraitu zure saltoki edo zentroaren aurrerapena 3 urrats errazetan:",
+  "Zure saltokiko erronka eta helburua zehaztu.",
+  "Zure guneko erronka eta helburua finkatu.",
+  "Nire Panela",
+  "Nire Saltokia",
+  "Pilotuak eta Hipotesia",
+  "Bagera Admin",
+  "Zuzeneko Neurketa • Kontagailua",
+  "Elkarrizketen Kontagailua",
+  "Hizkuntza-Ohituren Kontagailua",
+  "Hasi Saioa",
+  "Amaitu eta Gorde",
+  "Elebi (Nahastua)",
+  "1. Urratsa: Egin T0 hasierako neurketa (txapa jarri aurretik)",
+  "2. Urratsa: Jarri 'Euskaraz barra-barra' txapa bistan eta neurtu T1",
+  "2. Urratsa: Jarri 'Euskaraz barra-barra' txapa ikusgai eta neurtu T1",
+  "3. Urratsa: Egin T2 neurketa ohitura egonkortu dela egiaztatzeko",
+  "3. Urratsa: Egin T2 neurketa ohitura sendotu dela egiaztatzeko",
+  "Esku-hartze Pilotuak",
+  "Aukeratu zure gunean probatu nahi duzun dinamika, deskargatu materialak eta zehaztu hipotesia.",
+]);
+
 export function getUiTexts(): Record<string, string> {
   try {
     const database = initDb();
@@ -1282,7 +1318,11 @@ export function getUiTexts(): Record<string, string> {
     const merged: Record<string, string> = { ...DEFAULT_UI_TEXTS };
     for (const r of rows) {
       if (r.key && typeof r.value === "string") {
-        merged[r.key] = r.value;
+        if (LEGACY_UI_TEXT_VALUES.has(r.value) && DEFAULT_UI_TEXTS[r.key]) {
+          merged[r.key] = DEFAULT_UI_TEXTS[r.key];
+        } else {
+          merged[r.key] = r.value;
+        }
       }
     }
     return merged;

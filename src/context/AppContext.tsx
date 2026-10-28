@@ -23,37 +23,45 @@ import {
 
 export const DEFAULT_UI_TEXTS: Record<string, string> = {
   app_title: "Bidean Eragin",
-  app_subtitle: "Portaera-ekonomia eta esperimentazio arina • Bagera",
+  app_subtitle: "Euskararen erabilera sustatzeko esperimentu praktikoak • Bagera",
   auth_intro:
-    "Euskararen erabilera aktibatzeko tresna praktikoa. Jarraitu zure saltoki edo zentroaren aurrerapena 3 urrats errazetan:",
-  auth_step1_title: "Hipotesia definitu",
-  auth_step1_desc: "Zure saltokiko erronka eta helburua zehaztu.",
+    "Euskararen erabilera sustatzeko eta neurtzeko tresna praktikoa. Jarraitu zure entitatearen bilakaera 3 urrats errazetan:",
+  auth_step1_title: "Hipotesia zehaztu",
+  auth_step1_desc: "Zure entitateko erronka eta helburua finkatu.",
   auth_step2_title: "T0 / T1 / T2 neurtu",
-  auth_step2_desc: "10 minutuko neurketa erraza mugikorrarekin.",
-  auth_step3_title: "Eragina ikusi",
-  auth_step3_desc: "Emaitza errealak modu pribatuan aztertu.",
-  nav_panela: "Nire Saltokia",
-  nav_behaketa: "Neurtu (T0/T1/T2)",
-  nav_katalogoa: "Pilotuak",
+  auth_step2_desc: "Behaketa erraza eta diskretua mugikorrarekin.",
+  auth_step3_title: "Bilakaera ikusi",
+  auth_step3_desc: "Emaitzak modu pribatuan eta argian aztertu.",
+  nav_panela: "Nire panela",
+  nav_behaketa: "Neurtu",
+  nav_katalogoa: "Pilotuak eta hipotesia",
   nav_komunitatea: "Komunitatea",
-  nav_admin: "Bagera Admin",
-  counter_badge: "Zuzeneko Neurketa • Kontagailua",
-  counter_title: "Hizkuntza-Ohituren Kontagailua",
-  counter_subtitle:
-    "Aukeratu iraupena, sakatu Hasi eta erregistratu entzuten dituzun elkarrizketak modu diskretuan.",
-  counter_start_btn: "Hasi Saioa",
+  nav_admin: "Koordinazioa",
+  counter_badge: "Zuzeneko neurketa • Kontagailua",
+  counter_title: "Elkarrizketen kontagailua",
+  counter_subtitle: "Zuzeneko behaketa-saioa",
+  counter_start_btn: "Hasi saioa",
   counter_pause_btn: "Pausatu",
-  counter_save_btn: "Amaitu eta Gorde",
+  counter_save_btn: "Amaitu eta gorde",
+  counter_t0_desc:
+    "Pilotua martxan jarri aurretik euskaraz zenbat hitz egiten den neurtzen du, abiapuntua ezagutzeko.",
+  counter_t1_desc:
+    "Pilotua martxan jarri berritan egindako neurketa, lehen eragina ikusteko.",
+  counter_t2_desc:
+    "Handik 2-3 astera egindako neurketa, ohitura berria egonkortu den egiaztatzeko.",
   counter_btn_euskaraz: "Euskaraz",
   counter_btn_erdaraz: "Erdaraz",
-  counter_btn_elebi: "Elebi (Nahastua)",
-  dashboard_step1_title: "1. Urratsa: Egin T0 hasierako neurketa (txapa jarri aurretik)",
+  counter_btn_elebi: "Elebi (bi hizkuntzatan)",
+  dashboard_step1_title: "1. urratsa: egin T0 hasierako neurketa (pilotuaren aurretik)",
   dashboard_step1_desc:
-    "Txapak jarri aurretik, neurtu 10-30 minutuz gaur egungo elkarrizketak zein hizkuntzatan diren (abiapuntua ezagutzeko).",
-  dashboard_step2_title: "2. Urratsa: Jarri 'Euskaraz barra-barra' txapa ikusgai eta neurtu T1",
-  dashboard_step3_title: "3. Urratsa: Egin T2 neurketa ohitura sendotu dela egiaztatzeko",
-  katalogoa_title: "Aukeratu edo sortu zure esku-hartze pilotua",
-  katalogoa_subtitle: "Hautatu pilotu bat zure espazioan esperimentu kontrolatu bat abiatzeko.",
+    "Pilotua martxan jarri aurretik, neurtu 10-30 minutuz gaur egungo elkarrizketak zein hizkuntzatan diren (abiapuntua ezagutzeko).",
+  dashboard_step2_title: "2. urratsa: jarri pilotua martxan eta neurtu T1",
+  dashboard_step3_title: "3. urratsa: egin T2 neurketa ohitura egonkortu dela egiaztatzeko",
+  katalogoa_title: "Esku-hartze pilotuak",
+  katalogoa_subtitle:
+    "Aukeratu zure entitatean probatu nahi duzun dinamika, deskargatu materialak eta zehaztu hipotesia.",
+  footer_text:
+    "Bidean Eragin — Bagera Euskaltzaleen Elkartea • Euskararen erabilera neurgarria eta praktikoa",
 };
 
 export function getPublicEragileLabel(
@@ -69,13 +77,11 @@ export function getPublicEragileLabel(
   }
   const suffix = eragile.id.replace(/[^a-zA-Z0-9]/g, "").slice(-4).toUpperCase() || "01";
   const prefix =
-    eragile.mota === "merkataritza"
-      ? "Saltokia"
-      : eragile.mota === "ikastetxea"
+    eragile.mota === "ikastetxea"
       ? "Ikastetxea"
       : eragile.mota === "enpresa"
       ? "Enpresa"
-      : "Eragilea";
+      : "Entitatea";
   return `${prefix} #${suffix}`;
 }
 
@@ -684,10 +690,10 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
           izena: data.izena.trim(),
           mota: data.mota || "merkataritza",
           arduraduna: data.arduraduna?.trim() || "Arduraduna",
-          email: `komertzioa-${Date.now().toString(36)}@bideaneragin.eus`,
+          email: `entitatea-${Date.now().toString(36)}@bideaneragin.eus`,
           erronka_nagusia:
             data.erronka_nagusia?.trim() ||
-            "Dendan lehen hitza eta elkarrizketa euskaraz piztea, txapak erabilita.",
+            "Egunerokoan lehen hitza eta elkarrizketa euskaraz piztea, txapak erabilita.",
         }),
       });
       const jsonEragile = await resEragile.json();
@@ -697,9 +703,9 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
       const newEragilea = jsonEragile.data as Eragilea;
 
       const xedea = data.xede_portzentajea || 25;
-      const taldeaVal = data.taldea?.trim() || "Saltokiko lantaldeak";
-      const pertsonakVal = data.pertsonak?.trim() || "bezeroekin";
-      const guneaVal = data.gunea?.trim() || "mostradorean";
+      const taldeaVal = data.taldea?.trim() || "Entitateko lantaldeak";
+      const pertsonakVal = data.pertsonak?.trim() || "herritarrekin";
+      const guneaVal = data.gunea?.trim() || "harrera-gunean";
       const hipotesiaVal =
         data.hipotesia?.trim() ||
         `Gure ustez, ${taldeaVal} ${pertsonakVal} ${guneaVal} 'Euskaraz barra-barra' txapa bistan eramanda, euskarazko elkarrizketak %${xedea} ugarituko dira.`;
@@ -730,7 +736,7 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
       triggerConfetti();
       return { eragilea: newEragilea, esperimentua: newExp };
     } catch (e) {
-      console.error("Errorea saltoki azkarra sortzean:", e);
+      console.error("Errorea entitate azkarra sortzean:", e);
       return null;
     }
   };

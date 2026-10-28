@@ -492,7 +492,7 @@ export default function PilotuenKatalogoa() {
         <div className="max-w-3xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold mb-3">
             <Layers className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Pilotuen Katalogoa • Errezetak</span>
+            <span>Pilotuen katalogoa • Errezetak</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
             {uiTexts.katalogoa_title || "Aukeratu edo sortu zure esku-hartze pilotua"}
@@ -504,7 +504,7 @@ export default function PilotuenKatalogoa() {
                 <em>&ldquo;{activeEragilea.erronka_nagusia}&rdquo;</em>) aurre egiteko.
               </span>
             ) : (
-              uiTexts.katalogoa_subtitle || "Hautatu pilotu bat zure espazioan esperimentu kontrolatu bat abiatzeko."
+              uiTexts.katalogoa_subtitle || "Hautatu pilotu bat zure entitatean esperimentu kontrolatu bat abiatzeko."
             )}
           </p>
         </div>
@@ -516,7 +516,7 @@ export default function PilotuenKatalogoa() {
             className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-sm shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 transition cursor-pointer hover:scale-102"
           >
             <PlusCircle className="w-4 h-4" />
-            <span>Sortu Pilotu Berria</span>
+            <span>Sortu pilotu berria</span>
           </button>
         </div>
       </div>
@@ -553,7 +553,7 @@ export default function PilotuenKatalogoa() {
                     </span>
                     <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full">
                       {activeExpCount > 0
-                        ? `🔥 ${activeExpCount} saltokitan martxan`
+                        ? `🔥 ${activeExpCount} entitatetan martxan`
                         : "🌱 Prest abiatzeko"}
                     </span>
                   </div>
@@ -597,7 +597,7 @@ export default function PilotuenKatalogoa() {
                 {/* Real Example Quote Callout */}
                 <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-200/80 mb-5">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
-                    Adibide Erreal bat:
+                    Adibide erreal bat:
                   </span>
                   <p className="text-xs font-semibold text-slate-800 italic">
                     &ldquo;{pilotu.adibidea}&rdquo;
@@ -630,7 +630,7 @@ export default function PilotuenKatalogoa() {
                   onClick={() => setSelectedPilot(pilotu)}
                   className={`w-full py-3.5 px-4 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md transition cursor-pointer ${theme.buttonColor}`}
                 >
-                  <span>Aukeratu & Sortu Hipotesia</span>
+                  <span>Aukeratu eta sortu hipotesia</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
 
@@ -651,8 +651,8 @@ export default function PilotuenKatalogoa() {
                   <Paperclip className="w-3.5 h-3.5 text-emerald-600" />
                   <span>
                     {pilotuMaterialak.length > 0
-                      ? `Materialak & PDFak (${pilotuMaterialak.length} fitxategi)`
-                      : "Ikusi / Igo Materialak (PDF/Irudiak)"}
+                      ? `Materialak eta PDFak (${pilotuMaterialak.length} fitxategi)`
+                      : "Ikusi / igo materialak (PDF edo irudiak)"}
                   </span>
                 </button>
               </div>
@@ -672,7 +672,7 @@ export default function PilotuenKatalogoa() {
               Nola funtzionatzen du hobekuntza-zikloak?
             </h4>
             <p className="text-xs sm:text-sm text-slate-600 mt-0.5">
-              1. Hipotesia definitu → 2. T0 Neurtu (aurretik) → 3. Txapak/ekintza aktibatu → 4. T1 Neurtu (berehala) → 5. T2 Neurtu (sendotzea).
+              1. Hipotesia definitu → 2. T0 neurtu (aurretik) → 3. Pilotua aktibatu → 4. T1 neurtu (berehala) → 5. T2 neurtu (sendotzea).
             </p>
           </div>
         </div>
@@ -703,13 +703,13 @@ export default function PilotuenKatalogoa() {
                 <div>
                   <h3 className="font-bold text-slate-900 text-lg">
                     {editingPilotId
-                      ? "Editatu Pilotua eta Materialak"
-                      : "Sortu Pilotu Berria (Errezetak)"}
+                      ? "Editatu pilotua eta materialak"
+                      : "Sortu pilotu berria (errezetak)"}
                   </h3>
                   <p className="text-xs text-slate-500">
                     {editingPilotId
                       ? "Aldatu pilotuaren izena, deskribapena, urratsak edo erantsi PDF materialak"
-                      : "Definitu zure zentrorako esku-hartze berritzaile bat eta igo PDF materialak"}
+                      : "Definitu zure entitaterako esku-hartze berritzaile bat eta igo PDF materialak"}
                   </p>
                 </div>
               </div>
@@ -727,14 +727,14 @@ export default function PilotuenKatalogoa() {
             <form onSubmit={handleCreatePilotSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Pilotuaren Izena *
+                  Pilotuaren izena *
                 </label>
                 <input
                   type="text"
                   required
                   value={newIzena}
                   onChange={(e) => setNewIzena(e.target.value)}
-                  placeholder="Adib. Barra-barra txapak, Kafe-orduan euskaraz, Lehen Hitza telefonoz..."
+                  placeholder="Adib. Barra-barra txapak, Kafe-orduan euskaraz, Lehen hitza telefonoz..."
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 text-sm transition"
                 />
               </div>
@@ -742,7 +742,7 @@ export default function PilotuenKatalogoa() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Leloa / Azpititulua *
+                    Leloa / azpititulua *
                   </label>
                   <input
                     type="text"
@@ -756,14 +756,14 @@ export default function PilotuenKatalogoa() {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Espazioa / Mota *
+                    Espazioa / mota *
                   </label>
                   <input
                     type="text"
                     required
                     value={newMota}
                     onChange={(e) => setNewMota(e.target.value)}
-                    placeholder="Adib. Merkataritza, Ikasgela, Pasilloak, Harrera..."
+                    placeholder="Adib. Merkataritza, ikasgela, pasilloak, harrera..."
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 text-sm transition"
                   />
                 </div>
@@ -771,7 +771,7 @@ export default function PilotuenKatalogoa() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Deskribapena (Helburua eta zergatia) *
+                  Deskribapena (helburua eta zergatia) *
                 </label>
                 <textarea
                   required
@@ -785,13 +785,13 @@ export default function PilotuenKatalogoa() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Adibide Erreal Bat
+                  Adibide erreal bat
                 </label>
                 <input
                   type="text"
                   value={newAdibidea}
                   onChange={(e) => setNewAdibidea(e.target.value)}
-                  placeholder="Adib. 'Txapa paparrean daramanean, bezeroak segurtasunez Egun on! esaten du'"
+                  placeholder="Adib. 'Txapa paparrean daramanean, herritarrak segurtasunez Egun on! esaten du'"
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 text-sm transition"
                 />
               </div>
@@ -800,7 +800,7 @@ export default function PilotuenKatalogoa() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Hautatu Ikonoa
+                    Hautatu ikonoa
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {AVAILABLE_ICONS.map((item) => {
@@ -827,7 +827,7 @@ export default function PilotuenKatalogoa() {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Hautatu Kolorea
+                    Hautatu kolorea
                   </label>
                   <div className="flex items-center gap-2">
                     {AVAILABLE_COLORS.map((col) => (
@@ -874,7 +874,7 @@ export default function PilotuenKatalogoa() {
                   <div>
                     <label className="text-xs font-extrabold text-emerald-950 uppercase tracking-wider flex items-center gap-1.5">
                       <Paperclip className="w-4 h-4 text-emerald-600" />
-                      <span>Pilotuaren Materialak (PDF / Irudiak)</span>
+                      <span>Pilotuaren materialak (PDF / irudiak)</span>
                     </label>
                     <p className="text-[11px] text-slate-600 mt-0.5">
                       Igo pilotu honen txantiloiak, kartelak edo gida praktikoak PDF edo irudi formatuan.
@@ -890,7 +890,7 @@ export default function PilotuenKatalogoa() {
                     <span>
                       {isUploadingModalFiles
                         ? uploadProgressText || "PDFa igotzen..."
-                        : "+ Igo PDF / Irudiak"}
+                        : "+ Igo PDF / irudiak"}
                     </span>
                     <input
                       type="file"
@@ -960,7 +960,7 @@ export default function PilotuenKatalogoa() {
                   </div>
                 ) : (
                   <p className="text-[11px] text-slate-500 italic">
-                    Ez dago PDF fitxategirik erantsita oraindik. Sakatu &ldquo;+ Igo PDF / Irudiak&rdquo; botoia gehitzeko.
+                    Ez dago PDF fitxategirik erantsita oraindik. Sakatu &ldquo;+ Igo PDF / irudiak&rdquo; botoia gehitzeko.
                   </p>
                 )}
               </div>
@@ -987,8 +987,8 @@ export default function PilotuenKatalogoa() {
                     : isSubmittingPilot
                     ? "Gordetzen..."
                     : editingPilotId
-                    ? "Gorde Aldaketak"
-                    : "Gorde eta Argitaratu Pilotua"}
+                    ? "Gorde aldaketak"
+                    : "Gorde eta argitaratu pilotua"}
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -1008,7 +1008,7 @@ export default function PilotuenKatalogoa() {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 text-lg">
-                    {showMaterialsPilot.izena} • Esku-hartze Materialak
+                    {showMaterialsPilot.izena} • Esku-hartze materialak
                   </h3>
                   <p className="text-xs text-slate-500">
                     PDF txantiloiak, inprimatzeko txapak eta gida praktikoak
@@ -1037,7 +1037,7 @@ export default function PilotuenKatalogoa() {
                     <div>
                       <h4 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
                         <Paperclip className="w-4 h-4 text-emerald-600" />
-                        <span>Pilotuaren PDF eta Dokumentu Erantsiak ({attachedMaterials.length})</span>
+                        <span>Pilotuaren PDF eta dokumentu erantsiak ({attachedMaterials.length})</span>
                       </h4>
                       <p className="text-xs text-slate-600 mt-0.5">
                         Deskargatu, aurreikusi edo igo PDF fitxategi berriak pilotu honetarako.
@@ -1049,7 +1049,7 @@ export default function PilotuenKatalogoa() {
                       <span>
                         {isUploadingDirectMaterial
                           ? uploadProgressText || "Igotzen..."
-                          : "+ Igo PDF / Material Berria"}
+                          : "+ Igo PDF / material berria"}
                       </span>
                       <input
                         type="file"
@@ -1216,7 +1216,7 @@ export default function PilotuenKatalogoa() {
                     <div className="bg-white/80 rounded-xl p-3.5 border border-dashed border-emerald-300 text-center">
                       <p className="text-xs font-semibold text-slate-600">
                         Oraindik ez da PDF fitxategirik igo pilotu honetarako. Goiko{" "}
-                        <strong>&ldquo;+ Igo PDF / Material Berria&rdquo;</strong> botoia sakatuta igo ditzakezu.
+                        <strong>&ldquo;+ Igo PDF / material berria&rdquo;</strong> botoia sakatuta igo ditzakezu.
                       </p>
                     </div>
                   )}
@@ -1230,7 +1230,7 @@ export default function PilotuenKatalogoa() {
                 {/* Visual Badge Card */}
                 <div className="border border-emerald-300 rounded-3xl p-6 bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-900 text-white shadow-xl text-center relative overflow-hidden">
                   <span className="text-[10px] uppercase tracking-widest font-extrabold bg-white/20 px-3 py-1 rounded-full inline-block mb-4 border border-white/20">
-                    Komertzio & Saltokiko Txapa Identifikatzailea
+                    Entitate eta harrera-guneetako txapa identifikatzailea
                   </span>
 
                   {/* Circular Badge Graphic */}
@@ -1248,10 +1248,10 @@ export default function PilotuenKatalogoa() {
                   </div>
 
                   <h4 className="text-xl font-black tracking-tight">
-                    &ldquo;Euskaraz barra-barra: Hemen lasai hitz egin dezakezu&rdquo;
+                    &ldquo;Euskaraz barra-barra: hemen lasai hitz egin dezakezu&rdquo;
                   </h4>
                   <p className="text-xs text-emerald-100 mt-2 max-w-md mx-auto">
-                    Langilearen paparrean eramateko txapa (38mm / 50mm) eta erakusleihorako identifikagarria.
+                    Langilearen paparrean eramateko txapa (38mm / 50mm) eta harrera-gunerako identifikagarria.
                   </p>
                 </div>
 
@@ -1259,7 +1259,7 @@ export default function PilotuenKatalogoa() {
                 <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50 space-y-2">
                   <h5 className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
                     <Tag className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Langileentzako 3 Arau Sinpleak (Protokoloa):</span>
+                    <span>Langileentzako 3 arau sinpleak (protokoloa):</span>
                   </h5>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-xs text-slate-700">
                     <div className="p-2.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
@@ -1272,7 +1272,7 @@ export default function PilotuenKatalogoa() {
                     </div>
                     <div className="p-2.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
                       <span className="font-bold text-emerald-700 block">3. Eutsi euskarari</span>
-                      <p className="text-[11px] text-slate-500 mt-0.5">Bezeroak erantzun arte, elkarrizketa euskaraz mantendu.</p>
+                      <p className="text-[11px] text-slate-500 mt-0.5">Elkarrizketak aurrera egin arte, euskaraz mantendu.</p>
                     </div>
                   </div>
                 </div>
@@ -1281,7 +1281,7 @@ export default function PilotuenKatalogoa() {
               <div className="space-y-4">
                 <div className="border border-slate-200 rounded-2xl p-5 bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 text-white shadow-lg text-center">
                   <span className="text-[10px] uppercase tracking-widest font-bold bg-white/20 px-3 py-1 rounded-full inline-block mb-3">
-                    Esku-hartze Txantiloia
+                    Esku-hartze txantiloia
                   </span>
                   <h4 className="text-xl font-bold">{showMaterialsPilot.izena}</h4>
                   <p className="text-xs text-slate-300 mt-2 max-w-md mx-auto">
@@ -1291,7 +1291,7 @@ export default function PilotuenKatalogoa() {
 
                 <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50">
                   <h5 className="font-bold text-xs text-slate-900 mb-1">
-                    Definitutako Urratsak:
+                    Definitutako urratsak:
                   </h5>
                   <div className="space-y-1.5 text-xs text-slate-600">
                     {JSON.parse(showMaterialsPilot.urratsak_json || "[]").map((u: string, idx: number) => (
@@ -1334,7 +1334,7 @@ export default function PilotuenKatalogoa() {
                   }}
                   className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/30 flex items-center gap-1.5 transition cursor-pointer"
                 >
-                  <span>Aukeratu Pilotua & Hasi</span>
+                  <span>Aukeratu pilotua eta hasi</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>

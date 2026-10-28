@@ -84,13 +84,13 @@ export default function OnboardingView() {
       <div className="text-center mb-8">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold mb-3">
           <Sparkles className="w-4 h-4 text-emerald-600" />
-          <span>Portaera-aldaketak & Esperimentazio arina</span>
+          <span>Portaera-aldaketak eta esperimentazio arina</span>
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-          Eman izena & Aktibatu Euskara
+          Eman izena eta aktibatu euskara
         </h1>
         <p className="mt-2 text-sm sm:text-base text-slate-600 max-w-xl mx-auto">
-          Zure saltoki edo erakundeak hipotesiak sortu, zuzeneko neurketak egin eta emaitzetan oinarritutako portaera-aldaketak bultzatuko ditu.
+          Zure entitateak hipotesiak sortu, zuzeneko neurketak egin eta emaitzetan oinarritutako portaera-aldaketak bultzatuko ditu.
         </p>
 
         {/* Step Indicator */}
@@ -102,7 +102,7 @@ export default function OnboardingView() {
                 : "bg-emerald-100 text-emerald-800"
             }`}
           >
-            <span>1. Saltokiaren Datuak</span>
+            <span>1. Entitatearen datuak</span>
           </div>
           <div className="w-6 h-0.5 bg-slate-200"></div>
           <div
@@ -112,7 +112,7 @@ export default function OnboardingView() {
                 : "bg-slate-100 text-slate-500"
             }`}
           >
-            <span>2. Diagnostiko Azkarra</span>
+            <span>2. Diagnostiko azkarra</span>
           </div>
         </div>
       </div>
@@ -126,14 +126,14 @@ export default function OnboardingView() {
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-bold text-slate-800 mb-1.5">
-                Saltokiaren edo Erakundearen Izena <span className="text-rose-500">*</span>
+                Entitatearen izena <span className="text-rose-500">*</span>
               </label>
               <input
                 type="text"
                 required
                 value={izena}
                 onChange={(e) => setIzena(e.target.value)}
-                placeholder="Adibidez: Bretxako Harategia, Kaxilda Denda, Zurriola..."
+                placeholder="Adibidez: Zurriola Ikastola, Kaxilda, Bretxako Harategia..."
                 className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-slate-900 text-sm shadow-xs transition"
               />
             </div>
@@ -141,7 +141,7 @@ export default function OnboardingView() {
             {/* Center type selection */}
             <div>
               <label className="block text-sm font-bold text-slate-800 mb-2">
-                Eragile Mota <span className="text-rose-500">*</span>
+                Entitate mota <span className="text-rose-500">*</span>
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 {[
@@ -174,7 +174,7 @@ export default function OnboardingView() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-bold text-slate-800 mb-1.5">
-                  Arduradunaren Izena
+                  Arduradunaren izena
                 </label>
                 <input
                   type="text"
@@ -187,13 +187,13 @@ export default function OnboardingView() {
 
               <div>
                 <label className="block text-sm font-bold text-slate-800 mb-1.5">
-                  Helbide Elektronikoa
+                  Helbide elektronikoa
                 </label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="adibidea@zentroa.eus"
+                  placeholder="adibidea@entitatea.eus"
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-sky-500 text-slate-900 text-sm"
                 />
               </div>
@@ -201,7 +201,7 @@ export default function OnboardingView() {
 
             <div>
               <label className="block text-sm font-bold text-slate-800 mb-1.5">
-                Pasahitza (Kontua sortzeko)
+                Pasahitza (kontua sortzeko)
               </label>
               <input
                 type="password"
@@ -218,7 +218,7 @@ export default function OnboardingView() {
                 disabled={!izena.trim()}
                 className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-sky-600 to-teal-600 hover:from-sky-700 hover:to-teal-700 text-white font-bold text-sm shadow-md shadow-sky-600/30 flex items-center justify-center gap-2 transition disabled:opacity-50 cursor-pointer"
               >
-                <span>Jarraitu Diagnostikora</span>
+                <span>Jarraitu diagnostikora</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -235,7 +235,7 @@ export default function OnboardingView() {
               Zein da zuen erronka nagusia?
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 mt-1">
-              Hautatu zuen zentroko egoerara gehien hurbiltzen den portaera-arazoa:
+              Hautatu zuen entitateko egoerara gehien hurbiltzen den portaera-arazoa:
             </p>
           </div>
 
@@ -304,7 +304,7 @@ export default function OnboardingView() {
               disabled={isSubmitting}
               className="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-sm shadow-md shadow-emerald-600/30 flex items-center gap-2 cursor-pointer transition disabled:opacity-50"
             >
-              <span>{isSubmitting ? "Gordetzen..." : "Bikain, Sortu Zentroa & Ikusi Pilotuak!"}</span>
+              <span>{isSubmitting ? "Gordetzen..." : "Sortu entitatea eta ikusi pilotuak"}</span>
               <Sparkles className="w-4 h-4" />
             </button>
           </div>

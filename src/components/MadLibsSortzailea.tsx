@@ -32,18 +32,18 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
   const defaultTaldea = isIkastetxe
     ? "Jantokiko eta harrerako langileek"
     : isDenda
-    ? "Saltokiko langileek"
+    ? "Entitateko langileek"
     : "Lantaldeko kideek";
 
   const defaultPertsonak = isIkastetxe
     ? "ikasleekin"
     : isDenda
-    ? "bezeroekin"
+    ? "herritarrekin"
     : "erabiltzaileekin";
 
   const defaultGunea =
     pilotu.id === "barra-barra-txapak"
-      ? "mostradorean eta sarreran"
+      ? "harreran eta sarreran"
       : pilotu.mota.toLowerCase().includes("pasillo")
       ? "pasillo nagusian eta aldageletan"
       : pilotu.mota.toLowerCase().includes("gela")
@@ -112,7 +112,7 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
 
           <div className="flex items-center gap-2 text-emerald-300 text-xs font-semibold uppercase tracking-wider mb-1">
             <FlaskConical className="w-4 h-4" />
-            <span>Hipotesi-Sortzaile Gidatua</span>
+            <span>Hipotesi-sortzaile gidatua</span>
           </div>
 
           <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
@@ -120,7 +120,7 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
             {pilotu.izena}
           </h2>
           <p className="text-xs sm:text-sm text-sky-200 mt-1">
-            {activeEragilea?.izena || "Zure saltokia"}: bihurtu zuen asmoa hipotesi zientifiko neurgarri batean!
+            {activeEragilea?.izena || "Zure entitatea"}: bihurtu zuen asmoa hipotesi zientifiko neurgarri batean!
           </p>
         </div>
 
@@ -159,7 +159,7 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
                     required
                     value={taldea}
                     onChange={(e) => setTaldea(e.target.value)}
-                    placeholder="adib. Saltokiko langileek"
+                    placeholder="adib. Entitateko langileek"
                     className="bg-white font-bold text-sky-700 border-2 border-sky-300 rounded-lg px-2.5 py-1 text-sm focus:ring-2 focus:ring-sky-500 focus:outline-hidden shadow-xs min-w-[140px]"
                   />
                 </span>
@@ -171,7 +171,7 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
                     required
                     value={pertsonak}
                     onChange={(e) => setPertsonak(e.target.value)}
-                    placeholder="bezeroekin"
+                    placeholder="herritarrekin"
                     className="bg-white font-bold text-sky-700 border-2 border-sky-300 rounded-lg px-2.5 py-1 text-sm focus:ring-2 focus:ring-sky-500 focus:outline-hidden shadow-xs min-w-[110px]"
                   />
                 </span>
@@ -184,7 +184,7 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
                     required
                     value={gunea}
                     onChange={(e) => setGunea(e.target.value)}
-                    placeholder="mostradorean"
+                    placeholder="harreran"
                     className="bg-white font-bold text-emerald-700 border-2 border-emerald-300 rounded-lg px-2.5 py-1 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-hidden shadow-xs min-w-[180px]"
                   />
                 </span>
@@ -251,8 +251,8 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
             <div className="mt-4 pt-3 border-t border-slate-200/80 flex flex-wrap items-center gap-2">
               <span className="text-[11px] font-semibold text-slate-500">Iradokizun azkarrak:</span>
               {[
-                { label: "Saltokiko mostradorea", t: "Saltokiko langileek", p: "bezeroekin", g: "mostradorean eta ordainlekuan" },
-                { label: "Goizeko erosleak", t: "Goizeko saltzaileek", p: "erosleekin", g: "dendako sarreran" },
+                { label: "Harrera eta arreta-gunea", t: "Entitateko langileek", p: "herritarrekin", g: "harreran eta sarreran" },
+                { label: "Dendako mostradorea", t: "Dendako langileek", p: "bezeroekin", g: "mostradorean eta ordainlekuan" },
                 { label: "Ostalari eta bezeroak", t: "Barrako zerbitzariek", p: "bezeroekin", g: "kafe-orduan" },
                 { label: "Ikastetxeko pasilloak", t: "DBH 1-2. mailako irakasleek", p: "ikasleekin", g: "pasillo eta jantokian" },
               ].map((chip, idx) => (
@@ -281,7 +281,7 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
             <div>
               <div className="flex items-center gap-2">
                 <h4 className="text-xs font-bold text-emerald-900 uppercase tracking-wider">
-                  Zure Hipotesi Zientifikoa:
+                  Zure hipotesi zientifikoa:
                 </h4>
                 <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-200 text-emerald-900">
                   Xedea: +%{metrika}
@@ -311,7 +311,7 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
               disabled={isSubmitting || !taldea.trim() || !gunea.trim()}
               className="px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-sm shadow-lg shadow-emerald-600/30 flex items-center gap-2 transition cursor-pointer disabled:opacity-50"
             >
-              <span>{isSubmitting ? "Gordetzen..." : "Gorde Esperimentua & Hasi T0"}</span>
+              <span>{isSubmitting ? "Gordetzen..." : "Gorde esperimentua eta hasi T0"}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

@@ -52,13 +52,11 @@ export async function POST(request: Request) {
     const expId = "exp-" + Date.now();
     const sortze_data = new Date().toISOString();
 
+    const hasExplicitHipotesia = Boolean(hipotesia && String(hipotesia).trim());
     const chosenPilotId = pilotu_id || "barra-barra-txapak";
     const chosenGunea = (gunea || izena).trim();
     const chosenTarget = Number(xede_portzentajea || 20);
-    const chosenHipotesia = (
-      hipotesia ||
-      `${izena.trim()} gunean 'Euskaraz barra-barra' txapa ikusgai erabiltzen badugu, euskarazko elkarrizketak %${chosenTarget} handituko dira.`
-    ).trim();
+    const chosenHipotesia = hasExplicitHipotesia ? String(hipotesia).trim() : "";
 
     const insertCenterAndUser = db.transaction(() => {
       // 1. Insert center
@@ -92,53 +90,71 @@ export async function POST(request: Request) {
         sortze_data
       );
 
-      // 3. Create initial experiment so user lands on a ready-to-use dashboard
-      const insertExp = db.prepare(`
-        INSERT INTO esperimentuak (id, eragile_id, pilotu_id, hipotesia, taldea, pertsonak, gunea, xede_portzentajea, estatusa, hasiera_data)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
-      insertExp.run(
-        expId,
-        zentroId,
-        chosenPilotId,
-        chosenHipotesia,
-        izena.trim(),
-        arduraduna.trim(),
-        chosenGunea,
-        chosenTarget,
-        "T0_PENDIENTE",
-        sortze_data
-      );
+      // 3. Only create initial experiment if explicitly requested with a hypothesis
+      if (hasExplicitHipotesia) {
+        const insertExp = db.prepare(`
+          INSERT INTO esperimentuak (id, eragile_id, pilotu_id, hipotesia, taldea, pertsonak, gunea, xede_portzentajea, estatusa, hasiera_data)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        insertExp.run(
+          expId,
+          zentroId,
+          chosenPilotId,
+          chosenHipotesia,
+          izena.trim(),
+          arduraduna.trim(),
+          chosenGunea,
+          chosenTarget,
+          "T0_PENDIENTE",
+          sortze_data
+        );
+      }
 
       // 4. Insert welcome nudge
       const insertNudge = db.prepare(`
         INSERT INTO nudges (id, eragile_id, titulua, mezua, mota, epemuga, irakurria, ekintza_esteka, sortze_data)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
-      insertNudge.run(
-        "nudge-" + Date.now(),
-        zentroId,
-        "1. Urratsa: Egin T0 Hasierako Neurketa 📊",
-        `Zure hipotesia prest dago! Txapak jarri aurretik, egin lehen behaketa (T0) gaur egungo abiapuntua ezagutzeko.`,
-        "neurketa_t0",
-        new Date(Date.now() + 86400000 * 3).toISOString(),
-        0,
-        "/kontagailua",
-        sortze_data
-      );
+      if (hasExplicitHipotesia) {
+        insertNudge.run(
+          "nudge-" + Date.now(),
+          zentroId,
+          "1. urratsa: egin T0 hasierako neurketa 📊",
+          "Zure hipotesia prest dago! Esku-hartzea hasi aurretik, egin lehen behaketa (T0) gaur egungo abiapuntua ezagutzeko.",
+          "neurketa_t0",
+          new Date(Date.now() + 86400000 * 3).toISOString(),
+          0,
+          "/kontagailua",
+          sortze_data
+        );
+      } else {
+        insertNudge.run(
+          "nudge-" + Date.now(),
+          zentroId,
+          "Ongi etorri Bidean Eragin gunera! 🚀",
+          "Arakatu esku-hartze pilotuen katalogoa eta aukeratu zure entitatearentzat egokiena dena zure erronkari erantzuteko.",
+          "hipotesia_sortu",
+          new Date(Date.now() + 86400000 * 5).toISOString(),
+          0,
+          "/katalogoa",
+          sortze_data
+        );
+      }
     });
 
     insertCenterAndUser();
 
     const newUser = db.prepare("SELECT id, email, name, role, eragile_id, created_at FROM users WHERE id = ?").get(userId) as User;
     const newEragilea = db.prepare("SELECT * FROM eragileak WHERE id = ?").get(zentroId) as Eragilea;
-    const newEsperimentua = db.prepare(`
-      SELECT e.*, p.izena as pilotu_izena, p.ikonoa as pilotu_ikonoa, er.izena as eragile_izena
-      FROM esperimentuak e
-      LEFT JOIN pilotuak p ON e.pilotu_id = p.id
-      LEFT JOIN eragileak er ON e.eragile_id = er.id
-      WHERE e.id = ?
-    `).get(expId) as Esperimentua & { eragile_izena: string };
+    const newEsperimentua = hasExplicitHipotesia
+      ? (db.prepare(`
+          SELECT e.*, p.izena as pilotu_izena, p.ikonoa as pilotu_ikonoa, er.izena as eragile_izena
+          FROM esperimentuak e
+          LEFT JOIN pilotuak p ON e.pilotu_id = p.id
+          LEFT JOIN eragileak er ON e.eragile_id = er.id
+          WHERE e.id = ?
+        `).get(expId) as Esperimentua & { eragile_izena: string })
+      : null;
 
     await syncDbToCloud();
 

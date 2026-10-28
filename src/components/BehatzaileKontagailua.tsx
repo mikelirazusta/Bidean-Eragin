@@ -119,10 +119,10 @@ export default function BehatzaileKontagailua() {
   const [showNewStandModal, setShowNewStandModal] = useState<boolean>(false);
   const [newStandName, setNewStandName] = useState<string>("");
   const [newStandManager, setNewStandManager] = useState<string>("");
-  const [newStandGunea, setNewStandGunea] = useState<string>("Saltokiko mostradorea");
+  const [newStandGunea, setNewStandGunea] = useState<string>("Harrera eta arreta-gunea");
   const [newStandTargetPct, setNewStandTargetPct] = useState<number>(25);
   const [newStandHipotesia, setNewStandHipotesia] = useState<string>(
-    "Langileek 'Euskaraz barra-barra' txapa bistan eramanda, saltokiko mostradorean bezeroen lehen hitza eta elkarrizketak euskaraz %25 ugarituko dira."
+    "Langileek 'Euskaraz barra-barra' txapa bistan eramanda, harrera-gunean lehen hitza eta elkarrizketak euskaraz %25 ugarituko dira."
   );
   const [isCreatingStand, setIsCreatingStand] = useState<boolean>(false);
 
@@ -431,8 +431,8 @@ export default function BehatzaileKontagailua() {
   const handleConfirmSave = async () => {
     const expId = currentExp?.id;
     if (!expId) {
-      alert("Mesedez, lehenik sortu zentroa eta esperimentua neurketa honi lotzeko!");
-      setActiveTab("onboarding");
+      alert("Mesedez, lehenik sortu zure esperimentua neurketa honi lotzeko!");
+      setActiveTab("katalogoa");
       return;
     }
 
@@ -496,7 +496,7 @@ export default function BehatzaileKontagailua() {
           <div className="flex items-center gap-2">
             <Store className="w-4 h-4 text-emerald-400" />
             <span className="text-xs font-bold text-slate-200 uppercase tracking-wider">
-              {isAdmin ? "Gaurko Neurketaren Saltokia eta Behatzailea" : "Zure Saltokiko Neurketa Gunea"}
+              {isAdmin ? "Gaurko neurketaren entitatea eta behatzailea" : "Zure entitateko neurketa-gunea"}
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -512,7 +512,7 @@ export default function BehatzaileKontagailua() {
               title="Soinua aktibatu edo isilarazi (bibrazioa beti aktibo)"
             >
               {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
-              <span>{soundEnabled ? "Soinua ON" : "Isila (Bibrazioa)"}</span>
+              <span>{soundEnabled ? "Soinua ON" : "Isila (bibrazioa)"}</span>
             </button>
 
             {/* Stealth / Camouflage Mode Toggle */}
@@ -527,7 +527,7 @@ export default function BehatzaileKontagailua() {
               title="Modu diskretua: pantaila ilundu eta kolore deigarriak ezkutatu inork ez nabaritzeko"
             >
               {stealthMode ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-              <span>{stealthMode ? "Modu Diskretua ON" : "🕵️ Modu Diskretua"}</span>
+              <span>{stealthMode ? "Modu diskretua ON" : "🕵️ Modu diskretua"}</span>
             </button>
 
             {isAdmin && (
@@ -537,7 +537,7 @@ export default function BehatzaileKontagailua() {
                   onClick={handleManualRefresh}
                   disabled={isRefreshingStandList}
                   className="text-xs font-semibold text-sky-300 hover:text-sky-200 flex items-center gap-1 cursor-pointer disabled:opacity-50 transition"
-                  title="Lankideak sortutako saltokiak eguneratu"
+                  title="Lankideak sortutako entitateak eguneratu"
                 >
                   <RotateCcw className={`w-3.5 h-3.5 ${isRefreshingStandList ? "animate-spin" : ""}`} />
                 </button>
@@ -548,7 +548,7 @@ export default function BehatzaileKontagailua() {
                   className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 cursor-pointer disabled:opacity-50 transition"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Postu Berria</span>
+                  <span>Entitate berria</span>
                 </button>
               </>
             )}
@@ -566,14 +566,14 @@ export default function BehatzaileKontagailua() {
               className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs rounded-xl transition shadow-md flex items-center gap-2 mx-auto cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>{isAdmin ? "+ Sortu 1. Postua Orain" : "Aukeratu Pilotua eta Hipotesia"}</span>
+              <span>{isAdmin ? "+ Sortu 1. entitatea orain" : "Aukeratu pilotua eta hipotesia"}</span>
             </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                📍 {isAdmin ? "Zein saltoki edo postutan zaude?" : "Zure saltokia eta behaketa-gunea:"}
+                📍 {isAdmin ? "Zein entitatetan zaude?" : "Zure entitatea eta behaketa-gunea:"}
               </label>
               {isAdmin ? (
                 <select
@@ -590,13 +590,13 @@ export default function BehatzaileKontagailua() {
                 >
                   {availableEsperimentuak.map((exp) => (
                     <option key={exp.id} value={exp.id}>
-                      {exp.eragile_izena || "Saltokia"} ({exp.gunea || exp.taldea || "Saltokia"})
+                      {exp.eragile_izena || "Entitatea"} ({exp.gunea || exp.taldea || "Gunea"})
                     </option>
                   ))}
                 </select>
               ) : (
                 <div className="w-full bg-slate-800/90 border border-slate-700 text-emerald-300 rounded-xl px-3 py-2 text-xs font-bold truncate">
-                  {activeEragilea?.izena || "Zure Saltokia"} • {currentExp?.gunea || "Mostradorea"}
+                  {activeEragilea?.izena || "Zure entitatea"} • {currentExp?.gunea || "Harrera"}
                 </div>
               )}
             </div>
@@ -627,10 +627,10 @@ export default function BehatzaileKontagailua() {
             </div>
             <div>
               <h1 className="font-bold text-slate-900 text-base sm:text-lg">
-                {uiTexts.counter_title || "Elkarrizketen Kontagailua"}
+                {uiTexts.counter_title || "Elkarrizketen kontagailua"}
               </h1>
               <p className="text-xs text-slate-500">
-                {activeEragilea?.izena || "Zure gunea"} • {uiTexts.counter_subtitle || "Zuzeneko behaketa-saioa"}
+                {activeEragilea?.izena || "Zure entitatea"} • {uiTexts.counter_subtitle || "Zuzeneko behaketa-saioa"}
               </p>
             </div>
           </div>
@@ -666,13 +666,13 @@ export default function BehatzaileKontagailua() {
             <HelpCircle className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
             <span>
               {phase === "T0" && (
-                <strong>T0 (Hasierako argazkia):</strong>
+                <strong>T0 (hasierako argazkia):</strong>
               )}
               {phase === "T1" && (
-                <strong>T1 (Lehen eragina):</strong>
+                <strong>T1 (lehen eragina):</strong>
               )}
               {phase === "T2" && (
-                <strong>T2 (Ohitura egonkortua):</strong>
+                <strong>T2 (ohitura egonkortua):</strong>
               )}{" "}
               {phase === "T0" &&
                 (uiTexts.counter_t0_desc ||
@@ -735,7 +735,7 @@ export default function BehatzaileKontagailua() {
           <div className="flex items-center justify-between mb-2.5">
             <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
               <Clock className="w-4 h-4 text-emerald-600" />
-              <span>Aukeratu Behaketaren Iraupena:</span>
+              <span>Aukeratu behaketaren iraupena:</span>
             </label>
             <span className="text-[11px] text-slate-500 font-medium">
               Nahi beste denboraz neur dezakezu
@@ -841,7 +841,7 @@ export default function BehatzaileKontagailua() {
               className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/30 transition cursor-pointer"
             >
               <Play className="w-4 h-4 fill-current" />
-              <span>Hasi Saioa</span>
+              <span>Hasi saioa</span>
             </button>
           ) : (
             <>
@@ -880,7 +880,7 @@ export default function BehatzaileKontagailua() {
       <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 mb-5 flex items-center justify-between">
         <div>
           <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-            Jasotako Elkarrizketak
+            Jasotako elkarrizketak
           </span>
           <span className="text-2xl font-black text-slate-900">
             {totalInteractions}{" "}
@@ -927,7 +927,7 @@ export default function BehatzaileKontagailua() {
             <div className="flex items-center gap-2">
               <EyeOff className="w-4 h-4 text-slate-500" />
               <span className="text-xs font-bold text-slate-400">
-                Ohar-bloka / Zerrenda (Modu Ezkutua)
+                Ohar-bloka / zerrenda (modu ezkutua)
               </span>
             </div>
             <span className="text-[11px] font-mono text-slate-500">
@@ -948,7 +948,7 @@ export default function BehatzaileKontagailua() {
           >
             <div>
               <span className="text-sm font-bold text-slate-300 block">
-                1. Eremua — A aukera
+                1. eremua — A aukera
               </span>
               <span className="text-[11px] text-slate-500">
                 Bibrazio 1 (sendoa) • Bolumena + / ↑
@@ -979,7 +979,7 @@ export default function BehatzaileKontagailua() {
           >
             <div>
               <span className="text-sm font-bold text-slate-300 block">
-                2. Eremua — B aukera
+                2. eremua — B aukera
               </span>
               <span className="text-[11px] text-slate-500">
                 2 bibrazio labur • Bolumena - / ↓
@@ -1010,7 +1010,7 @@ export default function BehatzaileKontagailua() {
           >
             <div>
               <span className="text-sm font-bold text-slate-300 block">
-                3. Eremua — C aukera
+                3. eremua — C aukera
               </span>
               <span className="text-[11px] text-slate-500">
                 3 bibrazio labur • → tekla
@@ -1054,7 +1054,7 @@ export default function BehatzaileKontagailua() {
                   {uiTexts.counter_btn_euskaraz || "Euskaraz"}
                 </span>
                 <span className="text-xs text-emerald-100 font-medium">
-                  Sakatze bakoitzeko +1 (Bibrazio 1)
+                  Sakatze bakoitzeko +1 (bibrazio 1)
                 </span>
               </div>
             </div>
@@ -1100,7 +1100,7 @@ export default function BehatzaileKontagailua() {
                   {uiTexts.counter_btn_erdaraz || "Erdaraz"}
                 </span>
                 <span className="text-xs text-rose-100 font-medium">
-                  Gaztelania / Beste bat (2 bibrazio)
+                  Gaztelania / beste bat (2 bibrazio)
                 </span>
               </div>
             </div>
@@ -1143,7 +1143,7 @@ export default function BehatzaileKontagailua() {
               </div>
               <div className="text-left">
                 <span className="text-lg sm:text-xl font-extrabold tracking-tight block">
-                  {uiTexts.counter_btn_elebi || "Elebi (Nahastua)"}
+                  {uiTexts.counter_btn_elebi || "Elebi (bi hizkuntzatan)"}
                 </span>
                 <span className="text-xs text-amber-950/70 font-medium">
                   Euskara eta erdara txandakatuta (3 bibrazio)
@@ -1179,10 +1179,10 @@ export default function BehatzaileKontagailua() {
       <div className="mt-8 bg-sky-50/70 rounded-2xl p-4 border border-sky-100 text-xs text-slate-600 leading-relaxed">
         <h4 className="font-bold text-sky-900 mb-1 flex items-center gap-1.5">
           <AlertCircle className="w-4 h-4 text-sky-600" />
-          Behatzailearen Gida Praktikoa (Modu Diskretoa):
+          Behatzailearen gida praktikoa (modu diskretua):
         </h4>
         <ul className="list-disc pl-4 space-y-1 mt-1 text-slate-700">
-          <li>Sakatu goiko <strong>&ldquo;🕵️ Modu Ezkutua&rdquo;</strong> botoia pantaila iluntzeko eta kolore deigarriak ezkutatzeko.</li>
+          <li>Sakatu goiko <strong>&ldquo;🕵️ Modu diskretua&rdquo;</strong> botoia pantaila iluntzeko eta kolore deigarriak ezkutatzeko.</li>
           <li>Soinua lehenetsita <strong>isilik</strong> dago, eta aukera bakoitzak <strong>bibrazio-eredu ezberdina</strong> du pantailari begiratu gabe zenbatu ahal izateko.</li>
           <li>Nahastu bazara, erabili <strong>-1</strong> botoia edo desegin botoia edozein unetan.</li>
           <li>Amaitutakoan, sakatu <strong>&ldquo;Gorde&rdquo;</strong> emaitzak erregistratzeko.</li>
@@ -1199,7 +1199,7 @@ export default function BehatzaileKontagailua() {
               </div>
               <div>
                 <h3 className="text-lg font-bold text-slate-900">
-                  Gorde {phase} Neurketa ({existingPhaseCount + 1}. saioa)
+                  Gorde {phase} neurketa ({existingPhaseCount + 1}. saioa)
                 </h3>
                 <p className="text-xs text-slate-500">
                   {currentExp?.gunea || "Espazioa"} • {activeEragilea?.izena}
@@ -1237,7 +1237,7 @@ export default function BehatzaileKontagailua() {
             <div className="space-y-3 mb-5">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Behatzailearen Izena / Kodea:
+                  Behatzailearen izena / kodea:
                 </label>
                 <input
                   type="text"
@@ -1253,12 +1253,12 @@ export default function BehatzaileKontagailua() {
                 </label>
                 <div className="flex flex-wrap gap-1.5 mb-2">
                   {[
-                    "Bezeroak lehen hitza euskaraz",
-                    "Saltzaileak lehen hitza euskaraz",
+                    "Lehen hitza euskaraz",
+                    "Langileak lehen hitza euskaraz",
                     "Txapa bistan zegoen",
-                    "Jende ilara / lanpetuta",
+                    "Jende asko / lanpetuta",
                     "Giro lasaia",
-                    "Adineko bezeroak nagusi",
+                    "Adineko herritarrak nagusi",
                   ].map((tag) => (
                     <button
                       key={tag}
@@ -1303,7 +1303,7 @@ export default function BehatzaileKontagailua() {
                 onClick={() => setShowSaveModal(false)}
                 className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
               >
-                Jarraitu Neurtzen
+                Jarraitu neurtzen
               </button>
 
               <button
@@ -1317,8 +1317,8 @@ export default function BehatzaileKontagailua() {
                   {isSaving
                     ? "Gordetzen..."
                     : isOnline
-                    ? "Gorde & Ikusi Panela"
-                    : "Gailuan Gorde (Lineaz kanpo)"}
+                    ? "Gorde eta ikusi panela"
+                    : "Gailuan gorde (lineaz kanpo)"}
                 </span>
               </button>
             </div>
@@ -1337,10 +1337,10 @@ export default function BehatzaileKontagailua() {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 text-base">
-                    Gehitu Saltokia / Postua
+                    Gehitu entitatea
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Zehaztu saltokia eta zuen hipotesi erreala
+                    Zehaztu entitatea eta zuen hipotesi erreala
                   </p>
                 </div>
               </div>
@@ -1356,12 +1356,12 @@ export default function BehatzaileKontagailua() {
             <form onSubmit={handleCreateStandSubmit} className="space-y-3.5">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Saltokiaren edo Postuaren Izena *
+                  Entitatearen izena *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Adib: Bretxako 1. postua - Harategia"
+                  placeholder="Adib: Zurriola Ikastola, Kaxilda, Bretxako Harategia..."
                   value={newStandName}
                   onChange={(e) => setNewStandName(e.target.value)}
                   className="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
@@ -1384,7 +1384,7 @@ export default function BehatzaileKontagailua() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Gunea (Non)
+                    Gunea (non)
                   </label>
                   <input
                     type="text"
@@ -1397,7 +1397,7 @@ export default function BehatzaileKontagailua() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Xede-Igoera (+%):
+                  Xede-igoera (+%):
                 </label>
                 <div className="flex items-center gap-3">
                   <input
@@ -1417,7 +1417,7 @@ export default function BehatzaileKontagailua() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-800 mb-1">
-                  Hipotesi Erreala (nahi duzun bezala idatzi edo aldatu) *
+                  Hipotesi erreala (nahi duzun bezala idatzi edo aldatu) *
                 </label>
                 <textarea
                   rows={3}

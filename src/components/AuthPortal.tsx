@@ -77,8 +77,6 @@ export default function AuthPortal() {
   const [regPasswordConfirm, setRegPasswordConfirm] = useState("");
   const [regErronka, setRegErronka] = useState(ERRONKA_AUKERAK[0].titulua);
   const [customErronka, setCustomErronka] = useState("");
-  const [regXedea, setRegXedea] = useState<number>(20);
-  const [regHipotesia, setRegHipotesia] = useState("");
   const [regPublikoa, setRegPublikoa] = useState<boolean>(false);
 
   const sortedErronkak = [
@@ -109,7 +107,7 @@ export default function AuthPortal() {
     setErrorMessage("");
 
     if (!regIzena.trim()) {
-      setErrorMessage("Saltokiaren edo erakundearen izena beharrezkoa da.");
+      setErrorMessage("Entitatearen izena beharrezkoa da.");
       return;
     }
     if (!regArduraduna.trim()) {
@@ -129,12 +127,6 @@ export default function AuthPortal() {
       return;
     }
 
-    if (!regHipotesia.trim()) {
-      setRegHipotesia(
-        `${regIzena.trim()} gunean 'Euskaraz barra-barra' txapa ikusgai erabiltzen badugu, euskarazko elkarrizketak %${regXedea} handituko dira.`
-      );
-    }
-
     setRegStep(2);
   };
 
@@ -143,9 +135,6 @@ export default function AuthPortal() {
     setIsSubmitting(true);
 
     const finalErronka = customErronka.trim() ? customErronka.trim() : regErronka;
-    const finalHipotesia = regHipotesia.trim()
-      ? regHipotesia.trim()
-      : `${regIzena.trim()} gunean 'Euskaraz barra-barra' txapa ikusgai erabiltzen badugu, euskarazko elkarrizketak %${regXedea} handituko dira.`;
 
     const result = await register({
       izena: regIzena.trim(),
@@ -155,9 +144,6 @@ export default function AuthPortal() {
       password: regPassword.trim(),
       erronka_nagusia: finalErronka,
       publikoa: regPublikoa ? 1 : 0,
-      hipotesia: finalHipotesia,
-      gunea: regIzena.trim(),
-      xede_portzentajea: regXedea,
     });
 
     setIsSubmitting(false);
@@ -180,7 +166,7 @@ export default function AuthPortal() {
           {uiTexts.app_subtitle || "Portaera-ekonomia eta esperimentazio arina • Bagera"}
         </p>
         <p className="mt-1.5 text-xs sm:text-sm text-slate-600">
-          {uiTexts.auth_intro || "Euskararen erabilera aktibatzeko tresna praktikoa. Jarraitu zure saltoki edo zentroaren aurrerapena 3 urrats errazetan:"}
+          {uiTexts.auth_intro || "Euskararen erabilera aktibatzeko tresna praktikoa. Jarraitu zure entitatearen aurrerapena 3 urrats errazetan:"}
         </p>
 
         {/* 3-Step Visual Journey Guide */}
@@ -193,7 +179,7 @@ export default function AuthPortal() {
               {uiTexts.auth_step1_title || "Hipotesia definitu"}
             </p>
             <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">
-              {uiTexts.auth_step1_desc || "Zure saltokiko erronka eta helburua zehaztu."}
+              {uiTexts.auth_step1_desc || "Zure entitateko erronka eta helburua zehaztu."}
             </p>
           </div>
           <div className="bg-white/90 border border-slate-200/80 rounded-2xl p-2.5 shadow-xs">
@@ -224,7 +210,7 @@ export default function AuthPortal() {
       <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-lg px-4">
         <div className="bg-white py-7 px-6 sm:px-10 shadow-xl shadow-slate-200/60 rounded-3xl border border-slate-200/80">
           
-          {/* Main Role Selector: Eragileak (Publikoa) vs Bagera Admin */}
+          {/* Main Role Selector: Entitateak vs Bagera Admin */}
           <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1.5 rounded-2xl mb-6">
             <button
               type="button"
@@ -241,8 +227,8 @@ export default function AuthPortal() {
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              <Store className="w-4 h-4 text-emerald-600" />
-              <span>Eragileak / Saltokiak</span>
+              <Building2 className="w-4 h-4 text-emerald-600" />
+              <span>Entitateak / Eragileak</span>
             </button>
 
             <button
@@ -261,7 +247,7 @@ export default function AuthPortal() {
               }`}
             >
               <ShieldCheck className="w-4 h-4" />
-              <span>Bagera (Koordinazioa)</span>
+              <span>Bagera (koordinazioa)</span>
             </button>
           </div>
 
@@ -279,17 +265,17 @@ export default function AuthPortal() {
               <div className="bg-indigo-50/70 border border-indigo-100 rounded-2xl p-4 mb-5 text-xs text-indigo-900">
                 <div className="font-bold text-indigo-950 flex items-center gap-1.5 mb-1">
                   <ShieldCheck className="w-4 h-4 text-indigo-600" />
-                  <span>Bagera Koordinazio Gunea</span>
+                  <span>Bagera koordinazio-gunea</span>
                 </div>
                 <p className="text-indigo-800 leading-relaxed">
-                  Bagerako lantaldeak saltoki eta zentro guztiak gainbegiratu, postu berriak gehitu eta neurketak zuzenean egiteko sarbidea.
+                  Bagerako lantaldeak entitate guztiak gainbegiratu, entitate berriak gehitu eta neurketak zuzenean egiteko sarbidea.
                 </p>
               </div>
 
               <form onSubmit={handleLoginSubmit} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Admin Helbidea
+                    Admin helbidea
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -343,7 +329,7 @@ export default function AuthPortal() {
                     ) : (
                       <>
                         <ShieldCheck className="w-4 h-4" />
-                        <span>Sartu Bagera Koordinaziora</span>
+                        <span>Sartu Bagera koordinaziora</span>
                         <ArrowRight className="w-4 h-4" />
                       </>
                     )}
@@ -353,10 +339,10 @@ export default function AuthPortal() {
             </div>
           )}
 
-          {/* ===================== MODE 2: ERAGILEAK ===================== */}
+          {/* ===================== MODE 2: ENTITATEAK ===================== */}
           {portalRole === "eragilea" && (
             <div>
-              {/* Tabs Switcher: Saioa Hasi vs Kontua Sortu */}
+              {/* Tabs Switcher: Saioa hasi vs Kontua sortu */}
               <div className="flex bg-slate-100 p-1.5 rounded-2xl mb-6">
                 <button
                   type="button"
@@ -370,7 +356,7 @@ export default function AuthPortal() {
                       : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
-                  Saioa Hasi (Dendaria)
+                  Saioa hasi (entitatea)
                 </button>
                 <button
                   type="button"
@@ -385,7 +371,7 @@ export default function AuthPortal() {
                       : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
-                  Kontua Sortu (Eragile Berria)
+                  Kontua sortu (entitate berria)
                 </button>
               </div>
 
@@ -393,7 +379,7 @@ export default function AuthPortal() {
                 <form onSubmit={handleLoginSubmit} className="space-y-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Saltokiaren Helbide Elektronikoa
+                      Entitatearen helbide elektronikoa
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -404,7 +390,7 @@ export default function AuthPortal() {
                         required
                         value={loginEmail}
                         onChange={(e) => setLoginEmail(e.target.value)}
-                        placeholder="adib. denda@merkatua.eus"
+                        placeholder="adib. kaixo@entitatea.eus"
                         className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 text-sm transition"
                       />
                     </div>
@@ -446,7 +432,7 @@ export default function AuthPortal() {
                         <span>Saioa hasten...</span>
                       ) : (
                         <>
-                          <span>Sartu Zure Saltokian</span>
+                          <span>Sartu zure entitatean</span>
                           <ArrowRight className="w-4 h-4" />
                         </>
                       )}
@@ -463,7 +449,7 @@ export default function AuthPortal() {
               {/* Stepper info */}
               <div className="flex items-center justify-between mb-5">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  {regStep === 1 ? "1/2 Urratsa: Saltokia & Kontua" : "2/2 Urratsa: Erronka, Hipotesia & Pribatutasuna"}
+                  {regStep === 1 ? "1/2 urratsa: entitatea eta kontua" : "2/2 urratsa: erronka eta pribatutasuna"}
                 </span>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
                   {regStep === 1 ? "50%" : "100%"}
@@ -475,7 +461,7 @@ export default function AuthPortal() {
                 <form onSubmit={handleRegStep1Submit} className="space-y-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Saltokiaren edo Erakundearen Izena *
+                      Entitatearen izena *
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -486,7 +472,7 @@ export default function AuthPortal() {
                         required
                         value={regIzena}
                         onChange={(e) => setRegIzena(e.target.value)}
-                        placeholder="adib. Bretxako Harategia, Kaxilda, Zurriola..."
+                        placeholder="adib. Zurriola Ikastola, Kaxilda, Bretxako Harategia..."
                         className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 text-sm transition"
                       />
                     </div>
@@ -494,7 +480,7 @@ export default function AuthPortal() {
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                      Eragile Mota *
+                      Entitate mota *
                     </label>
                     <div className="grid grid-cols-2 gap-2">
                       {[
@@ -530,7 +516,7 @@ export default function AuthPortal() {
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Arduradunaren Izen-Abizenak *
+                      Arduradunaren izen-abizenak *
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -549,7 +535,7 @@ export default function AuthPortal() {
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Helbide Elektronikoa (Saioa hasteko) *
+                      Helbide elektronikoa (saioa hasteko) *
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -560,7 +546,7 @@ export default function AuthPortal() {
                         required
                         value={regEmail}
                         onChange={(e) => setRegEmail(e.target.value)}
-                        placeholder="adib. kaixo@saltokia.eus"
+                        placeholder="adib. kaixo@entitatea.eus"
                         className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 text-sm transition"
                       />
                     </div>
@@ -583,7 +569,7 @@ export default function AuthPortal() {
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                        Berretsi Pasahitza *
+                        Berretsi pasahitza *
                       </label>
                       <input
                         type="password"
@@ -602,14 +588,14 @@ export default function AuthPortal() {
                       type="submit"
                       className="w-full py-3 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm shadow-md shadow-sky-600/25 transition flex items-center justify-center gap-2 cursor-pointer"
                     >
-                      <span>Jarraitu Hipotesi eta Erronkara</span>
+                      <span>Jarraitu erronka eta pribatutasunera</span>
                       <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
                 </form>
               )}
 
-              {/* STEP 2: Fast Diagnosis / Hypothesis / Privacy */}
+              {/* STEP 2: Fast Diagnosis & Privacy (No Forced Hypothesis) */}
               {regStep === 2 && (
                 <div className="space-y-4">
                   <div>
@@ -618,7 +604,7 @@ export default function AuthPortal() {
                       1. Zein da zuen erronka nagusia?
                     </h3>
                     <p className="text-xs text-slate-500 mb-2.5">
-                      Aukeratu zure saltoki edo erakundeko egoerara hurbilen dagoen portaera:
+                      Aukeratu zure entitateko egoerara hurbilen dagoen portaera:
                     </p>
 
                     <div className="space-y-2">
@@ -660,49 +646,9 @@ export default function AuthPortal() {
                         type="text"
                         value={customErronka}
                         onChange={(e) => setCustomErronka(e.target.value)}
-                        placeholder="Adib. Bezeroek lehen hitza gaztelaniaz egiten dute erakusmahaian..."
+                        placeholder="Adib. Harreran lehen hitza gaztelaniaz egiten da..."
                         className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 transition"
                       />
-                    </div>
-                  </div>
-
-                  {/* Initial Hypothesis Preview & Editor */}
-                  <div className="bg-emerald-50/60 border border-emerald-200 rounded-2xl p-3.5 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-extrabold text-emerald-950 uppercase tracking-wider">
-                        2. Zure Hasierako Hipotesia (Editagarria)
-                      </label>
-                      <span className="text-[11px] font-bold text-emerald-800 bg-white px-2 py-0.5 rounded-full border border-emerald-200">
-                        Helburua: +{regXedea}%
-                      </span>
-                    </div>
-                    <textarea
-                      rows={2}
-                      value={regHipotesia}
-                      onChange={(e) => setRegHipotesia(e.target.value)}
-                      className="w-full px-3 py-2 text-xs font-medium text-slate-800 bg-white rounded-xl border border-emerald-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
-                    />
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] text-emerald-800 font-semibold">Igoera-xedea:</span>
-                      {[15, 20, 25, 30].map((pct) => (
-                        <button
-                          key={pct}
-                          type="button"
-                          onClick={() => {
-                            setRegXedea(pct);
-                            setRegHipotesia(
-                              `${regIzena.trim() || "Gure saltokian"} 'Euskaraz barra-barra' txapa ikusgai erabiltzen badugu, euskarazko elkarrizketak %${pct} handituko dira.`
-                            );
-                          }}
-                          className={`px-2 py-0.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
-                            regXedea === pct
-                              ? "bg-emerald-600 text-white"
-                              : "bg-white text-emerald-800 border border-emerald-200 hover:bg-emerald-100"
-                          }`}
-                        >
-                          +{pct}%
-                        </button>
-                      ))}
                     </div>
                   </div>
 
@@ -717,10 +663,10 @@ export default function AuthPortal() {
                       />
                       <div>
                         <span className="block text-xs font-bold text-slate-900">
-                          Erakutsi nire saltokiaren izena komunitateko beste eragileei
+                          2. Erakutsi nire entitatearen izena komunitateko beste eragileei
                         </span>
                         <span className="block text-[11px] text-slate-500 mt-0.5 leading-relaxed">
-                          Markatu gabe uzten baduzu (lehenetsia), beste eragileek kode anonimo bat bakarrik ikusiko dute (adib. <strong>Saltokia #4821</strong>). Edonoiz alda dezakezu zure panelean.
+                          Markatu gabe uzten baduzu (lehenetsia), beste eragileek kode anonimo bat bakarrik ikusiko dute (adib. <strong>Entitatea #4821</strong>). Edonoiz alda dezakezu zure panelean.
                         </span>
                       </div>
                     </label>
@@ -746,7 +692,7 @@ export default function AuthPortal() {
                         <span>Kontua sortzen...</span>
                       ) : (
                         <>
-                          <span>Sortu Kontua & Sartu Panelera</span>
+                          <span>Sortu kontua eta sartu panelera</span>
                           <Sparkles className="w-4 h-4" />
                         </>
                       )}
