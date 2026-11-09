@@ -27,6 +27,12 @@ import {
   Unlock,
   Users,
   Compass,
+  Bot,
+  Lightbulb,
+  FileText,
+  Copy,
+  Check,
+  RotateCcw,
 } from "lucide-react";
 import { useApp, getPublicEragileLabel } from "@/context/AppContext";
 import type { Esperimentua, Neurketa } from "@/lib/db";
@@ -159,6 +165,18 @@ export default function ZentroDashboard() {
   const [isSavingHypothesis, setIsSavingHypothesis] = useState(false);
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
 
+  // Latxa qualitative analysis state
+  const [isAnalyzingWithLatxa, setIsAnalyzingWithLatxa] = useState(false);
+  const [latxaAnalysisResult, setLatxaAnalysisResult] = useState<{
+    ondorio_nagusia?: string;
+    oharren_analisia?: string;
+    balorazio_kuantitatiboa?: string;
+    hurrengo_urratsak?: string[];
+    txosten_laburpena?: string;
+  } | null>(null);
+  const [latxaAnalysisError, setLatxaAnalysisError] = useState<string | null>(null);
+  const [copiedReport, setCopiedReport] = useState(false);
+
   // Quick setup state when !currentExp
   const [quickHipotesia, setQuickHipotesia] = useState(
     `${activeEragilea?.izena || "Gure entitatean"} esku-hartze pilotua aktibatzen badugu, euskarazko elkarrizketak %20 handituko dira.`
@@ -239,6 +257,89 @@ export default function ZentroDashboard() {
     t1Pct !== null && t0Pct !== null ? t1Pct - t0Pct : null;
   const sustainedGain =
     t2Pct !== null && t0Pct !== null ? t2Pct - t0Pct : null;
+
+  const handleRunLatxaAnalysis = async () => {
+    if (!currentExp) return;
+    setIsAnalyzingWithLatxa(true);
+    setLatxaAnalysisError(null);
+
+    const oharrakList = expNeurketak
+      .filter((n) => n.oharrak && n.oharrak.trim().length > 0)
+      .map((n) => ({
+        unea: n.unea,
+        oharra: n.oharrak.trim(),
+        behatzailea: n.behatzailea || "Behatzailea",
+        data: n.data_ordu,
+      }));
+
+    try {
+      const res = await fetch("/api/ai/latxa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ekintza: "ondorioak_eta_analisia",
+          eragile_izena: activeEragilea?.izena || "Entitatea",
+          erronka_nagusia: activeEragilea?.erronka_nagusia || "",
+          pilotu_izena: currentExp.pilotu_izena || "Esku-hartze pilotua",
+          hipotesia: currentExp.hipotesia,
+          t0_stats: t0Stats
+            ? {
+                pct: t0Stats.pct,
+                count: t0Stats.count,
+                euskaraz: t0Stats.totalEuskaraz,
+                total: t0Stats.totalInteractions,
+              }
+            : null,
+          t1_stats: t1Stats
+            ? {
+                pct: t1Stats.pct,
+                count: t1Stats.count,
+                euskaraz: t1Stats.totalEuskaraz,
+                total: t1Stats.totalInteractions,
+                gain: immediateGain ?? undefined,
+              }
+            : null,
+          t2_stats: t2Stats
+            ? {
+                pct: t2Stats.pct,
+                count: t2Stats.count,
+                euskaraz: t2Stats.totalEuskaraz,
+                total: t2Stats.totalInteractions,
+                gain: sustainedGain ?? undefined,
+              }
+            : null,
+          oharrak_zerrenda: oharrakList,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success || !json.data) {
+        throw new Error(json.error || "Ezin izan da Latxaren analisia jaso.");
+      }
+
+      setLatxaAnalysisResult(json.data);
+      triggerConfetti();
+    } catch (err) {
+      console.error("Latxa analisiaren errorea:", err);
+      setLatxaAnalysisError(err instanceof Error ? err.message : "Errorea gertatu da analisia egitean.");
+    } finally {
+      setIsAnalyzingWithLatxa(false);
+    }
+  };
+
+  const handleCopyReport = () => {
+    if (!latxaAnalysisResult) return;
+    const textToCopy =
+      latxaAnalysisResult.txosten_laburpena ||
+      `${latxaAnalysisResult.ondorio_nagusia || ""}\n\nOharren analisia:\n${latxaAnalysisResult.oharren_analisia || ""}`;
+    try {
+      navigator.clipboard.writeText(textToCopy);
+      setCopiedReport(true);
+      setTimeout(() => setCopiedReport(false), 2500);
+    } catch {
+      // fallback
+    }
+  };
 
   // Organization active unread nudges
   const activeNudges = nudges.filter(
@@ -1080,6 +1181,150 @@ export default function ZentroDashboard() {
                     </span>
                   )}
                 </p>
+              </div>
+
+              {/* 🤖 LATXA B BLOKEA: EMAITZEN ETA OHARREN ANALISI KUALITATIBOA */}
+              <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-sky-950 rounded-2xl p-5 sm:p-6 text-white border border-indigo-500/30 shadow-md relative overflow-hidden">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-sky-400 flex items-center justify-center text-white shadow-md shadow-indigo-500/30 shrink-0">
+                      <Bot className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-extrabold text-white text-sm">
+                          Latxa: Emaitzen eta Oharren Analisi Kualitatiboa
+                        </h4>
+                        <span className="px-2 py-0.5 rounded-full bg-indigo-500/30 border border-indigo-400/30 text-indigo-200 text-[9px] font-bold">
+                          Latxa 70B
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-300">
+                        Zenbakietatik harago: aztertu behatzaileen oharrak, inertziak eta osatu lantaldearentzako txosten narratiboa.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleRunLatxaAnalysis}
+                    disabled={isAnalyzingWithLatxa || expNeurketak.length === 0}
+                    className="px-4 py-2.5 bg-gradient-to-r from-indigo-500 via-sky-500 to-teal-400 hover:from-indigo-600 hover:to-teal-500 text-slate-950 font-black text-xs rounded-xl shadow-md transition cursor-pointer flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
+                  >
+                    {isAnalyzingWithLatxa ? (
+                      <>
+                        <RotateCcw className="w-3.5 h-3.5 animate-spin text-slate-950" />
+                        <span>Latxa oharrak aztertzen ari da...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5 text-slate-950" />
+                        <span>
+                          {latxaAnalysisResult ? "Berritu analisia" : "✨ Sortu analisia eta txostena"}
+                        </span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {latxaAnalysisError && (
+                  <div className="mt-3 p-3 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-200 text-xs">
+                    ⚠️ {latxaAnalysisError}
+                  </div>
+                )}
+
+                {/* EMAITZA BISTARATZEA */}
+                {latxaAnalysisResult && (
+                  <div className="mt-4 pt-4 border-t border-indigo-500/20 space-y-3.5 animate-in fade-in duration-300">
+                    {/* Ondorio Nagusia */}
+                    {latxaAnalysisResult.ondorio_nagusia && (
+                      <div className="bg-slate-800/90 border border-indigo-500/30 rounded-xl p-4 text-xs sm:text-sm text-slate-200 leading-relaxed">
+                        <span className="font-extrabold text-indigo-300 block mb-1 uppercase tracking-wider text-[10px]">
+                          Emaitzen balorazio orokorra
+                        </span>
+                        <p>{latxaAnalysisResult.ondorio_nagusia}</p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                      {/* Ohar Kualitatiboen Analisia */}
+                      {latxaAnalysisResult.oharren_analisia && (
+                        <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-3.5">
+                          <span className="font-extrabold text-amber-300 block mb-1 uppercase tracking-wider text-[10px] flex items-center gap-1">
+                            <Lightbulb className="w-3 h-3 text-amber-400" />
+                            Behatzaileen oharrak eta portaera-patroiak
+                          </span>
+                          <p className="text-slate-300 leading-relaxed text-[11px]">
+                            {latxaAnalysisResult.oharren_analisia}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Balorazio Kuantitatiboa */}
+                      {latxaAnalysisResult.balorazio_kuantitatiboa && (
+                        <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-3.5">
+                          <span className="font-extrabold text-emerald-300 block mb-1 uppercase tracking-wider text-[10px] flex items-center gap-1">
+                            <TrendingUp className="w-3 h-3 text-emerald-400" />
+                            Datuen eta igoeraren sendotasuna
+                          </span>
+                          <p className="text-slate-300 leading-relaxed text-[11px]">
+                            {latxaAnalysisResult.balorazio_kuantitatiboa}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Hurrengo urratsak */}
+                    {latxaAnalysisResult.hurrengo_urratsak && latxaAnalysisResult.hurrengo_urratsak.length > 0 && (
+                      <div className="bg-indigo-950/60 border border-indigo-500/30 rounded-xl p-3.5">
+                        <span className="font-extrabold text-sky-300 block mb-1.5 uppercase tracking-wider text-[10px]">
+                          🧭 Lantaldearentzako hurrengo urrats gomendatuak:
+                        </span>
+                        <ul className="space-y-1 text-[11px] text-slate-200">
+                          {latxaAnalysisResult.hurrengo_urratsak.map((u, i) => (
+                            <li key={i} className="flex items-start gap-1.5">
+                              <span className="text-teal-400 font-bold">•</span>
+                              <span>{u}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Txosten Laburpena & Kopiatzeko Botoia */}
+                    {latxaAnalysisResult.txosten_laburpena && (
+                      <div className="bg-white text-slate-900 rounded-xl p-4 border border-slate-200">
+                        <div className="flex items-center justify-between gap-2 mb-2 pb-1.5 border-b border-slate-100">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                            <FileText className="w-3 h-3 text-indigo-600" />
+                            Lantaldearekin partekatzeko txosten narratiboa
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleCopyReport}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-bold transition cursor-pointer"
+                            title="Kopiatu txosten osoa arbelean"
+                          >
+                            {copiedReport ? (
+                              <>
+                                <Check className="w-3 h-3 text-emerald-600" />
+                                <span className="text-emerald-700">Kopiatuta!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3 h-3" />
+                                <span>Kopiatu txostena</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                        <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-line font-medium">
+                          {latxaAnalysisResult.txosten_laburpena}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 

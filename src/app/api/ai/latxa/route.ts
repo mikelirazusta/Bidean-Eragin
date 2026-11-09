@@ -2,11 +2,17 @@ import { NextResponse } from "next/server";
 import db, { Pilotua } from "@/lib/db";
 
 interface LatxaRequestBody {
-  ekintza: "aholkularia_eta_hipotesia" | "hobetu_hipotesia" | "elkarrizketa";
+  ekintza: "aholkularia_eta_hipotesia" | "hobetu_hipotesia" | "elkarrizketa" | "ondorioak_eta_analisia";
   eragile_izena?: string;
   eragile_mota?: string;
   erronka_nagusia?: string;
   pilotu_id?: string;
+  pilotu_izena?: string;
+  hipotesia?: string;
+  t0_stats?: { pct: number; count: number; euskaraz: number; total: number } | null;
+  t1_stats?: { pct: number; count: number; euskaraz: number; total: number; gain?: number } | null;
+  t2_stats?: { pct: number; count: number; euskaraz: number; total: number; gain?: number } | null;
+  oharrak_zerrenda?: Array<{ unea: string; oharra: string; behatzailea: string; data: string }>;
   uneko_testua?: string;
   messages?: Array<{ role: "user" | "assistant"; content: string }>;
 }
@@ -115,6 +121,67 @@ ERANTZUN BETI ETA SALBUESPENIK GABE JSON FORMATUAN (markdown blokerik gabe, \`\`
 - Erronka nagusia: "${erronka_nagusia || "Egunerokoan lehen hitza eta elkarrizketak euskaraz piztea"}"`,
         });
       }
+    } else if (ekintza === "ondorioak_eta_analisia") {
+      const {
+        eragile_izena: eIzena,
+        erronka_nagusia: eErronka,
+        pilotu_izena: pIzena,
+        hipotesia: eHipo,
+        t0_stats: t0,
+        t1_stats: t1,
+        t2_stats: t2,
+        oharrak_zerrenda: oharrak,
+      } = body;
+
+      systemPrompt = `Bidean Eragin egitasmoko ebaluatzaile soziolinguistikoa eta portaera-ekonomian aditua zara.
+Zure zeregina da entitate batek burututako esperimentuaren datu kuantitatiboak (% eta faseak) eta behatzaileek idatzitako OHAR KUALITATIBOAK batera aztertzea, eta lantaldearentzako ondorio zientifiko, motibagarri eta sakon bat osatzea.
+
+GARRANTZITSUA:
+1. Erreparatu bereziki behatzaileen oharrei (bezeroen erreakzioak, langileen jarrerak, zailtasunak, pasadizoak). Ohar horiek azaldu eta balioetsi behar dituzu, datu hutsetatik harago doan ikuspegia emateko.
+2. Ebaluatu hipotesiaren betetze-maila zintzotasunez.
+3. Eman hurrengo urrats egingarri eta praktikoak ohitura berria finkatzeko edo zabaltzeko.
+
+ERANTZUN BETI ETA SALBUESPENIK GABE JSON FORMATUAN (markdown gabe, \`\`\` gabe):
+{
+  "ondorio_nagusia": "Emaitzen eta bilakaeraren interpretazio orokor argia eta soziolinguistikoki aberatsa (1-2 paragrafo).",
+  "oharren_analisia": "Behatzaileen ohar kualitatiboetatik ateratako gako nagusiak: zer portaera-aldaketa ikusi diren kalean/espazioan, zer erresistentzia edo inertzia agertu diren eta zer indargune nabarmendu diren.",
+  "balorazio_kuantitatiboa": "Faseen arteko datuen (% igoera, saio kopuruaren fidagarritasuna) balorazio zehatza.",
+  "hurrengo_urratsak": [
+    "Ohitura sendotzeko 1. gomendio praktikoa",
+    "Ohitura sendotzeko 2. gomendio praktikoa",
+    "Beste gune edo egoeretara zabaltzeko 3. gomendioa"
+  ],
+  "txosten_laburpena": "Lantaldearekin, zuzendaritzarekin edo bezeroekin partekatzeko orri bateko laburpen narratibo dotorea eta ulergarria."
+}`;
+
+      const oharrakTestua =
+        oharrak && oharrak.length > 0
+          ? oharrak
+              .map((o) => `- [${o.unea}] (${o.behatzailea || "Behatzailea"}): "${o.oharra}"`)
+              .join("\n")
+          : "(Ez dago testuzko ohar kualitatiborik jasoa saioetan)";
+
+      const kuantitatiboaTestua = `
+- T0 (hasierakoa): ${t0 ? `%${t0.pct} euskara (${t0.count} saiotan, ${t0.euskaraz}/${t0.total} elkarrizketa)` : "Oraindik ez dago neurtuta"}
+- T1 (tartekoa/berehalakoa): ${t1 ? `%${t1.pct} euskara (${t1.count} saiotan, ${t1.euskaraz}/${t1.total} elkarrizketa, igoera: +%${t1.gain ?? 0})` : "Oraindik ez dago neurtuta"}
+- T2 (sendotua): ${t2 ? `%${t2.pct} euskara (${t2.count} saiotan, ${t2.euskaraz}/${t2.total} elkarrizketa, igoera: +%${t2.gain ?? 0})` : "Oraindik ez dago neurtuta"}`;
+
+      conversationMessages.push({ role: "system", content: systemPrompt });
+      conversationMessages.push({
+        role: "user",
+        content: `Esperimentuaren datuak:
+- Entitatea: "${eIzena || "Entitatea"}"
+- Erronka nagusia: "${eErronka || "Euskarazko elkarrizketak piztea"}"
+- Pilotua: "${pIzena || "Esku-hartze pilotua"}"
+- Hasierako hipotesia: "${eHipo || ""}"
+
+Datu kuantitatiboak:${kuantitatiboaTestua}
+
+Behatzaileen ohar kualitatiboak saioetan:
+${oharrakTestua}
+
+Egin ezazu analisi kualitatibo sakona eta idatzi lantaldearentzako txosten narratiboa.`,
+      });
     } else {
       // ekintza === "hobetu_hipotesia"
       systemPrompt = `Bidean Eragin egitasmoko euskal hizkuntza-aholkularia zara.
