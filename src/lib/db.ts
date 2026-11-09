@@ -94,6 +94,7 @@ export interface Esperimentua {
   hasiera_data: string;
   pilotu_izena?: string;
   pilotu_ikonoa?: string;
+  ai_txostena_json?: string;
 }
 
 export interface Neurketa {
@@ -575,8 +576,15 @@ function createFallbackStore() {
             return { changes: 1 };
           }
           if (q.startsWith("INSERT INTO esperimentuak")) {
-            const [id, eragile_id, pilotu_id, hipotesia, taldea, pertsonak, gunea, xede_portzentajea, estatusa, hasiera_data] = params;
-            store.esperimentuak.push({ id, eragile_id, pilotu_id, hipotesia, taldea, pertsonak, gunea, xede_portzentajea, estatusa, hasiera_data });
+            const [id, eragile_id, pilotu_id, hipotesia, taldea, pertsonak, gunea, xede_portzentajea, estatusa, hasiera_data, ai_txostena_json] = params;
+            store.esperimentuak.push({ id, eragile_id, pilotu_id, hipotesia, taldea, pertsonak, gunea, xede_portzentajea, estatusa, hasiera_data, ai_txostena_json: ai_txostena_json || undefined });
+            save();
+            return { changes: 1 };
+          }
+          if (q.startsWith("UPDATE esperimentuak SET ai_txostena_json = ? WHERE id = ?")) {
+            const [ai_txostena_json, id] = params;
+            const exp = store.esperimentuak.find((e) => e.id === id);
+            if (exp) exp.ai_txostena_json = ai_txostena_json;
             save();
             return { changes: 1 };
           }
@@ -826,6 +834,9 @@ function initSqliteTables(db: any) {
   } catch {}
   try {
     db.exec("ALTER TABLE users ADD COLUMN created_at TEXT;");
+  } catch {}
+  try {
+    db.exec("ALTER TABLE esperimentuak ADD COLUMN ai_txostena_json TEXT;");
   } catch {}
 
   try {
@@ -1475,8 +1486,8 @@ export function importDbSnapshot(snapshot: MemoryStoreData) {
     for (const e of expsToInsert) {
       database
         .prepare(
-          `INSERT INTO esperimentuak (id, eragile_id, pilotu_id, hipotesia, taldea, pertsonak, gunea, xede_portzentajea, estatusa, hasiera_data)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          `INSERT INTO esperimentuak (id, eragile_id, pilotu_id, hipotesia, taldea, pertsonak, gunea, xede_portzentajea, estatusa, hasiera_data, ai_txostena_json)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         )
         .run(
           e.id,
@@ -1488,7 +1499,8 @@ export function importDbSnapshot(snapshot: MemoryStoreData) {
           e.gunea,
           e.xede_portzentajea,
           e.estatusa,
-          e.hasiera_data
+          e.hasiera_data,
+          e.ai_txostena_json || null
         );
     }
 

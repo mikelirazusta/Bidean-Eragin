@@ -34,6 +34,10 @@ import {
   Lock,
   Unlock,
   FileText,
+  Bot,
+  Lightbulb,
+  Copy,
+  Check,
 } from "lucide-react";
 import { useApp, getPublicEragileLabel, DEFAULT_UI_TEXTS } from "@/context/AppContext";
 import type { Eragilea, Esperimentua, Neurketa } from "@/lib/db";
@@ -107,6 +111,7 @@ export default function AdminKoadroa() {
     updateAdminCredentials,
     uiTexts,
     updateUiTexts,
+    refreshData,
     setObservationConfig,
     setCurrentEragileId,
     setActiveTab,
@@ -415,6 +420,178 @@ export default function AdminKoadroa() {
   const [nudgeType, setNudgeType] = useState<"abisua" | "bultzada" | "zoriontzea">("bultzada");
   const [isSending, setIsSending] = useState(false);
   const [sendSuccess, setSendSuccess] = useState(false);
+  const [isGeneratingNudgeLatxa, setIsGeneratingNudgeLatxa] = useState(false);
+
+  // Block C: Community-wide Latxa Executive Report state
+  const [isGeneratingCommunityReport, setIsGeneratingCommunityReport] = useState(false);
+  const [communityReportError, setCommunityReportError] = useState<string | null>(null);
+  const [copiedCommunityReport, setCopiedCommunityReport] = useState(false);
+  const [communityReport, setCommunityReport] = useState<{
+    ondorio_orokorra?: string;
+    joera_kualitatiboak?: string;
+    arrakasta_gakoak?: string;
+    gomendio_estrategikoak?: string[];
+    txosten_exekutiboa?: string;
+    sortze_data?: string;
+  } | null>(null);
+
+  React.useEffect(() => {
+    if (uiTexts.komunitate_ai_txostena) {
+      try {
+        const parsed = JSON.parse(uiTexts.komunitate_ai_txostena);
+        if (parsed && parsed.ondorio_orokorra) {
+          setCommunityReport(parsed);
+        }
+      } catch {
+        // ignore invalid json
+      }
+    }
+  }, [uiTexts.komunitate_ai_txostena]);
+
+  const handleGenerateNudgeWithLatxa = async () => {
+    if (!selectedEragileForNudge || isGeneratingNudgeLatxa) return;
+    setIsGeneratingNudgeLatxa(true);
+
+    const exp = esperimentuak.find((e) => e.eragile_id === selectedEragileForNudge.id);
+    const expNeu = neurketak.filter((n) => n.esperimentu_id === exp?.id);
+    const calcSimplePhase = (phase: "T0" | "T1" | "T2") => {
+      const list = expNeu.filter((n) => n.unea === phase);
+      if (list.length === 0) return null;
+      const eusk = list.reduce((s, n) => s + (n.euskaraz_count || 0), 0);
+      const tot = list.reduce(
+        (s, n) => s + (n.euskaraz_count || 0) + (n.erdaraz_count || 0) + (n.elebi_count || 0),
+        0
+      );
+      const pct = tot > 0 ? Math.round((eusk / tot) * 100) : 0;
+      return { pct, count: list.length, euskaraz: eusk, total: tot };
+    };
+
+    const t0 = calcSimplePhase("T0");
+    const t1 = calcSimplePhase("T1");
+    const t2 = calcSimplePhase("T2");
+
+    try {
+      const res = await fetch("/api/ai/latxa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ekintza: "sortu_nudge_mezua",
+          eragile_izena: selectedEragileForNudge.izena,
+          eragile_mota: selectedEragileForNudge.mota,
+          erronka_nagusia: selectedEragileForNudge.erronka_nagusia,
+          pilotu_izena: exp?.pilotu_izena || "Esku-hartze pilotua",
+          hipotesia: exp?.hipotesia || "",
+          nudge_mota: nudgeType,
+          t0_stats: t0,
+          t1_stats: t1 ? { ...t1, gain: t0 ? t1.pct - t0.pct : 0 } : null,
+          t2_stats: t2 ? { ...t2, gain: t0 ? t2.pct - t0.pct : 0 } : null,
+        }),
+      });
+      const json = await res.json();
+      if (res.ok && json.success && json.data) {
+        if (json.data.titulua) setNudgeTitle(json.data.titulua);
+        if (json.data.mezua) setNudgeMessage(json.data.mezua);
+      }
+    } catch (err) {
+      console.error("Errorea bultzada Latxarekin sortzean:", err);
+    } finally {
+      setIsGeneratingNudgeLatxa(false);
+    }
+  };
+
+  const handleGenerateCommunityReport = async () => {
+    if (isGeneratingCommunityReport) return;
+    setIsGeneratingCommunityReport(true);
+    setCommunityReportError(null);
+
+    const calcGlobalPhasePct = (phase: "T0" | "T1" | "T2") => {
+      const list = neurketak.filter((n) => n.unea === phase);
+      if (list.length === 0) return null;
+      const eusk = list.reduce((s, n) => s + (n.euskaraz_count || 0), 0);
+      const tot = list.reduce(
+        (s, n) => s + (n.euskaraz_count || 0) + (n.erdaraz_count || 0) + (n.elebi_count || 0),
+        0
+      );
+      return tot > 0 ? Math.round((eusk / tot) * 100) : null;
+    };
+
+    const totalInteractionsAll = neurketak.reduce(
+      (s, n) => s + (n.euskaraz_count || 0) + (n.erdaraz_count || 0) + (n.elebi_count || 0),
+      0
+    );
+
+    const eragileLaburpenak = eragileak.map((er) => {
+      const exp = esperimentuak.find((e) => e.eragile_id === er.id);
+      const expNeu = neurketak.filter((n) => n.esperimentu_id === exp?.id);
+      const getPct = (phase: "T0" | "T1" | "T2") => {
+        const l = expNeu.filter((n) => n.unea === phase);
+        const eusk = l.reduce((s, n) => s + (n.euskaraz_count || 0), 0);
+        const tot = l.reduce(
+          (s, n) => s + (n.euskaraz_count || 0) + (n.erdaraz_count || 0) + (n.elebi_count || 0),
+          0
+        );
+        return tot > 0 ? Math.round((eusk / tot) * 100) : null;
+      };
+      return {
+        izena: er.izena,
+        mota: er.mota,
+        erronka: er.erronka_nagusia,
+        pilotua: exp?.pilotu_izena || "Zehaztu gabe",
+        hipotesia: exp?.hipotesia || "",
+        t0_pct: getPct("T0"),
+        t1_pct: getPct("T1"),
+        t2_pct: getPct("T2"),
+      };
+    });
+
+    const oharrakZerrenda = neurketak
+      .filter((n) => n.oharrak && n.oharrak.trim().length > 0)
+      .map((n) => {
+        const exp = esperimentuak.find((e) => e.id === n.esperimentu_id);
+        const er = eragileak.find((item) => item.id === exp?.eragile_id);
+        return {
+          eragilea: er?.izena || "Entitatea",
+          unea: n.unea,
+          oharra: n.oharrak.trim(),
+          behatzailea: n.behatzailea || "Behatzailea",
+          data: n.data_ordu,
+        };
+      });
+
+    try {
+      const res = await fetch("/api/ai/latxa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ekintza: "komunitate_txostena",
+          komunitate_datuak: {
+            eragile_kopurua: eragileak.length,
+            esperimentu_kopurua: esperimentuak.length,
+            neurketa_kopurua: neurketak.length,
+            elkarrizketa_guztira: totalInteractionsAll,
+            global_t0_pct: calcGlobalPhasePct("T0"),
+            global_t1_pct: calcGlobalPhasePct("T1"),
+            global_t2_pct: calcGlobalPhasePct("T2"),
+            eragile_laburpenak: eragileLaburpenak,
+          },
+          oharrak_zerrenda: oharrakZerrenda,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success || !json.data) {
+        throw new Error(json.error || "Ezin izan da komunitate-txostena sortu.");
+      }
+      setCommunityReport(json.data);
+      await refreshData();
+    } catch (err) {
+      console.error("Errorea komunitate txostena sortzean:", err);
+      setCommunityReportError(
+        err instanceof Error ? err.message : "Errorea gertatu da Latxarekin txostena sortzean."
+      );
+    } finally {
+      setIsGeneratingCommunityReport(false);
+    }
+  };
 
   // Global KPIs calculation
   const totalEragileak = eragileak.length;
@@ -699,6 +876,148 @@ export default function AdminKoadroa() {
           <div className="text-3xl font-black text-slate-900">{totalEsperimentuak}</div>
           <p className="text-[11px] text-slate-500 mt-1">{amaitutakoEsperimentuak} ziklo osatu</p>
         </div>
+      </div>
+
+      {/* 🌐 C BLOKEA: KOMUNITATE OSOKO SINTESI SOZIOLINGUISTIKOA (LATXA 70B) */}
+      <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-sky-950 rounded-3xl p-6 sm:p-8 text-white border border-indigo-500/30 shadow-xl mb-8 relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-500 to-sky-400 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 shrink-0">
+              <Bot className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-base sm:text-lg font-extrabold text-white tracking-tight">
+                  Latxa: Donostiako Komunitatearen Txosten Soziolinguistiko Bateratua
+                </h3>
+                <span className="px-2 py-0.5 rounded-full bg-indigo-500/30 border border-indigo-400/30 text-indigo-200 text-[10px] font-bold">
+                  C Blokea • Latxa 70B
+                </span>
+                {communityReport && (
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[10px] font-bold">
+                    💾 Gordeta{communityReport.sortze_data ? ` • ${new Date(communityReport.sortze_data).toLocaleDateString("eu-ES")}` : ""}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-300 mt-0.5">
+                Entitate guztien T0/T1/T2 datuak eta behatzaileen ohar kualitatiboak gurutzatuz sortutako sintesi exekutiboa.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleGenerateCommunityReport}
+            disabled={isGeneratingCommunityReport || eragileak.length === 0}
+            className="px-5 py-2.5 bg-gradient-to-r from-indigo-500 via-sky-500 to-teal-400 hover:from-indigo-600 hover:to-teal-500 text-slate-950 font-black text-xs rounded-2xl shadow-lg transition cursor-pointer flex items-center justify-center gap-2 shrink-0 disabled:opacity-50"
+          >
+            {isGeneratingCommunityReport ? (
+              <>
+                <RotateCcw className="w-4 h-4 animate-spin text-slate-950" />
+                <span>Komunitatearen datuak aztertzen...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4 text-slate-950" />
+                <span>{communityReport ? "Berritu komunitate-txostena" : "✨ Sortu komunitate osoko txostena"}</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {communityReportError && (
+          <div className="mt-3 p-3 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-200 text-xs">
+            ⚠️ {communityReportError}
+          </div>
+        )}
+
+        {communityReport && (
+          <div className="mt-4 pt-4 border-t border-indigo-500/20 space-y-4 animate-in fade-in duration-300">
+            {communityReport.ondorio_orokorra && (
+              <div className="bg-slate-800/90 border border-indigo-500/30 rounded-2xl p-4 text-xs sm:text-sm text-slate-200 leading-relaxed">
+                <span className="font-extrabold text-indigo-300 block mb-1 uppercase tracking-wider text-[10px]">
+                  Balorazio soziolinguistiko orokorra
+                </span>
+                <p>{communityReport.ondorio_orokorra}</p>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+              {communityReport.joera_kualitatiboak && (
+                <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-4">
+                  <span className="font-extrabold text-amber-300 block mb-1 uppercase tracking-wider text-[10px] flex items-center gap-1">
+                    <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
+                    Behatzaileen oharretan atzemandako joerak
+                  </span>
+                  <p className="text-slate-300 leading-relaxed">{communityReport.joera_kualitatiboak}</p>
+                </div>
+              )}
+
+              {communityReport.arrakasta_gakoak && (
+                <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-4">
+                  <span className="font-extrabold text-emerald-300 block mb-1 uppercase tracking-wider text-[10px] flex items-center gap-1">
+                    <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                    Arrakasta-faktoreak eta praktika onenak
+                  </span>
+                  <p className="text-slate-300 leading-relaxed">{communityReport.arrakasta_gakoak}</p>
+                </div>
+              )}
+            </div>
+
+            {communityReport.gomendio_estrategikoak && communityReport.gomendio_estrategikoak.length > 0 && (
+              <div className="bg-indigo-950/60 border border-indigo-500/30 rounded-2xl p-4">
+                <span className="font-extrabold text-sky-300 block mb-1.5 uppercase tracking-wider text-[10px]">
+                  🧭 Koordinazio-taldearentzako gomendio estrategikoak:
+                </span>
+                <ul className="space-y-1 text-xs text-slate-200">
+                  {communityReport.gomendio_estrategikoak.map((g, i) => (
+                    <li key={i} className="flex items-start gap-1.5">
+                      <span className="text-teal-400 font-bold">•</span>
+                      <span>{g}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {communityReport.txosten_exekutiboa && (
+              <div className="bg-white text-slate-900 rounded-2xl p-4 border border-slate-200">
+                <div className="flex items-center justify-between gap-2 mb-2 pb-1.5 border-b border-slate-100">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                    <FileText className="w-3.5 h-3.5 text-indigo-600" />
+                    Txosten Exekutiboa (Bazkide, Udal edo Prentsarako)
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      try {
+                        navigator.clipboard.writeText(communityReport.txosten_exekutiboa || "");
+                        setCopiedCommunityReport(true);
+                        setTimeout(() => setCopiedCommunityReport(false), 2500);
+                      } catch {}
+                    }}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-bold transition cursor-pointer"
+                  >
+                    {copiedCommunityReport ? (
+                      <>
+                        <Check className="w-3 h-3 text-emerald-600" />
+                        <span className="text-emerald-700">Kopiatuta!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3 h-3" />
+                        <span>Kopiatu txostena</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-line font-medium">
+                  {communityReport.txosten_exekutiboa}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Visual T0 -> T1 -> T2 Comparative Progress Chart Across Participating Centers */}
@@ -1849,9 +2168,23 @@ export default function AdminKoadroa() {
             ) : (
               <form onSubmit={handleSendNudge} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Bultzada-mota:
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold text-slate-700">
+                      Bultzada-mota:
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleGenerateNudgeWithLatxa}
+                      disabled={isGeneratingNudgeLatxa}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-[11px] font-bold transition cursor-pointer disabled:opacity-50"
+                      title="Latxak entitatearen T0/T1/T2 datuak irakurri eta mezu pertsonalizatua idatziko du"
+                    >
+                      <Bot className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>
+                        {isGeneratingNudgeLatxa ? "Latxa idazten..." : "✨ Sortu mezua Latxarekin"}
+                      </span>
+                    </button>
+                  </div>
                   <div className="grid grid-cols-3 gap-2">
                     {[
                       { id: "bultzada", label: "Bultzada ⚡" },

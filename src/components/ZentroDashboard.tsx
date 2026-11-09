@@ -94,6 +94,7 @@ export default function ZentroDashboard() {
     updateEsperimentua,
     updateEragilea,
     createEsperimentua,
+    refreshData,
     currentUser,
     uiTexts,
   } = useApp();
@@ -173,9 +174,64 @@ export default function ZentroDashboard() {
     balorazio_kuantitatiboa?: string;
     hurrengo_urratsak?: string[];
     txosten_laburpena?: string;
+    sortze_data?: string;
   } | null>(null);
   const [latxaAnalysisError, setLatxaAnalysisError] = useState<string | null>(null);
   const [copiedReport, setCopiedReport] = useState(false);
+  const [isImprovingHypoWithLatxa, setIsImprovingHypoWithLatxa] = useState(false);
+
+  // Sync saved AI report from database whenever currentExp changes
+  React.useEffect(() => {
+    setLatxaAnalysisError(null);
+    if (currentExp?.ai_txostena_json) {
+      try {
+        const parsed = JSON.parse(currentExp.ai_txostena_json);
+        if (parsed && typeof parsed === "object" && parsed.ondorio_nagusia) {
+          setLatxaAnalysisResult(parsed);
+          return;
+        }
+      } catch {
+        // ignore invalid json
+      }
+    }
+    setLatxaAnalysisResult(null);
+  }, [currentExp?.id, currentExp?.ai_txostena_json]);
+
+  const handleImproveTextWithLatxa = async (mode: "edit" | "quick") => {
+    if (isImprovingHypoWithLatxa) return;
+    setIsImprovingHypoWithLatxa(true);
+    try {
+      const currentText = mode === "edit" ? editHipotesiaText : quickHipotesia;
+      const res = await fetch("/api/ai/latxa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ekintza: "hobetu_hipotesia",
+          uneko_testua: currentText,
+          eragile_izena: activeEragilea?.izena || "Entitatea",
+          eragile_mota: activeEragilea?.mota || "orokorra",
+          erronka_nagusia: activeEragilea?.erronka_nagusia || "",
+          pilotu_izena: currentExp?.pilotu_izena || "Esku-hartze pilotua",
+          taldea: mode === "edit" ? editTaldeaText : activeEragilea?.izena,
+          pertsonak: mode === "edit" ? editPertsonakText : "herritarrekin",
+          gunea: mode === "edit" ? editGuneaText : quickGunea,
+          xede_portzentajea: mode === "edit" ? editXedeaNum : quickXedea,
+        }),
+      });
+      const json = await res.json();
+      if (res.ok && json.success && json.data?.hipotesi_hobetua) {
+        if (mode === "edit") {
+          setEditHipotesiaText(json.data.hipotesi_hobetua);
+        } else {
+          setQuickHipotesia(json.data.hipotesi_hobetua);
+        }
+      }
+    } catch (err) {
+      console.error("Errorea hipotesia Latxarekin hobetzean:", err);
+    } finally {
+      setIsImprovingHypoWithLatxa(false);
+    }
+  };
 
   // Quick setup state when !currentExp
   const [quickHipotesia, setQuickHipotesia] = useState(
@@ -278,6 +334,7 @@ export default function ZentroDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ekintza: "ondorioak_eta_analisia",
+          esperimentu_id: currentExp.id,
           eragile_izena: activeEragilea?.izena || "Entitatea",
           erronka_nagusia: activeEragilea?.erronka_nagusia || "",
           pilotu_izena: currentExp.pilotu_izena || "Esku-hartze pilotua",
@@ -318,6 +375,7 @@ export default function ZentroDashboard() {
       }
 
       setLatxaAnalysisResult(json.data);
+      await refreshData();
       triggerConfetti();
     } catch (err) {
       console.error("Latxa analisiaren errorea:", err);
@@ -650,21 +708,32 @@ export default function ZentroDashboard() {
               {isEditingHypothesis ? (
                 <form onSubmit={handleSaveHypothesis} className="space-y-3 bg-amber-50/40 p-4 rounded-2xl border border-amber-200 my-2">
                   <div>
-                    <div className="flex items-center justify-between mb-1">
+                    <div className="flex flex-wrap items-center justify-between gap-1.5 mb-1">
                       <label className="block text-[11px] font-bold text-slate-800">
                         Hipotesi erreala *
                       </label>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setEditHipotesiaText(
-                            `Gure ustez, ${editTaldeaText || "entitateko lantaldeak"} ${editPertsonakText || "herritarrekin eta bezeroekin"}, ${editGuneaText || "harrera gunean"} esku-hartze pilotua aktibatuta, euskararen erabilera %${editXedeaNum} igoko da.`
-                          )
-                        }
-                        className="text-[10px] font-bold text-emerald-700 hover:underline cursor-pointer"
-                      >
-                        ✨ Sortu azpiko eremuekin
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleImproveTextWithLatxa("edit")}
+                          disabled={isImprovingHypoWithLatxa}
+                          className="text-[10px] font-extrabold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2 py-0.5 rounded-md cursor-pointer inline-flex items-center gap-1 disabled:opacity-50"
+                        >
+                          <Bot className="w-3 h-3" />
+                          <span>{isImprovingHypoWithLatxa ? "Fintzen..." : "✨ Hobetu Latxarekin"}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setEditHipotesiaText(
+                              `Gure ustez, ${editTaldeaText || "entitateko lantaldeak"} ${editPertsonakText || "herritarrekin eta bezeroekin"}, ${editGuneaText || "harrera gunean"} esku-hartze pilotua aktibatuta, euskararen erabilera %${editXedeaNum} igoko da.`
+                            )
+                          }
+                          className="text-[10px] font-bold text-emerald-700 hover:underline cursor-pointer"
+                        >
+                          Txantiloia erabili
+                        </button>
+                      </div>
                     </div>
                     <textarea
                       rows={3}
@@ -1191,13 +1260,18 @@ export default function ZentroDashboard() {
                       <Bot className="w-5 h-5" />
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <h4 className="font-extrabold text-white text-sm">
                           Latxa: Emaitzen eta Oharren Analisi Kualitatiboa
                         </h4>
                         <span className="px-2 py-0.5 rounded-full bg-indigo-500/30 border border-indigo-400/30 text-indigo-200 text-[9px] font-bold">
                           Latxa 70B
                         </span>
+                        {latxaAnalysisResult && (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[9px] font-bold">
+                            💾 Gordeta{latxaAnalysisResult.sortze_data ? ` • ${new Date(latxaAnalysisResult.sortze_data).toLocaleDateString("eu-ES")}` : ""}
+                          </span>
+                        )}
                       </div>
                       <p className="text-[11px] text-slate-300">
                         Zenbakietatik harago: aztertu behatzaileen oharrak, inertziak eta osatu lantaldearentzako txosten narratiboa.
@@ -1602,13 +1676,21 @@ export default function ZentroDashboard() {
             Zure kontua prest dago. Neurketekin hasteko, ikusi katalogoko esku-hartze pilotuak eta aukeratu zure entitateari ondoen egokitzen zaiona, edo idatzi zuzenean behean zure hipotesia:
           </p>
 
-          <div className="mb-6">
+          <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setActiveTab("katalogoa")}
+              className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-indigo-600 via-sky-600 to-teal-500 hover:from-indigo-700 hover:to-teal-600 text-white font-bold text-sm shadow-md shadow-indigo-600/25 transition cursor-pointer flex items-center justify-center gap-2"
+            >
+              <Bot className="w-4 h-4" />
+              <span>🤖 Diseinatu Latxa Kopilotuarekin</span>
+            </button>
             <button
               type="button"
               onClick={() => setActiveTab("katalogoa")}
               className="w-full py-3.5 px-5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md shadow-emerald-600/25 transition cursor-pointer flex items-center justify-center gap-2"
             >
-              <span>Ikusi pilotuen katalogoa eta materialak</span>
+              <span>Ikusi pilotuen katalogoa</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -1621,9 +1703,20 @@ export default function ZentroDashboard() {
 
             <form onSubmit={handleCreateQuickExp} className="space-y-4 mt-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Zuen hipotesia *
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-700">
+                    Zuen hipotesia *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => handleImproveTextWithLatxa("quick")}
+                    disabled={isImprovingHypoWithLatxa}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-[11px] font-bold transition cursor-pointer disabled:opacity-50"
+                  >
+                    <Bot className="w-3 h-3 text-indigo-600" />
+                    <span>{isImprovingHypoWithLatxa ? "Latxa fintzen..." : "✨ Hobetu Latxarekin"}</span>
+                  </button>
+                </div>
                 <textarea
                   rows={3}
                   required

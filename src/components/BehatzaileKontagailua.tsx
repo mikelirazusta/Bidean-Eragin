@@ -198,6 +198,8 @@ export default function BehatzaileKontagailua() {
             setSecondsRemaining(parsed.secondsRemaining);
           if (typeof parsed.sessionElapsed === "number")
             setSessionElapsed(parsed.sessionElapsed);
+          if (typeof parsed.notes === "string" && parsed.notes)
+            setNotes(parsed.notes);
           if (parsed.sessionActive) {
             setSessionActive(true);
             setIsPaused(true); // Pause on restore so observer can resume consciously
@@ -226,6 +228,7 @@ export default function BehatzaileKontagailua() {
             secondsRemaining,
             sessionElapsed,
             sessionActive,
+            notes,
             updatedAt: Date.now(),
           })
         );
@@ -245,6 +248,7 @@ export default function BehatzaileKontagailua() {
     secondsRemaining,
     sessionElapsed,
     sessionActive,
+    notes,
   ]);
 
   // Screen Wake Lock (prevent mobile screen from sleeping during active observation)
@@ -1174,6 +1178,78 @@ export default function BehatzaileKontagailua() {
           </div>
         </div>
       )}
+
+      {/* Live Qualitative Notes & Tags Panel (Feeds Latxa Block B) */}
+      <div
+        className={`mt-6 rounded-2xl p-4 border transition ${
+          stealthMode
+            ? "bg-slate-900 border-slate-800 text-slate-300"
+            : "bg-white border-slate-200 shadow-xs text-slate-800"
+        }`}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+          <div className="flex items-center gap-1.5">
+            <Sparkles className={`w-4 h-4 ${stealthMode ? "text-indigo-400" : "text-indigo-600"}`} />
+            <h4 className={`text-xs font-extrabold ${stealthMode ? "text-slate-200" : "text-slate-900"}`}>
+              Behaketa bitarteko ohar kualitatiboak (Latxaren analisirako)
+            </h4>
+          </div>
+          <span className="text-[10px] font-semibold text-slate-400">
+            Sakatu etiketak edo idatzi unean bertan ikusitakoa
+          </span>
+        </div>
+
+        <div className="flex flex-wrap gap-1.5 mb-2.5">
+          {[
+            "💬 Lehen hitza euskaraz",
+            "🔄 Euskaratik erdarara pasa dira",
+            "🙋 Herritarrak euskaraz jarraitu du",
+            "😊 Harrera ona dinamikari",
+            "⏳ Jende ilara / presa",
+            "👥 Taldeko elkarrizketa",
+          ].map((tag) => {
+            const isAdded = notes.includes(tag);
+            return (
+              <button
+                key={tag}
+                type="button"
+                onClick={() =>
+                  setNotes((prev) =>
+                    prev.includes(tag)
+                      ? prev
+                      : prev.trim()
+                      ? `${prev.trim()}. ${tag}`
+                      : tag
+                  )
+                }
+                className={`px-2.5 py-1 rounded-xl text-[11px] font-bold border transition cursor-pointer ${
+                  isAdded
+                    ? stealthMode
+                      ? "bg-indigo-950 border-indigo-700 text-indigo-300"
+                      : "bg-indigo-50 border-indigo-300 text-indigo-800"
+                    : stealthMode
+                    ? "bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300"
+                    : "bg-slate-50 hover:bg-indigo-50/70 border-slate-200 text-slate-700"
+                }`}
+              >
+                {isAdded ? `✓ ${tag}` : `+ ${tag}`}
+              </button>
+            );
+          })}
+        </div>
+
+        <input
+          type="text"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Idatzi hemen saioan ikusitako edozein pasadizo, jarrera edo ohar (automatikoki gordeko da)..."
+          className={`w-full rounded-xl px-3.5 py-2 text-xs border focus:outline-hidden focus:ring-2 focus:ring-indigo-500 ${
+            stealthMode
+              ? "bg-slate-950 border-slate-800 text-slate-200 placeholder:text-slate-600"
+              : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400"
+          }`}
+        />
+      </div>
 
       {/* Observer Instructions Card */}
       <div className="mt-8 bg-sky-50/70 rounded-2xl p-4 border border-sky-100 text-xs text-slate-600 leading-relaxed">

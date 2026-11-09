@@ -69,11 +69,17 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
 
   // Latxa integration state
   const [isLatxaLoading, setIsLatxaLoading] = useState(false);
+  const [isImprovingHypo, setIsImprovingHypo] = useState(false);
   const [latxaAdvice, setLatxaAdvice] = useState<string | null>(null);
 
   const handleFillWithLatxa = async () => {
     setIsLatxaLoading(true);
     setLatxaAdvice(null);
+    let parsedUrratsak: string[] = [];
+    try {
+      parsedUrratsak = JSON.parse(pilotu.urratsak_json || "[]");
+    } catch {}
+
     try {
       const res = await fetch("/api/ai/latxa", {
         method: "POST",
@@ -84,6 +90,9 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
           eragile_mota: activeEragilea?.mota || "orokorra",
           erronka_nagusia: activeEragilea?.erronka_nagusia || "Euskarazko elkarrizketak piztea",
           pilotu_id: pilotu.id,
+          pilotu_izena: pilotu.izena,
+          pilotu_deskribapena: pilotu.deskribapena,
+          pilotu_urratsak: parsedUrratsak,
         }),
       });
 
@@ -100,6 +109,47 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
       console.error("Errorea Latxarekin betetzean:", err);
     } finally {
       setIsLatxaLoading(false);
+    }
+  };
+
+  const handleImproveHypothesisWithLatxa = async () => {
+    setIsImprovingHypo(true);
+    try {
+      const currentText =
+        isCustomMode && customHypothesis.trim()
+          ? customHypothesis.trim()
+          : `Gure ustez, ${taldea || "..."} ${pertsonak || "..."}, ${gunea || "..."} ${ekintza}, euskararen erabilera %${metrika} igoko da.`;
+
+      const res = await fetch("/api/ai/latxa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ekintza: "hobetu_hipotesia",
+          uneko_testua: currentText,
+          eragile_izena: activeEragilea?.izena || "Entitatea",
+          eragile_mota: activeEragilea?.mota || "orokorra",
+          erronka_nagusia: activeEragilea?.erronka_nagusia || "",
+          pilotu_id: pilotu.id,
+          pilotu_izena: pilotu.izena,
+          taldea,
+          pertsonak,
+          gunea,
+          xede_portzentajea: metrika,
+        }),
+      });
+
+      const json = await res.json();
+      if (res.ok && json.success && json.data?.hipotesi_hobetua) {
+        setCustomHypothesis(json.data.hipotesi_hobetua);
+        setIsCustomMode(true);
+        if (json.data.azalpena) {
+          setLatxaAdvice(json.data.azalpena);
+        }
+      }
+    } catch (err) {
+      console.error("Errorea hipotesia hobetzean:", err);
+    } finally {
+      setIsImprovingHypo(false);
     }
   };
 
@@ -338,16 +388,36 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
             <div className="p-2 rounded-xl bg-emerald-100 text-emerald-800 shrink-0 mt-0.5">
               <FlaskConical className="w-5 h-5 text-emerald-700" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h4 className="text-xs font-bold text-emerald-900 uppercase tracking-wider">
-                  Zure hipotesi zientifikoa:
-                </h4>
-                <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-200 text-emerald-900">
-                  Xedea: +%{metrika}
-                </span>
+            <div className="flex-1">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-xs font-bold text-emerald-900 uppercase tracking-wider">
+                    Zure hipotesi zientifikoa:
+                  </h4>
+                  <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-200 text-emerald-900">
+                    Xedea: +%{metrika}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleImproveHypothesisWithLatxa}
+                  disabled={isImprovingHypo}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] font-bold transition cursor-pointer disabled:opacity-50"
+                >
+                  {isImprovingHypo ? (
+                    <>
+                      <RotateCcw className="w-3 h-3 animate-spin" />
+                      <span>Fintzen...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3 h-3" />
+                      <span>✨ Hobetu erredakzioa Latxarekin</span>
+                    </>
+                  )}
+                </button>
               </div>
-              <p className="text-sm font-semibold text-emerald-950 mt-1 italic">
+              <p className="text-sm font-semibold text-emerald-950 mt-1.5 italic">
                 &ldquo;{fullHypothesis}&rdquo;
               </p>
               <p className="text-xs text-emerald-800/80 mt-1.5">
