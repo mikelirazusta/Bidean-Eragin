@@ -170,6 +170,8 @@ export async function PATCH(request: Request) {
     const body = await request.json();
     const {
       id,
+      esperimentu_id,
+      eragile_id,
       unea,
       euskaraz_count,
       erdaraz_count,
@@ -193,6 +195,42 @@ export async function PATCH(request: Request) {
       );
     }
 
+    let updatedExpId = existing.esperimentu_id;
+
+    if (esperimentu_id && String(esperimentu_id).trim()) {
+      updatedExpId = String(esperimentu_id).trim();
+    } else if (eragile_id && String(eragile_id).trim()) {
+      const targetEragileId = String(eragile_id).trim();
+      const allExps = db.prepare("SELECT * FROM esperimentuak").all() as Esperimentua[];
+      const existingExpForEragile = allExps.find((e) => e.eragile_id === targetEragileId);
+
+      if (existingExpForEragile) {
+        updatedExpId = existingExpForEragile.id;
+      } else {
+        // If target entity has no experiment yet, create a default one so the measurement attaches cleanly
+        const eragileRow = db.prepare("SELECT * FROM eragileak WHERE id = ?").get(targetEragileId) as { id: string; izena: string } | undefined;
+        const newExpId = "exp-" + Date.now();
+        const defaultHipotesia = `${eragileRow?.izena || "Entitatean"} esku-hartze pilotua aktibatzen badugu, euskarazko elkarrizketak %25 handituko dira.`;
+        db.prepare(`
+          INSERT INTO esperimentuak (
+            id, eragile_id, pilotu_id, hipotesia, taldea, pertsonak, gunea, xede_portzentajea, estatusa, hasiera_data
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          newExpId,
+          targetEragileId,
+          "barra-barra-txapak",
+          defaultHipotesia,
+          "Entitateko lantaldeak",
+          "herritarrekin",
+          "Harrera edo gune nagusia",
+          25,
+          "T1_zain",
+          new Date().toISOString()
+        );
+        updatedExpId = newExpId;
+      }
+    }
+
     const updatedUnea = unea !== undefined ? String(unea).trim() : existing.unea;
     const updatedEusk = euskaraz_count !== undefined ? Math.max(0, Number(euskaraz_count)) : existing.euskaraz_count;
     const updatedErd = erdaraz_count !== undefined ? Math.max(0, Number(erdaraz_count)) : existing.erdaraz_count;
@@ -201,8 +239,8 @@ export async function PATCH(request: Request) {
     const updatedBehatzailea = behatzailea !== undefined ? String(behatzailea).trim() : (existing.behatzailea || "Behatzailea");
 
     db.prepare(
-      "UPDATE neurketak SET unea = ?, euskaraz_count = ?, erdaraz_count = ?, elebi_count = ?, oharrak = ?, behatzailea = ? WHERE id = ?"
-    ).run(updatedUnea, updatedEusk, updatedErd, updatedElebi, updatedOharrak, updatedBehatzailea, id);
+      "UPDATE neurketak SET esperimentu_id = ?, unea = ?, euskaraz_count = ?, erdaraz_count = ?, elebi_count = ?, oharrak = ?, behatzailea = ? WHERE id = ?"
+    ).run(updatedExpId, updatedUnea, updatedEusk, updatedErd, updatedElebi, updatedOharrak, updatedBehatzailea, id);
 
     const updated = db.prepare("SELECT * FROM neurketak WHERE id = ?").get(id) as Neurketa;
 

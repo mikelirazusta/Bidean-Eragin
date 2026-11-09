@@ -84,12 +84,59 @@ export default function ZentroDashboard() {
     setObservationConfig,
     triggerConfetti,
     deleteNeurketa,
+    updateNeurketa,
     updateEsperimentua,
     updateEragilea,
     createEsperimentua,
     currentUser,
     uiTexts,
   } = useApp();
+
+  const isAdmin = currentUser?.role === "admin";
+
+  // Edit Single Measurement Session Modal state
+  const [neurketaToEdit, setNeurketaToEdit] = useState<Neurketa | null>(null);
+  const [editNeuEragileId, setEditNeuEragileId] = useState<string>("");
+  const [editNeuExpId, setEditNeuExpId] = useState<string>("");
+  const [editNeuUnea, setEditNeuUnea] = useState<"T0" | "T1" | "T2">("T0");
+  const [editNeuBehatzailea, setEditNeuBehatzailea] = useState("");
+  const [editNeuEusk, setEditNeuEusk] = useState<number>(0);
+  const [editNeuErd, setEditNeuErd] = useState<number>(0);
+  const [editNeuElebi, setEditNeuElebi] = useState<number>(0);
+  const [editNeuOharrak, setEditNeuOharrak] = useState("");
+  const [isSavingNeurketaEdit, setIsSavingNeurketaEdit] = useState(false);
+
+  const openEditNeurketaModal = (n: Neurketa) => {
+    const exp = esperimentuak.find((e) => e.id === n.esperimentu_id);
+    setNeurketaToEdit(n);
+    setEditNeuExpId(n.esperimentu_id);
+    setEditNeuEragileId(exp?.eragile_id || activeEragilea?.id || "");
+    setEditNeuUnea(n.unea);
+    setEditNeuBehatzailea(n.behatzailea || "Behatzailea");
+    setEditNeuEusk(n.euskaraz_count || 0);
+    setEditNeuErd(n.erdaraz_count || 0);
+    setEditNeuElebi(n.elebi_count || 0);
+    setEditNeuOharrak(n.oharrak || "");
+  };
+
+  const handleSaveEditNeurketa = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!neurketaToEdit) return;
+    setIsSavingNeurketaEdit(true);
+    await updateNeurketa({
+      id: neurketaToEdit.id,
+      eragile_id: isAdmin && editNeuEragileId ? editNeuEragileId : undefined,
+      esperimentu_id: isAdmin && editNeuExpId ? editNeuExpId : undefined,
+      unea: editNeuUnea,
+      behatzailea: editNeuBehatzailea.trim() || "Behatzailea",
+      euskaraz_count: editNeuEusk,
+      erdaraz_count: editNeuErd,
+      elebi_count: editNeuElebi,
+      oharrak: editNeuOharrak.trim(),
+    });
+    setIsSavingNeurketaEdit(false);
+    setNeurketaToEdit(null);
+  };
 
   // Find all experiments for this organization
   const orgExperiments = esperimentuak.filter(
@@ -1252,22 +1299,32 @@ export default function ZentroDashboard() {
                                 {new Date(neu.data_ordu).toLocaleDateString("eu-ES")}
                               </td>
                               <td className="py-2.5 text-right">
-                                <button
-                                  type="button"
-                                  onClick={async () => {
-                                    if (
-                                      window.confirm(
-                                        `Ziur zaude ${neu.unea} faseko ${sessionIndex}. saio hau ezabatu nahi duzula? Batez bestekoa birkalkulatuko da.`
-                                      )
-                                    ) {
-                                      await deleteNeurketa(neu.id);
-                                    }
-                                  }}
-                                  className="p-1 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
-                                  title="Ezabatu saio hau"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
+                                <div className="inline-flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => openEditNeurketaModal(neu)}
+                                    className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition cursor-pointer"
+                                    title="Editatu saio hau"
+                                  >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={async () => {
+                                      if (
+                                        window.confirm(
+                                          `Ziur zaude ${neu.unea} faseko ${sessionIndex}. saio hau ezabatu nahi duzula? Batez bestekoa birkalkulatuko da.`
+                                        )
+                                      ) {
+                                        await deleteNeurketa(neu.id);
+                                      }
+                                    }}
+                                    className="p-1 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                                    title="Ezabatu saio hau"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           );
@@ -1457,6 +1514,164 @@ export default function ZentroDashboard() {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* EDIT SINGLE MEASUREMENT SESSION MODAL */}
+      {neurketaToEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-200">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-amber-100 text-amber-800 rounded-xl">
+                  <Pencil className="w-4 h-4 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base">
+                    Neurketa-saioa editatu
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {isAdmin
+                      ? "Zuzendu entitatea, fasea, behatzailea edo elkarrizketa kopuruak"
+                      : "Zuzendu fasea, behatzailea edo elkarrizketa kopuruak"}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setNeurketaToEdit(null)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditNeurketa} className="space-y-4">
+              {isAdmin && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Entitatea (eragilea)
+                  </label>
+                  <select
+                    value={editNeuEragileId}
+                    onChange={(e) => {
+                      const nextEragileId = e.target.value;
+                      setEditNeuEragileId(nextEragileId);
+                      const matchingExp = esperimentuak.find((ex) => ex.eragile_id === nextEragileId);
+                      setEditNeuExpId(matchingExp?.id || "");
+                    }}
+                    className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  >
+                    {eragileak.map((er) => (
+                      <option key={er.id} value={er.id}>
+                        {er.izena}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Fasea (T0 / T1 / T2)
+                  </label>
+                  <select
+                    value={editNeuUnea}
+                    onChange={(e) => setEditNeuUnea(e.target.value as "T0" | "T1" | "T2")}
+                    className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900"
+                  >
+                    <option value="T0">T0 (hasierako neurketa)</option>
+                    <option value="T1">T1 (tarteko neurketa)</option>
+                    <option value="T2">T2 (amaierako neurketa)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Behatzailea
+                  </label>
+                  <input
+                    type="text"
+                    value={editNeuBehatzailea}
+                    onChange={(e) => setEditNeuBehatzailea(e.target.value)}
+                    className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2.5">
+                <div className="bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
+                  <label className="block text-[10px] font-extrabold uppercase text-emerald-800 mb-1">
+                    Euskaraz
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={editNeuEusk}
+                    onChange={(e) => setEditNeuEusk(Math.max(0, Number(e.target.value)))}
+                    className="w-full bg-white border border-emerald-300 rounded-lg px-2.5 py-1.5 text-sm font-black text-emerald-800"
+                  />
+                </div>
+
+                <div className="bg-rose-50 p-2.5 rounded-xl border border-rose-200">
+                  <label className="block text-[10px] font-extrabold uppercase text-rose-800 mb-1">
+                    Erdaraz
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={editNeuErd}
+                    onChange={(e) => setEditNeuErd(Math.max(0, Number(e.target.value)))}
+                    className="w-full bg-white border border-rose-300 rounded-lg px-2.5 py-1.5 text-sm font-black text-rose-800"
+                  />
+                </div>
+
+                <div className="bg-amber-50 p-2.5 rounded-xl border border-amber-200">
+                  <label className="block text-[10px] font-extrabold uppercase text-amber-800 mb-1">
+                    Elebi
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={editNeuElebi}
+                    onChange={(e) => setEditNeuElebi(Math.max(0, Number(e.target.value)))}
+                    className="w-full bg-white border border-amber-300 rounded-lg px-2.5 py-1.5 text-sm font-black text-amber-800"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Oharrak
+                </label>
+                <textarea
+                  rows={2}
+                  value={editNeuOharrak}
+                  onChange={(e) => setEditNeuOharrak(e.target.value)}
+                  className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setNeurketaToEdit(null)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                >
+                  Utzi
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingNeurketaEdit}
+                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>{isSavingNeurketaEdit ? "Gordetzen..." : "Gorde saioa"}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -615,6 +615,22 @@ function createFallbackStore() {
             save();
             return { changes: 1 };
           }
+          if (q.startsWith("UPDATE neurketak SET esperimentu_id = ?, unea = ?, euskaraz_count = ?, erdaraz_count = ?, elebi_count = ?, oharrak = ?, behatzailea = ? WHERE id = ?")) {
+            const [esperimentu_id, unea, euskaraz_count, erdaraz_count, elebi_count, oharrak, behatzailea, id] = params;
+            const neu = store.neurketak.find((n) => n.id === id);
+            if (neu) {
+              if (esperimentu_id) neu.esperimentu_id = esperimentu_id;
+              neu.unea = unea;
+              neu.euskaraz_count = Number(euskaraz_count);
+              neu.erdaraz_count = Number(erdaraz_count);
+              neu.elebi_count = Number(elebi_count);
+              neu.oharrak = oharrak;
+              neu.behatzailea = behatzailea;
+              save();
+              return { changes: 1 };
+            }
+            return { changes: 0 };
+          }
           if (q.startsWith("UPDATE neurketak SET unea = ?, euskaraz_count = ?, erdaraz_count = ?, elebi_count = ?, oharrak = ?, behatzailea = ? WHERE id = ?")) {
             const [unea, euskaraz_count, erdaraz_count, elebi_count, oharrak, behatzailea, id] = params;
             const neu = store.neurketak.find((n) => n.id === id);

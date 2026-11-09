@@ -236,6 +236,8 @@ export default function AdminKoadroa() {
 
   // Edit Single Measurement Session Modal state
   const [neurketaToEdit, setNeurketaToEdit] = useState<Neurketa | null>(null);
+  const [editNeuEragileId, setEditNeuEragileId] = useState<string>("");
+  const [editNeuExpId, setEditNeuExpId] = useState<string>("");
   const [editNeuUnea, setEditNeuUnea] = useState<"T0" | "T1" | "T2">("T0");
   const [editNeuBehatzailea, setEditNeuBehatzailea] = useState("");
   const [editNeuEusk, setEditNeuEusk] = useState<number>(0);
@@ -317,7 +319,10 @@ export default function AdminKoadroa() {
   };
 
   const openEditNeurketaModal = (n: Neurketa) => {
+    const exp = esperimentuak.find((e) => e.id === n.esperimentu_id);
     setNeurketaToEdit(n);
+    setEditNeuExpId(n.esperimentu_id);
+    setEditNeuEragileId(exp?.eragile_id || eragileak[0]?.id || "");
     setEditNeuUnea(n.unea);
     setEditNeuBehatzailea(n.behatzailea || "Behatzailea");
     setEditNeuEusk(n.euskaraz_count || 0);
@@ -332,6 +337,8 @@ export default function AdminKoadroa() {
     setIsSavingNeurketaEdit(true);
     await updateNeurketa({
       id: neurketaToEdit.id,
+      eragile_id: editNeuEragileId || undefined,
+      esperimentu_id: editNeuExpId || undefined,
       unea: editNeuUnea,
       behatzailea: editNeuBehatzailea.trim() || "Behatzailea",
       euskaraz_count: editNeuEusk,
@@ -1575,7 +1582,7 @@ export default function AdminKoadroa() {
                     Neurketa-saioa editatu
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Zuzendu fasea, behatzailea edo elkarrizketa kopuruak
+                    Zuzendu entitatea, fasea, behatzailea edo elkarrizketa kopuruak
                   </p>
                 </div>
               </div>
@@ -1589,6 +1596,48 @@ export default function AdminKoadroa() {
             </div>
 
             <form onSubmit={handleSaveEditNeurketa} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Entitatea (eragilea)
+                </label>
+                <select
+                  value={editNeuEragileId}
+                  onChange={(e) => {
+                    const nextEragileId = e.target.value;
+                    setEditNeuEragileId(nextEragileId);
+                    const matchingExp = esperimentuak.find((ex) => ex.eragile_id === nextEragileId);
+                    setEditNeuExpId(matchingExp?.id || "");
+                  }}
+                  className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                >
+                  {eragileak.map((er) => (
+                    <option key={er.id} value={er.id}>
+                      {er.izena}
+                    </option>
+                  ))}
+                </select>
+                {esperimentuak.filter((ex) => ex.eragile_id === editNeuEragileId).length > 1 && (
+                  <div className="mt-2">
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                      Esperimentua / gunea
+                    </label>
+                    <select
+                      value={editNeuExpId}
+                      onChange={(e) => setEditNeuExpId(e.target.value)}
+                      className="w-full border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-900"
+                    >
+                      {esperimentuak
+                        .filter((ex) => ex.eragile_id === editNeuEragileId)
+                        .map((ex) => (
+                          <option key={ex.id} value={ex.id}>
+                            {ex.gunea || ex.taldea || ex.hipotesia.slice(0, 40)}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">

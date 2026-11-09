@@ -208,6 +208,8 @@ interface AppContextType {
   }) => Promise<Esperimentua | null>;
   updateNeurketa: (data: {
     id: string;
+    esperimentu_id?: string;
+    eragile_id?: string;
     unea?: "T0" | "T1" | "T2";
     euskaraz_count?: number;
     erdaraz_count?: number;
@@ -842,6 +844,8 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
 
   const updateNeurketa = async (data: {
     id: string;
+    esperimentu_id?: string;
+    eragile_id?: string;
     unea?: "T0" | "T1" | "T2";
     euskaraz_count?: number;
     erdaraz_count?: number;
