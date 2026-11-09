@@ -13,6 +13,9 @@ import {
   Star,
   MessageCircleHeart,
   HelpCircle,
+  Bot,
+  RotateCcw,
+  Lightbulb,
 } from "lucide-react";
 import type { Pilotua } from "@/lib/db";
 import { useApp } from "@/context/AppContext";
@@ -63,6 +66,42 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
   const [customHypothesis, setCustomHypothesis] = useState<string>("");
   const [isCustomMode, setIsCustomMode] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Latxa integration state
+  const [isLatxaLoading, setIsLatxaLoading] = useState(false);
+  const [latxaAdvice, setLatxaAdvice] = useState<string | null>(null);
+
+  const handleFillWithLatxa = async () => {
+    setIsLatxaLoading(true);
+    setLatxaAdvice(null);
+    try {
+      const res = await fetch("/api/ai/latxa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ekintza: "aholkularia_eta_hipotesia",
+          eragile_izena: activeEragilea?.izena || "Entitatea",
+          eragile_mota: activeEragilea?.mota || "orokorra",
+          erronka_nagusia: activeEragilea?.erronka_nagusia || "Euskarazko elkarrizketak piztea",
+          pilotu_id: pilotu.id,
+        }),
+      });
+
+      const json = await res.json();
+      if (json.success && json.data) {
+        if (json.data.taldea) setTaldea(json.data.taldea);
+        if (json.data.pertsonak) setPertsonak(json.data.pertsonak);
+        if (json.data.gunea) setGunea(json.data.gunea);
+        if (json.data.xede_portzentajea) setMetrika(Number(json.data.xede_portzentajea));
+        if (json.data.hipotesia && isCustomMode) setCustomHypothesis(json.data.hipotesia);
+        if (json.data.aholkua) setLatxaAdvice(json.data.aholkua);
+      }
+    } catch (err) {
+      console.error("Errorea Latxarekin betetzean:", err);
+    } finally {
+      setIsLatxaLoading(false);
+    }
+  };
 
   useEffect(() => {
     setEkintza(
@@ -129,24 +168,45 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
           
           {/* Mad Libs Guided Builder Card */}
           <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-5 shadow-inner">
-            <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
               <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 uppercase tracking-wider">
                 <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                 <span>Bete hutsuneak zure esperimentua zehazteko:</span>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  if (!isCustomMode && !customHypothesis.trim()) {
-                    setCustomHypothesis(generatedHypothesis);
-                  }
-                  setIsCustomMode(!isCustomMode);
-                }}
-                className="text-[11px] font-bold text-sky-700 hover:text-sky-900 underline cursor-pointer"
-              >
-                {isCustomMode ? "Txantiloi gidatura itzuli" : "Esaldia libreki idatzi"}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleFillWithLatxa}
+                  disabled={isLatxaLoading}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-[11px] font-bold transition cursor-pointer disabled:opacity-50"
+                  title="Latxak automatikoki beteko ditu hutsuneak zure entitaterako aproposak diren balioekin"
+                >
+                  <Bot className="w-3 h-3 text-indigo-600" />
+                  <span>{isLatxaLoading ? "Latxa pentsatzen..." : "✨ Bete Latxarekin"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isCustomMode && !customHypothesis.trim()) {
+                      setCustomHypothesis(generatedHypothesis);
+                    }
+                    setIsCustomMode(!isCustomMode);
+                  }}
+                  className="text-[11px] font-bold text-sky-700 hover:text-sky-900 underline cursor-pointer"
+                >
+                  {isCustomMode ? "Txantiloi gidatura itzuli" : "Esaldia libreki idatzi"}
+                </button>
+              </div>
             </div>
+
+            {latxaAdvice && (
+              <div className="mb-3 p-2.5 rounded-xl bg-indigo-50/80 border border-indigo-200/80 text-xs text-indigo-900 flex items-start gap-2">
+                <Lightbulb className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Latxaren aholkua:</strong> {latxaAdvice}
+                </span>
+              </div>
+            )}
 
             {!isCustomMode ? (
               <div className="text-base sm:text-lg text-slate-800 font-medium leading-loose">

@@ -28,6 +28,9 @@ import {
   Download,
   Eye,
   Paperclip,
+  Bot,
+  Lightbulb,
+  RotateCcw,
 } from "lucide-react";
 import { useApp, parsePilotuMaterialak } from "@/context/AppContext";
 import type { Pilotua, PilotuMateriala } from "@/lib/db";
@@ -67,9 +70,95 @@ export default function PilotuenKatalogoa() {
     createPilotua,
     updatePilotua,
     deletePilotua,
+    createEsperimentua,
+    setActiveTab,
+    setObservationConfig,
+    triggerConfetti,
     uiTexts,
   } = useApp();
   const [selectedPilot, setSelectedPilot] = useState<Pilotua | null>(null);
+
+  // Latxa Copilot state
+  const [copilotChallenge, setCopilotChallenge] = useState<string>("");
+  const [isCopilotLoading, setIsCopilotLoading] = useState<boolean>(false);
+  const [copilotResult, setCopilotResult] = useState<{
+    aholkua?: string;
+    pilotu_id?: string;
+    taldea?: string;
+    pertsonak?: string;
+    gunea?: string;
+    xede_portzentajea?: number;
+    hipotesia?: string;
+    behaketa_aholkuak?: string[];
+  } | null>(null);
+  const [copilotError, setCopilotError] = useState<string | null>(null);
+  const [isApplyingCopilot, setIsApplyingCopilot] = useState<boolean>(false);
+
+  // Initialize copilotChallenge when activeEragilea changes
+  React.useEffect(() => {
+    if (activeEragilea?.erronka_nagusia && !copilotChallenge) {
+      setCopilotChallenge(activeEragilea.erronka_nagusia);
+    }
+  }, [activeEragilea, copilotChallenge]);
+
+  const handleAskLatxaCopilot = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setIsCopilotLoading(true);
+    setCopilotError(null);
+
+    try {
+      const res = await fetch("/api/ai/latxa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ekintza: "aholkularia_eta_hipotesia",
+          eragile_izena: activeEragilea?.izena || "Entitatea",
+          eragile_mota: activeEragilea?.mota || "orokorra",
+          erronka_nagusia: copilotChallenge.trim() || activeEragilea?.erronka_nagusia || "Euskarazko lehen hitza eta elkarrizketak piztea",
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success || !json.data) {
+        throw new Error(json.error || "Ezin izan da Latxaren erantzuna jaso.");
+      }
+
+      setCopilotResult(json.data);
+      triggerConfetti();
+    } catch (err) {
+      console.error("Latxa kopilotu errorea:", err);
+      setCopilotError(err instanceof Error ? err.message : "Errorea gertatu da Latxari galdetzean.");
+    } finally {
+      setIsCopilotLoading(false);
+    }
+  };
+
+  const handleApplyCopilotExperiment = async () => {
+    if (!copilotResult) return;
+    setIsApplyingCopilot(true);
+
+    try {
+      const targetPilotId = copilotResult.pilotu_id || "barra-barra-txapak";
+      const created = await createEsperimentua({
+        pilotu_id: targetPilotId,
+        hipotesia: copilotResult.hipotesia || `Gure ustez, ${copilotResult.taldea || "lantaldeak"} ${copilotResult.pertsonak || "bezeroekin"} ${copilotResult.gunea || "gunean"} dinamika aktibatuta, euskararen erabilera %${copilotResult.xede_portzentajea || 20} igoko da.`,
+        taldea: copilotResult.taldea || "Lantaldeak",
+        pertsonak: copilotResult.pertsonak || "herritarrekin",
+        gunea: copilotResult.gunea || "harreran",
+        xede_portzentajea: copilotResult.xede_portzentajea || 20,
+      });
+
+      if (created) {
+        setObservationConfig({ expId: created.id, phase: "T0" });
+        triggerConfetti();
+        setActiveTab("panela");
+      }
+    } catch (err) {
+      console.error("Errorea esperimentua aplikatzean:", err);
+    } finally {
+      setIsApplyingCopilot(false);
+    }
+  };
   const [showMaterialsPilot, setShowMaterialsPilot] = useState<Pilotua | null>(null);
   const [previewMaterialId, setPreviewMaterialId] = useState<string | null>(null);
   const [isUploadingDirectMaterial, setIsUploadingDirectMaterial] = useState<boolean>(false);
@@ -518,6 +607,167 @@ export default function PilotuenKatalogoa() {
             <PlusCircle className="w-4 h-4" />
             <span>Sortu pilotu berria</span>
           </button>
+        </div>
+      </div>
+
+      {/* 🤖 LATXA KOPILOTUA & AHOLKULARI SOZIOLINGUISTIKOA */}
+      <div className="bg-gradient-to-br from-indigo-900 via-slate-900 to-sky-950 rounded-3xl p-6 sm:p-8 text-white shadow-xl border border-indigo-500/30 mb-12 relative overflow-hidden">
+        <div className="absolute -top-24 -right-24 w-72 h-72 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative z-10">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-sky-400 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 shrink-0">
+                <Bot className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg sm:text-xl font-extrabold text-white tracking-tight">
+                    Latxa Kopilotua: Aholkulari Soziolinguistikoa
+                  </h2>
+                  <span className="px-2 py-0.5 rounded-full bg-indigo-500/30 border border-indigo-400/40 text-indigo-200 text-[10px] font-bold">
+                    Latxa 70B
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300 mt-0.5">
+                  Azaldu zure erronka eta Latxak esku-hartze aproposena eta hipotesi neurgarria proposatuko dizkizu.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <form onSubmit={handleAskLatxaCopilot} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1.5 flex items-center justify-between">
+                <span>Zuen entitatearen egoera edo erronka:</span>
+                <span className="text-[11px] text-slate-400 font-normal">
+                  {activeEragilea ? `${activeEragilea.izena} (${activeEragilea.mota})` : "Entitatea"}
+                </span>
+              </label>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input
+                  type="text"
+                  value={copilotChallenge}
+                  onChange={(e) => setCopilotChallenge(e.target.value)}
+                  placeholder="Adibidez: Tabernan gaztelaniaz hasten dira bezero gehienak, edo lantaldeak lotsa du euskaraz abiatzeko..."
+                  className="flex-1 bg-slate-800/80 border border-slate-700 rounded-2xl px-4 py-3 text-xs sm:text-sm text-white placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
+                />
+                <button
+                  type="submit"
+                  disabled={isCopilotLoading || !copilotChallenge.trim()}
+                  className="px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-500 via-sky-500 to-teal-400 hover:from-indigo-600 hover:to-teal-500 text-slate-950 font-black text-xs sm:text-sm shadow-lg shadow-indigo-500/25 transition cursor-pointer flex items-center justify-center gap-2 shrink-0 disabled:opacity-50"
+                >
+                  {isCopilotLoading ? (
+                    <>
+                      <RotateCcw className="w-4 h-4 animate-spin text-slate-950" />
+                      <span>Latxa pentsatzen ari da...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 text-slate-950" />
+                      <span>Galdetu Latxari →</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </form>
+
+          {copilotError && (
+            <div className="mt-4 p-3.5 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-200 text-xs">
+              ⚠️ {copilotError}
+            </div>
+          )}
+
+          {/* LATXA RESULT CARD */}
+          {copilotResult && (
+            <div className="mt-6 pt-6 border-t border-indigo-500/20 space-y-4 animate-in fade-in duration-300">
+              {/* Soziolinguistika Aholkua */}
+              {copilotResult.aholkua && (
+                <div className="bg-slate-800/90 border border-indigo-500/30 rounded-2xl p-4 sm:p-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Lightbulb className="w-4 h-4 text-amber-400" />
+                    <span className="text-xs font-extrabold uppercase tracking-wider text-amber-300">
+                      Aholkularitza Soziolinguistikoa
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium">
+                    &ldquo;{copilotResult.aholkua}&rdquo;
+                  </p>
+                </div>
+              )}
+
+              {/* Hipotesi eta Esperimentu Proposamena */}
+              <div className="bg-white text-slate-900 rounded-2xl p-5 shadow-lg border border-slate-200">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2 border-b border-slate-100">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-indigo-700 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                    Latxak gomendatutako hipotesia
+                  </span>
+                  {copilotResult.pilotu_id && (
+                    <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-800 border border-indigo-200">
+                      Gomendatutako pilotua: {pilotuak.find((p) => p.id === copilotResult.pilotu_id)?.izena || copilotResult.pilotu_id}
+                    </span>
+                  )}
+                </div>
+
+                <div className="text-sm sm:text-base font-extrabold text-slate-900 mb-4 bg-indigo-50/50 p-3.5 rounded-xl border border-indigo-100 leading-relaxed">
+                  {copilotResult.hipotesia ||
+                    `Gure ustez, ${copilotResult.taldea || "lantaldeak"} ${copilotResult.pertsonak || "bezeroekin"} ${copilotResult.gunea || "gunean"} dinamika aktibatuta, euskararen erabilera %${copilotResult.xede_portzentajea || 20} igoko da.`}
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4 text-xs">
+                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                    <span className="block text-[10px] text-slate-500 font-bold uppercase">Nork</span>
+                    <span className="font-extrabold text-slate-800">{copilotResult.taldea || "Lantaldeak"}</span>
+                  </div>
+                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                    <span className="block text-[10px] text-slate-500 font-bold uppercase">Norekin</span>
+                    <span className="font-extrabold text-slate-800">{copilotResult.pertsonak || "Herritarrekin"}</span>
+                  </div>
+                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                    <span className="block text-[10px] text-slate-500 font-bold uppercase">Non (gunea)</span>
+                    <span className="font-extrabold text-slate-800">{copilotResult.gunea || "Harrera-gunean"}</span>
+                  </div>
+                  <div className="bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
+                    <span className="block text-[10px] text-emerald-700 font-bold uppercase">Xede-igoera</span>
+                    <span className="font-black text-emerald-800 text-sm">+{copilotResult.xede_portzentajea || 20}%</span>
+                  </div>
+                </div>
+
+                {copilotResult.behaketa_aholkuak && copilotResult.behaketa_aholkuak.length > 0 && (
+                  <div className="mb-4 text-xs text-slate-600 bg-amber-50/60 p-3 rounded-xl border border-amber-200/60">
+                    <span className="font-bold text-amber-900 block mb-1">💡 T0 behaketa egiteko gomendioak:</span>
+                    <ul className="list-disc list-inside space-y-0.5 text-[11px] text-amber-950">
+                      {copilotResult.behaketa_aholkuak.map((aholkua, i) => (
+                        <li key={i}>{aholkua}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setCopilotResult(null)}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition cursor-pointer"
+                  >
+                    Itxi
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleApplyCopilotExperiment}
+                    disabled={isApplyingCopilot}
+                    className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md shadow-emerald-600/25 transition cursor-pointer flex items-center gap-2 disabled:opacity-50"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>{isApplyingCopilot ? "Esperimentua sortzen..." : "Onartu eta Esperimentua Sortu →"}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
