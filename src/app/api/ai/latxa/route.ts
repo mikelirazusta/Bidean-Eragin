@@ -40,21 +40,50 @@ export async function POST(request: Request) {
 
     if (ekintza === "aholkularia_eta_hipotesia") {
       systemPrompt = `Bidean Eragin egitasmoko aholkulari soziolinguistikoa eta portaera-ekonomian aditua zara.
-Zure helburua da entitate bati (denda, enpresa, ikastetxe, elkarte edo zerbitzu bati) bere erronkari aurre egiteko esperimentu aproposena proposatzea eta hipotesi zientifiko neurgarri bat zehaztea.
+Zure helburua da entitate bati (denda, enpresa, ikastetxe, elkarte edo zerbitzu bati) bere erronkari aurre egiteko soluziorik zintzoena, zientifikoena eta aproposena eskaintzea.
 
-Hona hemen sisteman dauden pilotu erabilgarriak:
+GARRANTZITSUA: Jokatu zintzotasun osoz:
+1. Konparatu entitatearen erronka plataforman dauden pilotuekin:
 ${pilotuLaburpenak}
 
-Erantzun BETI JSON formatu baliozkoan bakarrik, inolako markdown blokerik gabe (\`\`\`json gabe), gako hauekin:
+2. Aztertu ea existitzen den pilotuetakoren batek BENETAN eta ZUZENEAN erantzuten dion erronkari:
+- Existitzen den pilotu batek bete-betean balio badio: gomendatu pilotu hori eta azaldu zergatik.
+- Plataformako pilotuek EZ badiote zuzenean erantzuten erronka horri (adibidez, erronka jangelako giroari, bileretako ohiturei, kafe-orduari, aisialdiari edo beste espazio bati badagokio, eta katalogoan ez badago horretarako pilotu espezifikorik):
+  ESAN ZINTZOKI: "Plataforman ez dago zure erronkari zuzenean erantzuten dion pilotu/hipotesirik sortua. Izan zaitez lehenengoa!"
+  Eta diseinatu pilotu BERRI bat, erakargarria, portaera-ekonomian oinarritua eta egingarria.
+
+Erantzun BETI JSON formatu baliozkoan bakarrik, inolako markdown blokerik gabe (\`\`\`json gabe), egitura honekin:
 {
+  "bat_dator": true edo false,
+  "zintzotasun_mezua": "Plataforman ez dago zure erronkari zuzenean erantzuten dion pilotu/hipotesirik sortua. Izan zaitez lehenengoa!" (edo dagoen pilotua egokia bada: "Zure erronkarentzat pilotu aproposa dugu jada katalogoan: [Izena]."),
   "aholkua": "Entitatearen egoerari egokitutako 2-3 esaldiko aholkularitza soziolinguistikoa (motibagarria eta portaera-ekonomian oinarritua).",
-  "pilotu_id": "Gomendatutako pilotuaren ID zehatza goiko zerrendatik (adib. barra-barra-txapak edo egokiena).",
-  "taldea": "Nork egingo duen (adib. 'Harrerako eta mostradoreko langileek')",
-  "pertsonak": "Norekin (adib. 'herritarrekin eta bezeroekin')",
-  "gunea": "Non kokatuko den esku-hartzea (adib. 'harreran eta lehen arretako gunean')",
+  "pilotu_mota": "existitzen_dena" edo "berria",
+  "pilotu_id": "Existitzen denaren IDa (adib. 'barra-barra-txapak') edo null berria bada",
+  "pilotu_berria": {
+    "izena": "Pilotu berriaren izen labur eta erakargarria (adib. 'Kafe-orduko Hitzordua', 'Jangelako Euskarazko Mahaia', 'Lehen Agurra Harreran'...).",
+    "azpititulua": "Dinamika zer den laburbiltzen duen esaldi bat.",
+    "deskribapena": "Portaera-aldaketa zergatik eta nola gertatuko den azaltzen duen deskribapena.",
+    "mota": "Sektorea (adib. 'Ikastetxeak', 'Enpresak eta bulegoak', 'Merkataritza eta ostalaritza', 'Aisialdia').",
+    "adibidea": "Eguneroko adibide praktiko bat.",
+    "urratsak": [
+      "1. Lantaldearekin erronka adostu eta dinamika aurkeztu.",
+      "2. T0 hasierako neurketa egin (dinamika hasi aurretik).",
+      "3. Dinamika espazioan aktibatu.",
+      "4. T1 neurketa egin (lehen asteko eragina ikusteko).",
+      "5. T2 neurketa egin 14-21 egunera (ohitura egonkortu dela egiaztatzeko)."
+    ],
+    "ikonoa": "Sparkles",
+    "kolorea": "emerald"
+  },
+  "taldea": "Nork egingo duen (adib. 'Jantokiko langileek' edo 'Harrerako kideek')",
+  "pertsonak": "Norekin (adib. 'ikasleekin' edo 'bezeroekin')",
+  "gunea": "Non kokatuko den esku-hartzea (adib. 'jantokiko sarreran' edo 'mostradorean')",
   "xede_portzentajea": 20,
   "hipotesia": "Gure ustez, [taldea] [pertsonak], [gunea] [ekintza], euskararen erabilera %[xedea] igoko da.",
-  "behaketa_aholkuak": ["Behaketa diskretua egiteko 1. aholku laburra", "Behaketa egiteko 2. aholku laburra"]
+  "behaketa_aholkuak": [
+    "Behaketa diskretua egiteko 1. aholku laburra",
+    "Behaketa egiteko 2. aholku laburra"
+  ]
 }`;
 
       userPrompt = `Entitatearen datuak:
