@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import db, { Pilotua } from "@/lib/db";
 
 interface LatxaRequestBody {
-  ekintza: "aholkularia_eta_hipotesia" | "hobetu_hipotesia";
+  ekintza: "aholkularia_eta_hipotesia" | "hobetu_hipotesia" | "elkarrizketa";
   eragile_izena?: string;
   eragile_mota?: string;
   erronka_nagusia?: string;
   pilotu_id?: string;
   uneko_testua?: string;
+  messages?: Array<{ role: "user" | "assistant"; content: string }>;
 }
 
 export async function POST(request: Request) {
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
     }
 
     const body = (await request.json()) as LatxaRequestBody;
-    const { ekintza, eragile_izena, eragile_mota, erronka_nagusia, pilotu_id, uneko_testua } = body;
+    const { ekintza, eragile_izena, eragile_mota, erronka_nagusia, pilotu_id, uneko_testua, messages } = body;
 
     // Load available pilots from database for context
     const pilotuak = db.prepare("SELECT id, izena, azpititulua, deskribapena, mota FROM pilotuak").all() as Pilotua[];
@@ -36,78 +37,102 @@ export async function POST(request: Request) {
       .join("\n");
 
     let systemPrompt = "";
-    let userPrompt = "";
+    const conversationMessages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [];
 
-    if (ekintza === "aholkularia_eta_hipotesia") {
+    if (ekintza === "aholkularia_eta_hipotesia" || ekintza === "elkarrizketa") {
       systemPrompt = `Bidean Eragin egitasmoko aholkulari soziolinguistikoa eta portaera-ekonomian aditua zara.
-Zure helburua da entitate bati (denda, enpresa, ikastetxe, elkarte edo zerbitzu bati) bere erronkari aurre egiteko soluziorik zintzoena, zientifikoena eta aproposena eskaintzea.
+Zure helburua da entitate bati (denda, enpresa, ikastetxe, elkarte edo zerbitzu bati) bere erronkari aurre egiteko soluziorik zintzoena, zientifikoena eta aproposena eraikitzen laguntzea, ELKARRIZKETA GIDATU baten bidez.
 
-GARRANTZITSUA: Jokatu zintzotasun osoz:
-1. Konparatu entitatearen erronka plataforman dauden pilotuekin:
+SISTEMAN DAUDEN PILOTUAK:
 ${pilotuLaburpenak}
 
-2. Aztertu ea existitzen den pilotuetakoren batek BENETAN eta ZUZENEAN erantzuten dion erronkari:
-- Existitzen den pilotu batek bete-betean balio badio: gomendatu pilotu hori eta azaldu zergatik.
-- Plataformako pilotuek EZ badiote zuzenean erantzuten erronka horri (adibidez, erronka jangelako giroari, bileretako ohiturei, kafe-orduari, aisialdiari edo beste espazio bati badagokio, eta katalogoan ez badago horretarako pilotu espezifikorik):
-  ESAN ZINTZOKI: "Plataforman ez dago zure erronkari zuzenean erantzuten dion pilotu/hipotesirik sortua. Izan zaitez lehenengoa!"
-  Eta diseinatu pilotu BERRI bat, erakargarria, portaera-ekonomian oinarritua eta egingarria.
+ZURE JOKABIDE-ARAUAK (ZINTZOTASUNA ETA KO-DISEINUA):
+1. Aztertu entitatearen erronka eta mezu-historia:
+- Katalogoan dagoen piloturen batek bete-betean eta zuzenean balio badio: gomendatu pilotu hori eta sortu hipotesia.
+- Katalogoan EZ BADAUKAGU erronka horri zuzenean erantzuten dion piloturik:
+  * Erabiltzaileak bere erronka aipatu berri badu eta oraindik xehetasunak falta badira:
+    - Ezarri "bat_dator": false
+    - Ezarri "egoera": "galderak_behar_dira"
+    - "zintzotasun_mezua": "Plataforman ez dago zure erronkari zuzenean erantzuten dion pilotu/hipotesirik sortua. Izan zaitez lehenengoa! Elkarrekin diseinatuko dugu zure neurriko esku-hartzea."
+    - "galderak": Egin 2 galdera zehatz eta lagungarri (adib.: 1. Zein espazio edo momentu zehatzetan gertatzen da erdarazko inertzia? 2. Zer ekintza edo material txiki litzateke erosoa eta errealista zuen lantaldearentzat?).
+    - "aholkua": Aholku soziolinguistiko labur eta motibagarria.
+  * Erabiltzaileak galderak dagoeneko erantzun baditu:
+    - Ezarri "bat_dator": false
+    - Ezarri "egoera": "pilotua_prest"
+    - "zintzotasun_mezua": "Bikain! Zure erantzunekin pilotu berri hau diseinatu dugu elkarrekin:"
+    - "pilotu_berria": Diseinatu pilotu osoa (izena, azpititulua, deskribapena, mota, urratsak, ikonoa, kolorea).
+    - "hipotesia", "taldea", "pertsonak", "gunea", "xede_portzentajea", "behaketa_aholkuak" sortu erantzunetan oinarrituta.
 
-Erantzun BETI JSON formatu baliozkoan bakarrik, inolako markdown blokerik gabe (\`\`\`json gabe), egitura honekin:
+ERANTZUN BETI ETA SALBUESPENIK GABE JSON FORMATUAN (markdown blokerik gabe, \`\`\` gabe):
 {
   "bat_dator": true edo false,
-  "zintzotasun_mezua": "Plataforman ez dago zure erronkari zuzenean erantzuten dion pilotu/hipotesirik sortua. Izan zaitez lehenengoa!" (edo dagoen pilotua egokia bada: "Zure erronkarentzat pilotu aproposa dugu jada katalogoan: [Izena]."),
-  "aholkua": "Entitatearen egoerari egokitutako 2-3 esaldiko aholkularitza soziolinguistikoa (motibagarria eta portaera-ekonomian oinarritua).",
+  "egoera": "pilotua_prest" edo "galderak_behar_dira",
+  "zintzotasun_mezua": "Azalpen zintzoa erabiltzaileari.",
+  "aholkua": "Aholku soziolinguistikoa.",
+  "galderak": ["1. galdera zehatza?", "2. galdera zehatza?"],
   "pilotu_mota": "existitzen_dena" edo "berria",
-  "pilotu_id": "Existitzen denaren IDa (adib. 'barra-barra-txapak') edo null berria bada",
+  "pilotu_id": "Existitzen denaren IDa edo null",
   "pilotu_berria": {
-    "izena": "Pilotu berriaren izen labur eta erakargarria (adib. 'Kafe-orduko Hitzordua', 'Jangelako Euskarazko Mahaia', 'Lehen Agurra Harreran'...).",
-    "azpititulua": "Dinamika zer den laburbiltzen duen esaldi bat.",
-    "deskribapena": "Portaera-aldaketa zergatik eta nola gertatuko den azaltzen duen deskribapena.",
-    "mota": "Sektorea (adib. 'Ikastetxeak', 'Enpresak eta bulegoak', 'Merkataritza eta ostalaritza', 'Aisialdia').",
-    "adibidea": "Eguneroko adibide praktiko bat.",
+    "izena": "Pilotu berriaren izena",
+    "azpititulua": "Dinamika zer den laburbiltzen duen esaldi bat",
+    "deskribapena": "Portaera-aldaketa zergatik eta nola gertatuko den",
+    "mota": "Sektorea",
+    "adibidea": "Adibide praktikoa",
     "urratsak": [
       "1. Lantaldearekin erronka adostu eta dinamika aurkeztu.",
-      "2. T0 hasierako neurketa egin (dinamika hasi aurretik).",
+      "2. T0 hasierako neurketa egin.",
       "3. Dinamika espazioan aktibatu.",
-      "4. T1 neurketa egin (lehen asteko eragina ikusteko).",
-      "5. T2 neurketa egin 14-21 egunera (ohitura egonkortu dela egiaztatzeko)."
+      "4. T1 neurketa egin.",
+      "5. T2 neurketa egin 14-21 egunera."
     ],
     "ikonoa": "Sparkles",
     "kolorea": "emerald"
   },
-  "taldea": "Nork egingo duen (adib. 'Jantokiko langileek' edo 'Harrerako kideek')",
-  "pertsonak": "Norekin (adib. 'ikasleekin' edo 'bezeroekin')",
-  "gunea": "Non kokatuko den esku-hartzea (adib. 'jantokiko sarreran' edo 'mostradorean')",
+  "taldea": "Nork",
+  "pertsonak": "Norekin",
+  "gunea": "Non",
   "xede_portzentajea": 20,
-  "hipotesia": "Gure ustez, [taldea] [pertsonak], [gunea] [ekintza], euskararen erabilera %[xedea] igoko da.",
-  "behaketa_aholkuak": [
-    "Behaketa diskretua egiteko 1. aholku laburra",
-    "Behaketa egiteko 2. aholku laburra"
-  ]
+  "hipotesia": "Gure ustez, ...",
+  "behaketa_aholkuak": ["1. aholkua", "2. aholkua"]
 }`;
 
-      userPrompt = `Entitatearen datuak:
+      conversationMessages.push({ role: "system", content: systemPrompt });
+
+      // Add conversation history if available
+      if (messages && Array.isArray(messages) && messages.length > 0) {
+        for (const msg of messages) {
+          conversationMessages.push({
+            role: msg.role === "assistant" ? "assistant" : "user",
+            content: msg.content,
+          });
+        }
+      } else {
+        conversationMessages.push({
+          role: "user",
+          content: `Entitatearen datuak:
 - Izena: "${eragile_izena || "Entitatea"}"
 - Mota: "${eragile_mota || "orokorra"}"
-- Erronka nagusia: "${erronka_nagusia || "Egunerokoan lehen hitza eta elkarrizketak euskaraz piztea"}"
-
-Proposatu entitate honi aholku soziolinguistiko argia eta esperimentu-hipotesi egituratu egokiena.`;
+- Erronka nagusia: "${erronka_nagusia || "Egunerokoan lehen hitza eta elkarrizketak euskaraz piztea"}"`,
+        });
+      }
     } else {
       // ekintza === "hobetu_hipotesia"
       systemPrompt = `Bidean Eragin egitasmoko euskal hizkuntza-aholkularia zara.
 Erabiltzaileak idatzitako hipotesia edo zirriborroa aztertu eta soziolinguistikoki zehatzagoa, neurgarriagoa eta euskaraz txukunagoa proposatu behar duzu.
 
-Erantzun BETI JSON formatu baliozkoan bakarrik, markdownik gabe, gako hauekin:
+Erantzun BETI JSON formatu baliozkoan bakarrik, markdownik gabe:
 {
   "hipotesi_hobetua": "Hipotesiaren formulazio hobetua eta profesionala.",
   "azalpena": "Zergatik den hobea formulazio hau (esaldi labur bat)."
 }`;
 
-      userPrompt = `Uneko hipotesia: "${uneko_testua || ""}"
+      conversationMessages.push({ role: "system", content: systemPrompt });
+      conversationMessages.push({
+        role: "user",
+        content: `Uneko hipotesia: "${uneko_testua || ""}"
 Pilotua: "${pilotu_id || "orokorra"}"
-Entitatea: "${eragile_izena || "Entitatea"}" (${eragile_mota || "orokorra"})
-
-Hobetu formulazioa.`;
+Entitatea: "${eragile_izena || "Entitatea"}" (${eragile_mota || "orokorra"})`,
+      });
     }
 
     const endpoint = `${apiUrl}/chat/completions`;
@@ -120,12 +145,9 @@ Hobetu formulazioa.`;
       },
       body: JSON.stringify({
         model: model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
+        messages: conversationMessages,
         temperature: 0.3,
-        max_tokens: 800,
+        max_tokens: 1100,
       }),
     });
 

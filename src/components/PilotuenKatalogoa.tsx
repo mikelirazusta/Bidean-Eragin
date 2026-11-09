@@ -81,10 +81,14 @@ export default function PilotuenKatalogoa() {
   // Latxa Copilot state
   const [copilotChallenge, setCopilotChallenge] = useState<string>("");
   const [isCopilotLoading, setIsCopilotLoading] = useState<boolean>(false);
+  const [copilotHistory, setCopilotHistory] = useState<Array<{ role: "user" | "assistant"; content: string }>>([]);
+  const [userFollowUpAnswer, setUserFollowUpAnswer] = useState<string>("");
   const [copilotResult, setCopilotResult] = useState<{
     bat_dator?: boolean;
+    egoera?: "pilotua_prest" | "galderak_behar_dira";
     zintzotasun_mezua?: string;
     aholkua?: string;
+    galderak?: string[];
     pilotu_mota?: "existitzen_dena" | "berria";
     pilotu_id?: string | null;
     pilotu_berria?: {
@@ -117,8 +121,15 @@ export default function PilotuenKatalogoa() {
 
   const handleAskLatxaCopilot = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (!copilotChallenge.trim()) return;
+
     setIsCopilotLoading(true);
     setCopilotError(null);
+    setCopilotResult(null);
+
+    const initialUserMsg = `Entitatearen erronka: "${copilotChallenge.trim()}" (Entitatea: ${activeEragilea?.izena || "Entitatea"}, Mota: ${activeEragilea?.mota || "orokorra"})`;
+    const newHistory: Array<{ role: "user" | "assistant"; content: string }> = [{ role: "user", content: initialUserMsg }];
+    setCopilotHistory(newHistory);
 
     try {
       const res = await fetch("/api/ai/latxa", {
@@ -128,7 +139,8 @@ export default function PilotuenKatalogoa() {
           ekintza: "aholkularia_eta_hipotesia",
           eragile_izena: activeEragilea?.izena || "Entitatea",
           eragile_mota: activeEragilea?.mota || "orokorra",
-          erronka_nagusia: copilotChallenge.trim() || activeEragilea?.erronka_nagusia || "Euskarazko lehen hitza eta elkarrizketak piztea",
+          erronka_nagusia: copilotChallenge.trim(),
+          messages: newHistory,
         }),
       });
 
@@ -143,10 +155,60 @@ export default function PilotuenKatalogoa() {
       } else {
         setCopilotChoice("berria");
       }
+
+      // Add assistant response to history
+      newHistory.push({
+        role: "assistant",
+        content: JSON.stringify(json.data),
+      });
+      setCopilotHistory(newHistory);
       triggerConfetti();
     } catch (err) {
       console.error("Latxa kopilotu errorea:", err);
       setCopilotError(err instanceof Error ? err.message : "Errorea gertatu da Latxari galdetzean.");
+    } finally {
+      setIsCopilotLoading(false);
+    }
+  };
+
+  const handleSendFollowUpAnswer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userFollowUpAnswer.trim() || isCopilotLoading) return;
+
+    const answerText = userFollowUpAnswer.trim();
+    setUserFollowUpAnswer("");
+    setIsCopilotLoading(true);
+    setCopilotError(null);
+
+    const updatedHistory = [
+      ...copilotHistory,
+      { role: "user" as const, content: `Erabiltzailearen erantzuna galderari: "${answerText}". Orain sortu pilotu berriaren fitxa eta hipotesi neurgarria datu hauekin.` },
+    ];
+    setCopilotHistory(updatedHistory);
+
+    try {
+      const res = await fetch("/api/ai/latxa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ekintza: "elkarrizketa",
+          eragile_izena: activeEragilea?.izena || "Entitatea",
+          eragile_mota: activeEragilea?.mota || "orokorra",
+          messages: updatedHistory,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success || !json.data) {
+        throw new Error(json.error || "Ezin izan da Latxaren erantzuna jaso.");
+      }
+
+      setCopilotResult(json.data);
+      setCopilotChoice("berria");
+      triggerConfetti();
+    } catch (err) {
+      console.error("Latxa galdera-erantzun errorea:", err);
+      setCopilotError(err instanceof Error ? err.message : "Errorea gertatu da Latxari erantzutean.");
     } finally {
       setIsCopilotLoading(false);
     }
@@ -757,6 +819,58 @@ export default function PilotuenKatalogoa() {
                   </div>
                 </div>
               </div>
+
+              {/* Galderak eta Ko-diseinurako Erantzuteko Koadroa */}
+              {copilotResult.galderak && copilotResult.galderak.length > 0 && (
+                <div className="bg-slate-800/90 border border-amber-400/30 rounded-2xl p-5 text-white shadow-lg space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Lightbulb className="w-4 h-4 text-amber-400" />
+                    <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-amber-300">
+                      Ko-diseinurako galderak (erantzun hauek baliatuko ditu Latxak):
+                    </h4>
+                  </div>
+
+                  <div className="space-y-2 bg-slate-900/60 p-3.5 rounded-xl border border-slate-700/80">
+                    {copilotResult.galderak.map((galdera, idx) => (
+                      <div key={idx} className="flex items-start gap-2 text-xs sm:text-sm text-slate-200">
+                        <span className="font-black text-amber-400 shrink-0">{idx + 1}.</span>
+                        <span>{galdera}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <form onSubmit={handleSendFollowUpAnswer} className="space-y-2.5">
+                    <label className="block text-xs font-bold text-slate-300">
+                      Zure erantzuna (labur azaldu espazioa, lantaldea edo dinamika):
+                    </label>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        value={userFollowUpAnswer}
+                        onChange={(e) => setUserFollowUpAnswer(e.target.value)}
+                        placeholder="Adibidez: Bileren lehen 5 minutuetan da, langileen artean; dinamika gisa agur-erronka bat jarriko genuke..."
+                        className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 focus:ring-2 focus:ring-amber-400 focus:outline-hidden"
+                      />
+                      <button
+                        type="submit"
+                        disabled={isCopilotLoading || !userFollowUpAnswer.trim()}
+                        className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-black text-xs rounded-xl shadow-md transition cursor-pointer flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
+                      >
+                        {isCopilotLoading ? (
+                          <>
+                            <RotateCcw className="w-3.5 h-3.5 animate-spin" />
+                            <span>Eraikitzen...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Bidali erantzuna →</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
 
               {/* Aukera: Berria sortu ala existitzen dena erabili */}
               {copilotResult.pilotu_berria && copilotResult.bat_dator && (
