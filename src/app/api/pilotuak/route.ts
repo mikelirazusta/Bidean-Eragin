@@ -191,6 +191,19 @@ export async function DELETE(request: Request) {
       );
     }
 
+    if (id === "barra-barra-txapak") {
+      return NextResponse.json(
+        { success: false, error: "Pilotu lehenetsia ezin da ezabatu." },
+        { status: 400 }
+      );
+    }
+
+    // Reassign any experiments referencing this pilot so foreign keys / views stay valid
+    db.prepare("UPDATE esperimentuak SET pilotu_id = ? WHERE pilotu_id = ?").run(
+      "barra-barra-txapak",
+      id
+    );
+
     db.prepare("DELETE FROM pilotuak WHERE id = ?").run(id);
 
     await syncDbToCloud();

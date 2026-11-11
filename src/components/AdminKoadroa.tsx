@@ -104,6 +104,7 @@ export default function AdminKoadroa() {
     createEsperimentua,
     updateEragilea,
     updateEsperimentua,
+    deleteEsperimentua,
     updateNeurketa,
     deleteEragilea,
     deleteNeurketa,
@@ -217,6 +218,9 @@ export default function AdminKoadroa() {
   // Deletion & Reset states
   const [eragileToDelete, setEragileToDelete] = useState<Eragilea | null>(null);
   const [isDeletingEragile, setIsDeletingEragile] = useState(false);
+  const [expToDelete, setExpToDelete] = useState<{ exp: Esperimentua; eragileIzena: string } | null>(null);
+  const [isDeletingExp, setIsDeletingExp] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [neurketaDeletingId, setNeurketaDeletingId] = useState<string | null>(null);
   const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
   const [isResettingAll, setIsResettingAll] = useState(false);
@@ -307,6 +311,8 @@ export default function AdminKoadroa() {
         xede_portzentajea: editXedePct,
         estatusa: editEstatusa,
       });
+    } else if (editExpId && !editHipotesia.trim()) {
+      await deleteEsperimentua(editExpId);
     } else if (!editExpId && editHipotesia.trim()) {
       await createEsperimentua({
         eragile_id: eragileToEdit.id,
@@ -316,6 +322,7 @@ export default function AdminKoadroa() {
         pertsonak: editPertsonak.trim() || "herritarrekin eta bezeroekin",
         gunea: editGunea.trim() || "harrera edo gune nagusian",
         xede_portzentajea: editXedePct,
+        skipNavigation: true,
       });
     }
 
@@ -358,9 +365,32 @@ export default function AdminKoadroa() {
   const handleConfirmDeleteEragilea = async () => {
     if (!eragileToDelete) return;
     setIsDeletingEragile(true);
-    await deleteEragilea(eragileToDelete.id);
+    setDeleteError(null);
+    const ok = await deleteEragilea(eragileToDelete.id);
     setIsDeletingEragile(false);
-    setEragileToDelete(null);
+    if (ok) {
+      setEragileToDelete(null);
+    } else {
+      setDeleteError("Ezin izan da entitatea ezabatu. Saiatu berriro.");
+    }
+  };
+
+  const handleConfirmDeleteExp = async () => {
+    if (!expToDelete) return;
+    setIsDeletingExp(true);
+    setDeleteError(null);
+    const targetExpId = expToDelete.exp.id;
+    const ok = await deleteEsperimentua(targetExpId);
+    setIsDeletingExp(false);
+    if (ok) {
+      if (editExpId === targetExpId) {
+        setEditExpId(null);
+        setEditHipotesia("");
+      }
+      setExpToDelete(null);
+    } else {
+      setDeleteError("Ezin izan da hipotesia ezabatu. Saiatu berriro.");
+    }
   };
 
   const handleDeleteSingleNeurketa = async (id: string) => {
@@ -1348,17 +1378,32 @@ export default function AdminKoadroa() {
 
                     <td className="py-3.5 pr-3 max-w-xs">
                       {exp ? (
-                        <div>
-                          <p
-                            onClick={() => !isPresentationMode && openEditEragileModal(eragile, exp)}
-                            className="text-slate-800 font-medium line-clamp-2 cursor-pointer hover:text-indigo-700 transition"
-                            title="Egin klik hipotesia editatzeko"
-                          >
-                            &ldquo;{exp.hipotesia}&rdquo;
-                          </p>
-                          <span className="text-[10px] text-slate-400 block mt-0.5 truncate">
-                            Gunea: {exp.gunea} • Xedea: +%{exp.xede_portzentajea}
-                          </span>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p
+                              onClick={() => !isPresentationMode && openEditEragileModal(eragile, exp)}
+                              className="text-slate-800 font-medium line-clamp-2 cursor-pointer hover:text-indigo-700 transition"
+                              title="Egin klik hipotesia editatzeko"
+                            >
+                              &ldquo;{exp.hipotesia}&rdquo;
+                            </p>
+                            <span className="text-[10px] text-slate-400 block mt-0.5 truncate">
+                              Gunea: {exp.gunea} • Xedea: +%{exp.xede_portzentajea}
+                            </span>
+                          </div>
+                          {!isPresentationMode && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDeleteError(null);
+                                setExpToDelete({ exp, eragileIzena: eragile.izena });
+                              }}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition shrink-0 cursor-pointer"
+                              title="Ezabatu hipotesia (entitatea mantenduta)"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       ) : (
                         <span className="text-slate-500 truncate block">{eragile.erronka_nagusia}</span>
@@ -1751,16 +1796,35 @@ export default function AdminKoadroa() {
                     <FlaskConical className="w-3.5 h-3.5 text-emerald-600" />
                     <span>2. Hipotesia eta esperimentuaren xehetasunak (aukerakoa)</span>
                   </h4>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const generated = `Gure ustez, ${editTaldea || "entitateko kideek"} ${editPertsonak || "herritarrekin eta bezeroekin"}, ${editGunea || "harrera edo gune nagusian"} esku-hartze pilotua aktibatuta, euskararen erabilera %${editXedePct} igoko da.`;
-                      setEditHipotesia(generated);
-                    }}
-                    className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 bg-white px-2.5 py-1 rounded-lg border border-emerald-200 shadow-2xs transition cursor-pointer"
-                  >
-                    ✨ Sortu esaldia azpiko eremuekin
-                  </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const generated = `Gure ustez, ${editTaldea || "entitateko kideek"} ${editPertsonak || "herritarrekin eta bezeroekin"}, ${editGunea || "harrera edo gune nagusian"} esku-hartze pilotua aktibatuta, euskararen erabilera %${editXedePct} igoko da.`;
+                        setEditHipotesia(generated);
+                      }}
+                      className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 bg-white px-2.5 py-1 rounded-lg border border-emerald-200 shadow-2xs transition cursor-pointer"
+                    >
+                      ✨ Sortu esaldia azpiko eremuekin
+                    </button>
+                    {editExpId && eragileToEdit && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const targetExp = esperimentuak.find((item) => item.id === editExpId);
+                          if (targetExp) {
+                            setDeleteError(null);
+                            setExpToDelete({ exp: targetExp, eragileIzena: eragileToEdit.izena });
+                          }
+                        }}
+                        className="text-[11px] font-bold text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-2.5 py-1 rounded-lg border border-rose-200 transition cursor-pointer inline-flex items-center gap-1"
+                        title="Ezabatu entitate honen hipotesia eta neurketak"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>Ezabatu hipotesia</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div>
@@ -2079,10 +2143,19 @@ export default function AdminKoadroa() {
               </div>
             </div>
 
+            {deleteError && (
+              <p className="text-xs font-semibold text-rose-600 mb-3 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2">
+                {deleteError}
+              </p>
+            )}
+
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
               <button
                 type="button"
-                onClick={() => setEragileToDelete(null)}
+                onClick={() => {
+                  setDeleteError(null);
+                  setEragileToDelete(null);
+                }}
                 className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
               >
                 Utzi
@@ -2095,6 +2168,58 @@ export default function AdminKoadroa() {
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>{isDeletingEragile ? "Ezabatzen..." : "Bai, ezabatu"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE SINGLE HYPOTHESIS / EXPERIMENT CONFIRMATION MODAL */}
+      {expToDelete && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-200">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="p-2.5 bg-rose-100 text-rose-700 rounded-2xl shrink-0">
+                <AlertTriangle className="w-5 h-5 text-rose-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 text-base">
+                  Hipotesia ezabatu?
+                </h3>
+                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                  Ziur zaude <strong>{expToDelete.eragileIzena}</strong> entitatearen hipotesi hau eta hari lotutako neurketak ezabatu nahi dituzula? Entitatea zerrendan mantenduko da.
+                </p>
+                <p className="text-xs italic text-slate-500 mt-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200 line-clamp-3">
+                  &ldquo;{expToDelete.exp.hipotesia}&rdquo;
+                </p>
+              </div>
+            </div>
+
+            {deleteError && (
+              <p className="text-xs font-semibold text-rose-600 mb-3 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2">
+                {deleteError}
+              </p>
+            )}
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setDeleteError(null);
+                  setExpToDelete(null);
+                }}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              >
+                Utzi
+              </button>
+              <button
+                type="button"
+                disabled={isDeletingExp}
+                onClick={handleConfirmDeleteExp}
+                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{isDeletingExp ? "Ezabatzen..." : "Bai, ezabatu hipotesia"}</span>
               </button>
             </div>
           </div>

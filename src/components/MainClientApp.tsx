@@ -10,7 +10,7 @@ import OnboardingView from "@/components/OnboardingView";
 import AdminKoadroa from "@/components/AdminKoadroa";
 import AuthPortal from "@/components/AuthPortal";
 import PWAInitializer from "@/components/PWAInitializer";
-import { Heart, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import type { Pilotua, Eragilea, Esperimentua, Neurketa, Nudge } from "@/lib/db";
 
 interface MainClientAppProps {
@@ -72,8 +72,8 @@ function MainContent() {
             </button>
 
             <span>•</span>
-            <span className="flex items-center gap-1 text-slate-400">
-              Euskaraz egina <Heart className="w-3 h-3 text-rose-500 fill-current" /> Bagera
+            <span className="text-slate-400">
+              Bagera Euskaltzaleen Elkartea
             </span>
           </div>
         </div>

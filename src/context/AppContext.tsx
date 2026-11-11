@@ -161,6 +161,7 @@ interface AppContextType {
     gunea: string;
     xede_portzentajea: number;
     eragile_id?: string;
+    skipNavigation?: boolean;
   }) => Promise<Esperimentua | null>;
   createQuickPostua: (data: {
     izena: string;
@@ -206,6 +207,7 @@ interface AppContextType {
     xede_portzentajea?: number;
     estatusa?: string;
   }) => Promise<Esperimentua | null>;
+  deleteEsperimentua: (id: string) => Promise<boolean>;
   updateNeurketa: (data: {
     id: string;
     esperimentu_id?: string;
@@ -647,22 +649,35 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
     gunea: string;
     xede_portzentajea: number;
     eragile_id?: string;
+    skipNavigation?: boolean;
   }) => {
     try {
-      const targetId = data.eragile_id || effectiveEragileId || (currentUser?.eragile_id || "");
+      const targetId =
+        data.eragile_id ||
+        effectiveEragileId ||
+        activeEragilea?.id ||
+        currentUser?.eragile_id ||
+        "";
       const res = await fetch("/api/esperimentuak", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...data,
+          pilotu_id: data.pilotu_id,
+          hipotesia: data.hipotesia,
+          taldea: data.taldea,
+          pertsonak: data.pertsonak,
+          gunea: data.gunea,
+          xede_portzentajea: data.xede_portzentajea,
           eragile_id: targetId,
         }),
       });
       const json = await res.json();
       if (json.success && json.data) {
         await refreshData();
-        setObservationConfig({ expId: json.data.id, phase: "T0" });
-        setActiveTab("behaketa");
+        if (!data.skipNavigation) {
+          setObservationConfig({ expId: json.data.id, phase: "T0" });
+          setActiveTab("behaketa");
+        }
         triggerConfetti();
         return json.data;
       }
@@ -806,6 +821,10 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
       });
       const json = await res.json();
       if (json.success) {
+        setPilotuak((prev) => prev.filter((p) => p.id !== id));
+        setEsperimentuak((prev) =>
+          prev.map((e) => (e.pilotu_id === id ? { ...e, pilotu_id: "barra-barra-txapak" } : e))
+        );
         await refreshData();
         return true;
       }
@@ -957,11 +976,31 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
       });
       const json = await res.json();
       if (json.success) {
+        setNeurketak((prev) => prev.filter((n) => n.id !== id));
         await refreshData();
         return true;
       }
     } catch (e) {
       console.error("Errorea neurketa ezabatzean:", e);
+    }
+    return false;
+  };
+
+  const deleteEsperimentua = async (id: string) => {
+    try {
+      const res = await fetch(`/api/esperimentuak?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      const json = await res.json();
+      if (json.success) {
+        setEsperimentuak((prev) => prev.filter((e) => e.id !== id));
+        setNeurketak((prev) => prev.filter((n) => n.esperimentu_id !== id));
+        setObservationConfig((prev) => (prev?.expId === id ? { phase: "T0" } : prev));
+        await refreshData();
+        return true;
+      }
+    } catch (e) {
+      console.error("Errorea esperimentua ezabatzean:", e);
     }
     return false;
   };
@@ -973,6 +1012,13 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
       });
       const json = await res.json();
       if (json.success) {
+        const expIds = new Set(
+          esperimentuak.filter((e) => e.eragile_id === id).map((e) => e.id)
+        );
+        setEragileak((prev) => prev.filter((er) => er.id !== id));
+        setEsperimentuak((prev) => prev.filter((e) => e.eragile_id !== id));
+        setNeurketak((prev) => prev.filter((n) => !expIds.has(n.esperimentu_id)));
+        setNudges((prev) => prev.filter((nd) => nd.eragile_id !== id));
         if (currentEragileId === id) {
           setCurrentEragileId("");
         }
@@ -1124,6 +1170,7 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
         createQuickPostua,
         updateEragilea,
         updateEsperimentua,
+        deleteEsperimentua,
         updateNeurketa,
         saveNeurketa,
         deleteNeurketa,

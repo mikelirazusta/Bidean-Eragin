@@ -115,6 +115,7 @@ export default function PilotuenKatalogoa() {
   const [copilotChoice, setCopilotChoice] = useState<"berria" | "existitzen_dena">("berria");
   const [copilotError, setCopilotError] = useState<string | null>(null);
   const [isApplyingCopilot, setIsApplyingCopilot] = useState<boolean>(false);
+  const [pilotToDelete, setPilotToDelete] = useState<Pilotua | null>(null);
 
   // Initialize copilotChallenge when activeEragilea changes
   React.useEffect(() => {
@@ -647,17 +648,21 @@ export default function PilotuenKatalogoa() {
     setShowCreateModal(true);
   };
 
-  const handleDeletePilot = async (pilotu: Pilotua) => {
-    if (
-      !window.confirm(
-        `Ziur zaude "${pilotu.izena}" pilotua katalogotik ezabatu nahi duzula?`
-      )
-    ) {
-      return;
-    }
-    setDeletingPilotId(pilotu.id);
-    await deletePilotua(pilotu.id);
+  const handleDeletePilot = (pilotu: Pilotua) => {
+    setPilotToDelete(pilotu);
+  };
+
+  const handleConfirmDeletePilot = async () => {
+    if (!pilotToDelete) return;
+    setDeletingPilotId(pilotToDelete.id);
+    const ok = await deletePilotua(pilotToDelete.id);
     setDeletingPilotId(null);
+    if (ok) {
+      if (selectedPilot?.id === pilotToDelete.id) {
+        setSelectedPilot(null);
+      }
+      setPilotToDelete(null);
+    }
   };
 
   const getPilotTheme = (kolorea: string, ikonoa: string, id: string) => {
@@ -2225,6 +2230,45 @@ export default function PilotuenKatalogoa() {
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE PILOT CONFIRMATION MODAL */}
+      {pilotToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-200">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="p-2.5 bg-rose-100 text-rose-700 rounded-2xl shrink-0">
+                <Trash2 className="w-5 h-5 text-rose-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 text-base">
+                  Pilotua katalogotik ezabatu?
+                </h3>
+                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                  Ziur zaude <strong>&ldquo;{pilotToDelete.izena}&rdquo;</strong> pilotua ezabatu nahi duzula? Lotutako esperimentuak pilotu lehenetsira egokituko dira.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setPilotToDelete(null)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              >
+                Utzi
+              </button>
+              <button
+                type="button"
+                disabled={deletingPilotId === pilotToDelete.id}
+                onClick={handleConfirmDeletePilot}
+                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{deletingPilotId === pilotToDelete.id ? "Ezabatzen..." : "Bai, ezabatu"}</span>
+              </button>
             </div>
           </div>
         </div>

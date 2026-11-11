@@ -92,6 +92,7 @@ export default function ZentroDashboard() {
     deleteNeurketa,
     updateNeurketa,
     updateEsperimentua,
+    deleteEsperimentua,
     updateEragilea,
     createEsperimentua,
     refreshData,
@@ -165,6 +166,14 @@ export default function ZentroDashboard() {
   const [editXedeaNum, setEditXedeaNum] = useState<number>(25);
   const [isSavingHypothesis, setIsSavingHypothesis] = useState(false);
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
+  const [expToDelete, setExpToDelete] = useState<Esperimentua | null>(null);
+  const [isDeletingExp, setIsDeletingExp] = useState(false);
+  const [neurketaToDeleteConfirm, setNeurketaToDeleteConfirm] = useState<{
+    id: string;
+    unea: string;
+    sessionIndex: number;
+  } | null>(null);
+  const [isDeletingNeurketa, setIsDeletingNeurketa] = useState(false);
 
   // Latxa qualitative analysis state
   const [isAnalyzingWithLatxa, setIsAnalyzingWithLatxa] = useState(false);
@@ -692,15 +701,25 @@ export default function ZentroDashboard() {
                     Xedea: +%{currentExp.xede_portzentajea}
                   </span>
                   {!isEditingHypothesis && (
-                    <button
-                      type="button"
-                      onClick={handleOpenEditHypothesis}
-                      className="px-2.5 py-1 rounded-lg bg-paper hover:bg-sand text-ink border border-line text-xs font-semibold inline-flex items-center gap-1 transition cursor-pointer print:hidden"
-                      title="Editatu hipotesia eta xehetasunak"
-                    >
-                      <Pencil className="w-3.5 h-3.5 text-ink-muted" />
-                      <span>Editatu</span>
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleOpenEditHypothesis}
+                        className="px-2.5 py-1 rounded-lg bg-paper hover:bg-sand text-ink border border-line text-xs font-semibold inline-flex items-center gap-1 transition cursor-pointer print:hidden"
+                        title="Editatu hipotesia eta xehetasunak"
+                      >
+                        <Pencil className="w-3.5 h-3.5 text-ink-muted" />
+                        <span>Editatu</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setExpToDelete(currentExp)}
+                        className="p-1.5 rounded-lg bg-paper hover:bg-rose-50 text-ink-muted hover:text-rose-600 border border-line hover:border-rose-200 transition cursor-pointer print:hidden"
+                        title="Ezabatu hipotesia"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
@@ -1629,15 +1648,13 @@ export default function ZentroDashboard() {
                                   </button>
                                   <button
                                     type="button"
-                                    onClick={async () => {
-                                      if (
-                                        window.confirm(
-                                          `Ziur zaude ${neu.unea} faseko ${sessionIndex}. saio hau ezabatu nahi duzula? Batez bestekoa birkalkulatuko da.`
-                                        )
-                                      ) {
-                                        await deleteNeurketa(neu.id);
-                                      }
-                                    }}
+                                    onClick={() =>
+                                      setNeurketaToDeleteConfirm({
+                                        id: neu.id,
+                                        unea: neu.unea,
+                                        sessionIndex,
+                                      })
+                                    }
                                     className="p-1 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
                                     title="Ezabatu saio hau"
                                   >
@@ -2010,6 +2027,97 @@ export default function ZentroDashboard() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE HYPOTHESIS CONFIRMATION MODAL */}
+      {expToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-200">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="p-2.5 bg-rose-100 text-rose-700 rounded-2xl shrink-0">
+                <Trash2 className="w-5 h-5 text-rose-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 text-base">
+                  Hipotesia ezabatu?
+                </h3>
+                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                  Ziur zaude hipotesi hau eta hari lotutako neurketak ezabatu nahi dituzula? Beste hipotesi bat sor dezakezu gero.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setExpToDelete(null)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              >
+                Utzi
+              </button>
+              <button
+                type="button"
+                disabled={isDeletingExp}
+                onClick={async () => {
+                  setIsDeletingExp(true);
+                  const ok = await deleteEsperimentua(expToDelete.id);
+                  setIsDeletingExp(false);
+                  if (ok) {
+                    setIsEditingHypothesis(false);
+                    setExpToDelete(null);
+                  }
+                }}
+                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{isDeletingExp ? "Ezabatzen..." : "Bai, ezabatu"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE MEASUREMENT SESSION CONFIRMATION MODAL */}
+      {neurketaToDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-200">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="p-2.5 bg-rose-100 text-rose-700 rounded-2xl shrink-0">
+                <Trash2 className="w-5 h-5 text-rose-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 text-base">
+                  Neurketa-saioa ezabatu?
+                </h3>
+                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                  Ziur zaude <strong>{neurketaToDeleteConfirm.unea}</strong> faseko <strong>{neurketaToDeleteConfirm.sessionIndex}. saioa</strong> ezabatu nahi duzula? Batez bestekoa birkalkulatuko da.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setNeurketaToDeleteConfirm(null)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              >
+                Utzi
+              </button>
+              <button
+                type="button"
+                disabled={isDeletingNeurketa}
+                onClick={async () => {
+                  setIsDeletingNeurketa(true);
+                  await deleteNeurketa(neurketaToDeleteConfirm.id);
+                  setIsDeletingNeurketa(false);
+                  setNeurketaToDeleteConfirm(null);
+                }}
+                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{isDeletingNeurketa ? "Ezabatzen..." : "Bai, ezabatu"}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

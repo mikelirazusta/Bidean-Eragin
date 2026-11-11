@@ -159,3 +159,31 @@ export async function PATCH(request: Request) {
   }
 }
 
+export async function DELETE(request: Request) {
+  try {
+    await syncDbFromCloud();
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: "Hipotesiaren IDa falta da" },
+        { status: 400 }
+      );
+    }
+
+    db.prepare("DELETE FROM neurketak WHERE esperimentu_id = ?").run(id);
+    db.prepare("DELETE FROM esperimentuak WHERE id = ?").run(id);
+
+    await syncDbToCloud();
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Errorea esperimentua ezabatzean:", error);
+    return NextResponse.json(
+      { success: false, error: "Ezin izan da hipotesia edo esperimentua ezabatu" },
+      { status: 500 }
+    );
+  }
+}
+

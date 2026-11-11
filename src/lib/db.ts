@@ -611,6 +611,22 @@ function createFallbackStore() {
             }
             return { changes: 0 };
           }
+          if (q.startsWith("UPDATE esperimentuak SET pilotu_id = ? WHERE pilotu_id = ?")) {
+            const [newPilotId, oldPilotId] = params;
+            for (const exp of store.esperimentuak) {
+              if (exp.pilotu_id === oldPilotId) {
+                exp.pilotu_id = newPilotId;
+              }
+            }
+            save();
+            return { changes: 1 };
+          }
+          if (q.startsWith("DELETE FROM esperimentuak WHERE id = ?")) {
+            const [id] = params;
+            store.esperimentuak = store.esperimentuak.filter((e) => e.id !== id);
+            save();
+            return { changes: 1 };
+          }
           if (q.startsWith("DELETE FROM esperimentuak WHERE eragile_id = ?")) {
             const [eragileId] = params;
             store.esperimentuak = store.esperimentuak.filter((e) => e.eragile_id !== eragileId);
@@ -1040,7 +1056,7 @@ async function writeSnapshotToNetlifyBlobs(snapshot: MemoryStoreData): Promise<b
         headers: {
           authorization: `Bearer ${ctx.token}`,
           "content-type": "application/json",
-          "cache-control": "max-age=0, stale-while-revalidate=60",
+          "cache-control": "no-store, max-age=0",
         },
         body: payload,
       });
@@ -1064,7 +1080,7 @@ async function writeSnapshotToNetlifyBlobs(snapshot: MemoryStoreData): Promise<b
           method: "PUT",
           headers: {
             "content-type": "application/json",
-            "cache-control": "max-age=0, stale-while-revalidate=60",
+            "cache-control": "no-store, max-age=0",
           },
           body: payload,
         });
@@ -1112,7 +1128,7 @@ export async function writeCustomBlobJson(key: string, value: unknown): Promise<
         headers: {
           authorization: `Bearer ${ctx.token}`,
           "content-type": "application/json",
-          "cache-control": "max-age=0, stale-while-revalidate=60",
+          "cache-control": "no-store, max-age=0",
         },
         body: payload,
       });
@@ -1136,7 +1152,7 @@ export async function writeCustomBlobJson(key: string, value: unknown): Promise<
           method: "PUT",
           headers: {
             "content-type": "application/json",
-            "cache-control": "max-age=0, stale-while-revalidate=60",
+            "cache-control": "no-store, max-age=0",
           },
           body: payload,
         });

@@ -105,7 +105,7 @@ export async function POST(request: Request) {
           arduraduna.trim(),
           chosenGunea,
           chosenTarget,
-          "T0_PENDIENTE",
+          "T0_zain",
           sortze_data
         );
       }
@@ -124,7 +124,7 @@ export async function POST(request: Request) {
           "neurketa_t0",
           new Date(Date.now() + 86400000 * 3).toISOString(),
           0,
-          "/kontagailua",
+          "/behaketa",
           sortze_data
         );
       } else {
