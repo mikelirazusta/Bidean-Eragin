@@ -803,7 +803,7 @@ export default function PilotuenKatalogoa() {
         <div className="shrink-0">
           <button
             onClick={handleOpenCreateModal}
-            className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-sm shadow-md shadow-emerald-600/25 flex items-center justify-center gap-2 transition cursor-pointer hover:scale-102"
+            className="w-full sm:w-auto px-5 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm shadow-xs flex items-center justify-center gap-2 transition cursor-pointer"
           >
             <PlusCircle className="w-4 h-4" />
             <span>Sortu pilotu berria</span>
@@ -811,27 +811,24 @@ export default function PilotuenKatalogoa() {
         </div>
       </div>
 
-      {/* 🤖 LATXA KOPILOTUA & AHOLKULARI SOZIOLINGUISTIKOA */}
-      <div className="bg-gradient-to-br from-indigo-900 via-slate-900 to-sky-950 rounded-3xl p-6 sm:p-8 text-white shadow-xl border border-indigo-500/30 mb-12 relative overflow-hidden">
-        <div className="absolute -top-24 -right-24 w-72 h-72 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
-
+      {/* LATXA KOPILOTUA & AHOLKULARI SOZIOLINGUISTIKOA */}
+      <div className="bg-white rounded-2xl p-6 sm:p-8 text-slate-900 border border-slate-200 border-l-4 border-l-indigo-600 mb-12 relative">
         <div className="relative z-10">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-sky-400 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 shrink-0">
-                <Bot className="w-6 h-6" />
+              <div className="w-11 h-11 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-700 shrink-0">
+                <Bot className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg sm:text-xl font-extrabold text-white tracking-tight">
+                  <h2 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
                     Latxa Kopilotua: Aholkulari Soziolinguistikoa
                   </h2>
-                  <span className="px-2 py-0.5 rounded-full bg-indigo-500/30 border border-indigo-400/40 text-indigo-200 text-[10px] font-bold">
+                  <span className="px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-800 text-[10px] font-semibold">
                     Latxa 70B
                   </span>
                 </div>
-                <p className="text-xs text-slate-300 mt-0.5">
+                <p className="text-xs text-slate-600 mt-0.5">
                   Azaldu zure erronka eta Latxak esku-hartze aproposena eta hipotesi neurgarria proposatuko dizkizu.
                 </p>
               </div>
@@ -840,9 +837,9 @@ export default function PilotuenKatalogoa() {
 
           <form onSubmit={handleAskLatxaCopilot} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5 flex items-center justify-between">
+              <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
                 <span>Zuen entitatearen egoera edo erronka:</span>
-                <span className="text-[11px] text-slate-400 font-normal">
+                <span className="text-[11px] text-slate-500 font-normal">
                   {activeEragilea ? `${activeEragilea.izena} (${activeEragilea.mota})` : "Entitatea"}
                 </span>
               </label>
@@ -852,21 +849,21 @@ export default function PilotuenKatalogoa() {
                   value={copilotChallenge}
                   onChange={(e) => setCopilotChallenge(e.target.value)}
                   placeholder="Adibidez: Tabernan gaztelaniaz hasten dira bezero gehienak, edo lantaldeak lotsa du euskaraz abiatzeko..."
-                  className="flex-1 bg-slate-800/80 border border-slate-700 rounded-2xl px-4 py-3 text-xs sm:text-sm text-white placeholder:text-slate-500 focus:outline-hidden focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition"
+                  className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-600 focus:bg-white transition"
                 />
                 <button
                   type="submit"
                   disabled={isCopilotLoading || !copilotChallenge.trim()}
-                  className="px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-500 via-sky-500 to-teal-400 hover:from-indigo-600 hover:to-teal-500 text-slate-950 font-black text-xs sm:text-sm shadow-lg shadow-indigo-500/25 transition cursor-pointer flex items-center justify-center gap-2 shrink-0 disabled:opacity-50"
+                  className="px-6 py-3 rounded-xl bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs sm:text-sm shadow-xs transition cursor-pointer flex items-center justify-center gap-2 shrink-0 disabled:opacity-50"
                 >
                   {isCopilotLoading ? (
                     <>
-                      <RotateCcw className="w-4 h-4 animate-spin text-slate-950" />
+                      <RotateCcw className="w-4 h-4 animate-spin" />
                       <span>Latxa pentsatzen ari da...</span>
                     </>
                   ) : (
                     <>
-                      <Sparkles className="w-4 h-4 text-slate-950" />
+                      <Sparkles className="w-4 h-4" />
                       <span>Galdetu Latxari →</span>
                     </>
                   )}
@@ -876,36 +873,42 @@ export default function PilotuenKatalogoa() {
           </form>
 
           {copilotError && (
-            <div className="mt-4 p-3.5 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-200 text-xs">
-              ⚠️ {copilotError}
+            <div className="mt-4 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs">
+              {copilotError}
             </div>
           )}
 
           {/* LATXA RESULT CARD */}
           {copilotResult && (
-            <div className="mt-6 pt-6 border-t border-indigo-500/20 space-y-4 animate-in fade-in duration-300">
+            <div className="mt-6 pt-6 border-t border-slate-200 space-y-4 animate-in fade-in duration-300">
               {/* Zintzotasunaren eta Egoeraren Diagnostikoa */}
               <div
-                className={`p-4 sm:p-5 rounded-2xl border ${
+                className={`p-4 sm:p-5 rounded-xl border ${
                   !copilotResult.bat_dator
-                    ? "bg-gradient-to-r from-amber-500/20 via-orange-500/15 to-amber-500/10 border-amber-400/40 text-amber-100"
-                    : "bg-emerald-500/15 border-emerald-400/30 text-emerald-100"
+                    ? "bg-amber-50/80 border-amber-200 text-amber-950"
+                    : "bg-emerald-50/80 border-emerald-200 text-emerald-950"
                 }`}
               >
                 <div className="flex items-start gap-3">
-                  <span className="text-2xl mt-0.5 shrink-0">
-                    {!copilotResult.bat_dator ? "🌱" : "🎯"}
-                  </span>
+                  <div
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
+                      !copilotResult.bat_dator
+                        ? "bg-amber-100 text-amber-800"
+                        : "bg-emerald-100 text-emerald-800"
+                    }`}
+                  >
+                    {!copilotResult.bat_dator ? <Lightbulb className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                  </div>
                   <div>
-                    <h4 className="font-black text-sm sm:text-base text-white mb-1">
+                    <h4 className="font-bold text-sm sm:text-base text-slate-900 mb-1">
                       {copilotResult.zintzotasun_mezua ||
                         (!copilotResult.bat_dator
                           ? "Plataforman ez dago zure erronkari zuzenean erantzuten dion pilotu/hipotesirik sortua. Izan zaitez lehenengoa!"
                           : "Zure erronkarako pilotu egokia dugu jada katalogoan!")}
                     </h4>
                     {copilotResult.aholkua && (
-                      <p className="text-xs sm:text-sm text-slate-200 mt-2 leading-relaxed">
-                        <strong>Latxaren aholku soziolinguistikoa:</strong> &ldquo;{copilotResult.aholkua}&rdquo;
+                      <p className="text-xs sm:text-sm text-slate-700 mt-2 leading-relaxed">
+                        <strong>Aholku soziolinguistikoa:</strong> &ldquo;{copilotResult.aholkua}&rdquo;
                       </p>
                     )}
                   </div>
@@ -914,15 +917,15 @@ export default function PilotuenKatalogoa() {
 
               {/* Elkarrizketa-historiaren laburpena (erabiltzaileak dagoeneko erantzun badu) */}
               {copilotHistory.filter((m) => m.role === "user").length > 1 && (
-                <div className="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-3.5 text-xs text-slate-300 space-y-1.5">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-indigo-300 block">
-                    💬 Ko-diseinuko elkarrizketa-haria ({copilotHistory.filter((m) => m.role === "user").length - 1} erantzun bidalita)
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs text-slate-700 space-y-1.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 block">
+                    Ko-diseinuko elkarrizketa-haria ({copilotHistory.filter((m) => m.role === "user").length - 1} erantzun bidalita)
                   </span>
                   {copilotHistory
                     .filter((m) => m.role === "user")
                     .slice(1)
                     .map((msg, i) => (
-                      <div key={i} className="bg-slate-900/70 px-3 py-2 rounded-xl border border-slate-700/60 text-slate-200 whitespace-pre-line">
+                      <div key={i} className="bg-white px-3 py-2 rounded-lg border border-slate-200 text-slate-800 whitespace-pre-line">
                         {msg.content.replace(/^Erabiltzailearen erantzunak galderei:\n/, "").replace(/\n\nOrain sortu[\s\S]*$/, "")}
                       </div>
                     ))}
@@ -931,10 +934,10 @@ export default function PilotuenKatalogoa() {
 
               {/* Galderak eta Ko-diseinurako Banan-banako Erantzun Koadroa */}
               {copilotResult.galderak && copilotResult.galderak.length > 0 && (
-                <div className="bg-slate-800/90 border border-amber-400/30 rounded-2xl p-5 text-white shadow-lg space-y-4">
+                <div className="bg-slate-50 border border-amber-200 rounded-xl p-5 text-slate-900 space-y-4">
                   <div className="flex items-center gap-2">
-                    <Lightbulb className="w-4 h-4 text-amber-400" />
-                    <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-amber-300">
+                    <Lightbulb className="w-4 h-4 text-amber-600" />
+                    <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-amber-900">
                       Ko-diseinurako galderak (erantzun zure egoeraren arabera):
                     </h4>
                   </div>
@@ -944,10 +947,10 @@ export default function PilotuenKatalogoa() {
                       {copilotResult.galderak.map((galdera, idx) => (
                         <div
                           key={idx}
-                          className="bg-slate-900/75 p-3.5 rounded-xl border border-slate-700/80 space-y-2"
+                          className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2"
                         >
-                          <label className="flex items-start gap-2 text-xs sm:text-sm font-bold text-slate-100">
-                            <span className="font-black text-amber-400 shrink-0">{idx + 1}.</span>
+                          <label className="flex items-start gap-2 text-xs sm:text-sm font-bold text-slate-800">
+                            <span className="font-bold text-amber-700 shrink-0">{idx + 1}.</span>
                             <span>{galdera}</span>
                           </label>
                           <input
@@ -960,14 +963,14 @@ export default function PilotuenKatalogoa() {
                               }))
                             }
                             placeholder={`${idx + 1}. galderari zure erantzuna...`}
-                            className="w-full bg-slate-950/90 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder:text-slate-500 focus:ring-2 focus:ring-amber-400 focus:outline-hidden"
+                            className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-amber-500 focus:bg-white focus:outline-hidden"
                           />
                         </div>
                       ))}
                     </div>
 
                     <div className="pt-1">
-                      <label className="block text-[11px] font-bold text-slate-400 mb-1.5">
+                      <label className="block text-[11px] font-bold text-slate-600 mb-1.5">
                         Beste xehetasun edo ideiaren bat gehitu nahi duzu? (aukerakoa):
                       </label>
                       <div className="flex flex-col sm:flex-row gap-2">
@@ -976,12 +979,12 @@ export default function PilotuenKatalogoa() {
                           value={userFollowUpAnswer}
                           onChange={(e) => setUserFollowUpAnswer(e.target.value)}
                           placeholder="Adibidez: Lantaldean 6 pertsona gara eta goizeko txandan egin nahi dugu..."
-                          className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 focus:ring-2 focus:ring-amber-400 focus:outline-hidden"
+                          className="flex-1 bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
                         />
                         <button
                           type="submit"
                           disabled={isCopilotLoading || !hasAnyFollowUpAnswer}
-                          className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-black text-xs rounded-xl shadow-md transition cursor-pointer flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
+                          className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
                         >
                           {isCopilotLoading ? (
                             <>
@@ -1003,7 +1006,7 @@ export default function PilotuenKatalogoa() {
 
               {/* Aukera: Katalogokoa erabili ala Pilotu berri bat sortu */}
               {copilotResult.egoera !== "galderak_behar_dira" && (
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 bg-slate-100 p-2 rounded-xl border border-slate-200">
                   <div className="flex items-center gap-2 flex-1">
                     {copilotResult.pilotu_id && (
                       <button
@@ -1011,11 +1014,11 @@ export default function PilotuenKatalogoa() {
                         onClick={() => setCopilotChoice("existitzen_dena")}
                         className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition cursor-pointer ${
                           copilotChoice === "existitzen_dena"
-                            ? "bg-indigo-600 text-white shadow-sm"
-                            : "text-slate-400 hover:text-white"
+                            ? "bg-indigo-700 text-white shadow-xs"
+                            : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
                         }`}
                       >
-                        📚 Katalogoko pilotua erabili (
+                        Katalogoko pilotua erabili (
                         {pilotuak.find((p) => p.id === copilotResult.pilotu_id)?.izena || "Dagoena"})
                       </button>
                     )}
@@ -1050,11 +1053,11 @@ export default function PilotuenKatalogoa() {
                       }}
                       className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition cursor-pointer ${
                         copilotChoice === "berria"
-                          ? "bg-emerald-600 text-white shadow-sm"
-                          : "text-slate-400 hover:text-white"
+                          ? "bg-emerald-700 text-white shadow-xs"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
                       }`}
                     >
-                      ✨ Pilotu berri bat sortu ({copilotResult.pilotu_berria?.izena || "Neurrikoa"})
+                      Pilotu berri bat sortu ({copilotResult.pilotu_berria?.izena || "Neurrikoa"})
                     </button>
                   </div>
 
@@ -1063,8 +1066,8 @@ export default function PilotuenKatalogoa() {
                     onClick={() => setIsEditingCopilotProposal((v) => !v)}
                     className={`px-3.5 py-2 rounded-lg text-xs font-bold border transition cursor-pointer flex items-center justify-center gap-1.5 ${
                       isEditingCopilotProposal
-                        ? "bg-amber-400 text-slate-950 border-amber-300"
-                        : "bg-slate-900/80 text-slate-200 border-slate-600 hover:bg-slate-700"
+                        ? "bg-amber-100 text-amber-950 border-amber-300"
+                        : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
                     }`}
                   >
                     <Pencil className="w-3.5 h-3.5" />
@@ -1077,13 +1080,13 @@ export default function PilotuenKatalogoa() {
               {copilotResult.egoera !== "galderak_behar_dira" &&
                 (copilotChoice === "berria" || !copilotResult.bat_dator) &&
                 copilotResult.pilotu_berria && (
-                  <div className="bg-slate-800/90 border border-emerald-500/40 rounded-2xl p-5 text-white">
-                    <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-slate-700">
-                      <span className="text-[11px] font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                  <div className="bg-emerald-50/60 border border-emerald-200 rounded-xl p-5 text-slate-900">
+                    <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-emerald-200/80">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
+                        <Layers className="w-3.5 h-3.5 text-emerald-700" />
                         Zuretzat diseinatutako pilotu berria
                       </span>
-                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-md bg-white text-emerald-800 border border-emerald-200">
                         {copilotResult.pilotu_berria.mota || "Pertsonalizatua"}
                       </span>
                     </div>
@@ -1091,7 +1094,7 @@ export default function PilotuenKatalogoa() {
                     {isEditingCopilotProposal ? (
                       <div className="space-y-3 mt-3">
                         <div>
-                          <label className="block text-[10px] font-bold uppercase text-emerald-300 mb-1">
+                          <label className="block text-[10px] font-bold uppercase text-emerald-800 mb-1">
                             Pilotu berriaren izena
                           </label>
                           <input
@@ -1107,11 +1110,11 @@ export default function PilotuenKatalogoa() {
                                   : prev
                               )
                             }
-                            className="w-full bg-slate-900 border border-slate-600 rounded-xl px-3 py-2 text-xs font-bold text-white"
+                            className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-900"
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold uppercase text-emerald-300 mb-1">
+                          <label className="block text-[10px] font-bold uppercase text-emerald-800 mb-1">
                             Azpititulua (laburpena)
                           </label>
                           <input
@@ -1127,11 +1130,11 @@ export default function PilotuenKatalogoa() {
                                   : prev
                               )
                             }
-                            className="w-full bg-slate-900 border border-slate-600 rounded-xl px-3 py-2 text-xs text-white"
+                            className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900"
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold uppercase text-emerald-300 mb-1">
+                          <label className="block text-[10px] font-bold uppercase text-emerald-800 mb-1">
                             Deskribapena
                           </label>
                           <textarea
@@ -1147,11 +1150,11 @@ export default function PilotuenKatalogoa() {
                                   : prev
                               )
                             }
-                            className="w-full bg-slate-900 border border-slate-600 rounded-xl px-3 py-2 text-xs text-white"
+                            className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900"
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold uppercase text-emerald-300 mb-1">
+                          <label className="block text-[10px] font-bold uppercase text-emerald-800 mb-1">
                             Urratsak (bat lerro bakoitzean)
                           </label>
                           <textarea
@@ -1170,29 +1173,29 @@ export default function PilotuenKatalogoa() {
                                   : prev
                               )
                             }
-                            className="w-full bg-slate-900 border border-slate-600 rounded-xl px-3 py-2 text-xs text-white"
+                            className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900"
                           />
                         </div>
                       </div>
                     ) : (
                       <>
-                        <h3 className="text-lg font-black text-white">{copilotResult.pilotu_berria.izena}</h3>
-                        <p className="text-xs text-emerald-200 font-semibold mt-0.5 mb-2">
+                        <h3 className="text-lg font-bold text-slate-900">{copilotResult.pilotu_berria.izena}</h3>
+                        <p className="text-xs text-emerald-800 font-semibold mt-0.5 mb-2">
                           {copilotResult.pilotu_berria.azpititulua}
                         </p>
-                        <p className="text-xs text-slate-300 leading-relaxed mb-3">
+                        <p className="text-xs text-slate-700 leading-relaxed mb-3">
                           {copilotResult.pilotu_berria.deskribapena}
                         </p>
 
                         {copilotResult.pilotu_berria.urratsak && copilotResult.pilotu_berria.urratsak.length > 0 && (
-                          <div className="bg-slate-900/70 p-3 rounded-xl border border-slate-700/60 mb-2">
-                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">
+                          <div className="bg-white p-3.5 rounded-lg border border-emerald-200/80 mb-2">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
                               Esku-hartzearen urratsak:
                             </span>
-                            <ul className="space-y-1 text-xs text-slate-300">
+                            <ul className="space-y-1 text-xs text-slate-700">
                               {copilotResult.pilotu_berria.urratsak.map((u, idx) => (
                                 <li key={idx} className="flex items-start gap-1.5">
-                                  <span className="text-emerald-400 font-bold">•</span>
+                                  <span className="text-emerald-700 font-bold">•</span>
                                   <span>{u}</span>
                                 </li>
                               ))}
@@ -1206,10 +1209,10 @@ export default function PilotuenKatalogoa() {
 
               {/* Hipotesi eta Esperimentu Proposamena */}
               {copilotResult.egoera !== "galderak_behar_dira" && (
-                <div className="bg-white text-slate-900 rounded-2xl p-5 shadow-lg border border-slate-200">
+                <div className="bg-white text-slate-900 rounded-xl p-5 border border-slate-200">
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2 border-b border-slate-100">
-                    <span className="text-[11px] font-black uppercase tracking-wider text-indigo-700 flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-800 flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5 text-indigo-600" />
                       Proposatutako hipotesi neurgarria
                     </span>
                     <div className="flex items-center gap-2">
@@ -1217,7 +1220,7 @@ export default function PilotuenKatalogoa() {
                         type="button"
                         onClick={handleImproveCopilotHypothesis}
                         disabled={isImprovingCopilotHypo}
-                        className="text-[11px] font-extrabold px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                        className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 transition cursor-pointer flex items-center gap-1 disabled:opacity-50"
                       >
                         {isImprovingCopilotHypo ? (
                           <>
@@ -1227,11 +1230,11 @@ export default function PilotuenKatalogoa() {
                         ) : (
                           <>
                             <Sparkles className="w-3 h-3" />
-                            <span>✨ Hobetu erredakzioa Latxarekin</span>
+                            <span>Hobetu erredakzioa Latxarekin</span>
                           </>
                         )}
                       </button>
-                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-800 border border-indigo-200">
+                      <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
                         {copilotChoice === "berria" || !copilotResult.bat_dator
                           ? `Pilotu berria: ${copilotResult.pilotu_berria?.izena || "Neurrira"}`
                           : `Dagoen pilotua: ${pilotuak.find((p) => p.id === copilotResult.pilotu_id)?.izena || "Katalogokoa"}`}
@@ -1240,14 +1243,14 @@ export default function PilotuenKatalogoa() {
                   </div>
 
                   {copilotHypoExplanation && (
-                    <div className="mb-3 px-3 py-2 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs flex items-center justify-between gap-2">
+                    <div className="mb-3 px-3 py-2 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs flex items-center justify-between gap-2">
                       <span>
-                        <strong>✨ Latxaren hobekuntza:</strong> {copilotHypoExplanation}
+                        <strong>Latxaren hobekuntza:</strong> {copilotHypoExplanation}
                       </span>
                       <button
                         type="button"
                         onClick={() => setCopilotHypoExplanation(null)}
-                        className="text-indigo-500 hover:text-indigo-800 text-xs font-bold"
+                        className="text-indigo-600 hover:text-indigo-900 text-xs font-bold"
                       >
                         ✕
                       </button>

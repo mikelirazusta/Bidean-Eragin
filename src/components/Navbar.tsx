@@ -19,6 +19,7 @@ import {
   User as UserIcon,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
+import BideanLogo from "@/components/BideanLogo";
 
 export default function Navbar() {
   const {
@@ -64,7 +65,7 @@ export default function Navbar() {
   const isAdmin = currentUser?.role === "admin";
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 print:hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           
@@ -74,15 +75,13 @@ export default function Navbar() {
               onClick={() => setActiveTab(isAdmin && userRole === "admin" ? "admin" : "panela")}
               className="flex items-center gap-2.5 text-left group transition cursor-pointer"
             >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 via-teal-500 to-emerald-500 flex items-center justify-center text-white shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-transform">
-                <Sparkles className="w-5 h-5" />
-              </div>
+              <BideanLogo size="md" className="group-hover:scale-105 transition-transform" />
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-lg text-slate-900 tracking-tight">
                     {uiTexts.app_title || "Bidean Eragin"}
                   </span>
-                  <span className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-semibold bg-emerald-100 text-emerald-800 rounded-full">
+                  <span className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200/80 rounded-md">
                     Bagera
                   </span>
                 </div>
@@ -320,55 +319,13 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Methodology Flow Stepper Bar (Desktop & Tablet) */}
-        <div className="hidden md:flex items-center justify-between py-2 border-t border-slate-100 text-xs">
-          <div className="flex items-center gap-1.5 text-slate-500">
-            <span className="font-extrabold text-slate-700 uppercase tracking-wider text-[10px] mr-1">
-              Metodologia-zikloa:
-            </span>
-
-            <button
-              onClick={() => setActiveTab("katalogoa")}
-              className={`px-2.5 py-1 rounded-lg font-semibold transition cursor-pointer flex items-center gap-1 ${
-                activeTab === "katalogoa"
-                  ? "bg-sky-100 text-sky-800 font-bold"
-                  : "hover:bg-slate-100 text-slate-600"
-              }`}
-            >
-              <span>1. Pilotuak eta hipotesia</span>
-            </button>
-            <span className="text-slate-300">→</span>
-
-            <button
-              onClick={() => setActiveTab("behaketa")}
-              className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer flex items-center gap-1 ${
-                activeTab === "behaketa"
-                  ? "bg-emerald-600 text-white shadow-xs"
-                  : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-              }`}
-            >
-              <Timer className="w-3.5 h-3.5" />
-              <span>2. Neurketak (T0/T1/T2)</span>
-            </button>
-            <span className="text-slate-300">→</span>
-
-            <button
-              onClick={() => setActiveTab("panela")}
-              className={`px-2.5 py-1 rounded-lg font-semibold transition cursor-pointer flex items-center gap-1 ${
-                activeTab === "panela"
-                  ? "bg-sky-100 text-sky-800 font-bold"
-                  : "hover:bg-slate-100 text-slate-600"
-              }`}
-            >
-              <span>3. Emaitzak eta bilakaera</span>
-            </button>
-          </div>
-
-          <div className="flex items-center gap-2 text-[11px]">
-            {isAdmin ? (
-              eragileak.length > 0 ? (
+        {/* Admin Active Entity Bar (Only when admin needs to switch context cleanly) */}
+        {isAdmin && (
+          <div className="hidden md:flex items-center justify-end py-1.5 border-t border-slate-100 text-xs">
+            <div className="flex items-center gap-2 text-[11px]">
+              {eragileak.length > 0 ? (
                 <div className="flex items-center gap-1.5">
-                  <span className="text-slate-400 font-semibold">Entitate aktiboa:</span>
+                  <span className="text-slate-500 font-semibold">Entitate aktiboa:</span>
                   <select
                     value={activeEragilea?.id || ""}
                     onChange={(e) => {
@@ -377,7 +334,7 @@ export default function Navbar() {
                         setActiveTab("panela");
                       }
                     }}
-                    className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-800 font-bold text-xs focus:ring-2 focus:ring-sky-500 focus:outline-hidden cursor-pointer max-w-[220px]"
+                    className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-slate-800 font-bold text-xs focus:ring-2 focus:ring-emerald-600 focus:outline-hidden cursor-pointer max-w-[220px]"
                   >
                     {eragileak.map((e) => (
                       <option key={e.id} value={e.id}>
@@ -388,19 +345,14 @@ export default function Navbar() {
                 </div>
               ) : (
                 <span className="text-slate-400 italic">Entitaterik ez</span>
-              )
-            ) : activeEragilea ? (
-              <span className="text-slate-700 font-bold bg-white border border-slate-200 px-3 py-1 rounded-lg flex items-center gap-1.5 shadow-2xs">
-                {getMotaIcon(activeEragilea.mota)}
-                <span>{activeEragilea.izena}</span>
-              </span>
-            ) : null}
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Mobile Fixed Bottom Navigation Bar */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200 py-2 px-2 flex items-center justify-around shadow-lg">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200 pt-2 px-2 pb-safe flex items-center justify-around shadow-lg">
         <button
           onClick={() => setActiveTab("panela")}
           className={`flex flex-col items-center gap-0.5 text-[11px] font-medium py-1 px-2.5 rounded-xl cursor-pointer ${

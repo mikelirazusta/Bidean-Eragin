@@ -502,7 +502,7 @@ export default function ZentroDashboard() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 print:hidden">
           <button
             type="button"
             onClick={() => window.print()}
@@ -539,17 +539,17 @@ export default function ZentroDashboard() {
         </div>
       </div>
 
-      {/* 🎯 GUIDED NEXT STEP BANNER (Always clear what to do next) */}
-      <div className="mb-6 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 text-white rounded-3xl p-5 sm:p-6 shadow-lg border border-slate-700/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      {/* GUIDED NEXT STEP BANNER (Always clear what to do next) */}
+      <div className="mb-6 bg-white text-slate-900 rounded-2xl p-5 sm:p-6 border border-slate-200 border-l-4 border-l-emerald-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 print:hidden">
         <div className="flex items-start gap-3.5">
-          <div className="w-11 h-11 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center shrink-0">
-            <Compass className="w-6 h-6 text-emerald-400" />
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200/80 flex items-center justify-center shrink-0">
+            <Compass className="w-5 h-5 text-emerald-700" />
           </div>
           <div>
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-300">
-              🎯 Zure hurrengo urratsa orain
+            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">
+              Hurrengo urratsa
             </span>
-            <h2 className="text-base sm:text-lg font-extrabold text-white mt-0.5">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 mt-0.5">
               {!currentExp
                 ? "1. urratsa: aukeratu esku-hartze pilotu bat katalogotik edo sortu hipotesia"
                 : !t0Stats
@@ -560,7 +560,7 @@ export default function ZentroDashboard() {
                 ? uiTexts.dashboard_step3_title || "3. urratsa: egin T2 neurketa ohitura sendotu dela egiaztatzeko"
                 : "Zorionak! Ziklo osoa (T0, T1 eta T2) osatu duzue"}
             </h2>
-            <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
+            <p className="text-xs text-slate-600 mt-1 max-w-2xl leading-relaxed">
               {!currentExp
                 ? "Aztertu esku-hartze pilotuen katalogoa eta aukeratu zuen entitatearen erronkari ondoen egokitzen zaiona."
                 : !t0Stats
@@ -569,7 +569,7 @@ export default function ZentroDashboard() {
                 ? `T0 oinarria baduzue (%${t0Stats.pct} euskara). Orain jarri pilotua martxan eta egin T1 neurketa berehalako eragina neurtzeko.`
                 : !t2Stats
                 ? `T1 neurketan %${t1Stats.pct} jaso duzue. Egin T2 neurketa 14-21 egunera portaera berria egonkortu den ikusteko.`
-                : "Nahi baduzue, saio gehiago gehitu ditzakezue batez bestekoa sendotzeko edo PDF txostena inprimatu."}
+                : "Nahi baduzue, saio gehitu ditzakezue batez bestekoa sendotzeko edo PDF txostena inprimatu."}
             </p>
           </div>
         </div>
@@ -584,7 +584,7 @@ export default function ZentroDashboard() {
               });
               setActiveTab("behaketa");
             }}
-            className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shadow-md shadow-emerald-500/20 transition flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-2 shrink-0 cursor-pointer"
           >
             <span>
               {!t0Stats
@@ -601,7 +601,7 @@ export default function ZentroDashboard() {
           <button
             type="button"
             onClick={() => setActiveTab("katalogoa")}
-            className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shadow-md shadow-emerald-500/20 transition flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-2 shrink-0 cursor-pointer"
           >
             <span>Ikusi pilotuen katalogoa</span>
             <ArrowRight className="w-4 h-4" />
@@ -611,20 +611,20 @@ export default function ZentroDashboard() {
 
       {/* ACTIVE NUDGE BANNER (if any unread nudge exists) */}
       {activeNudges.length > 0 && (
-        <div className="mb-8 bg-gradient-to-r from-emerald-500 via-teal-600 to-sky-600 rounded-3xl p-5 sm:p-6 text-white shadow-xl shadow-emerald-600/20 relative overflow-hidden">
+        <div className="mb-8 bg-emerald-50/90 rounded-2xl p-5 sm:p-6 text-emerald-950 border border-emerald-200 relative overflow-hidden print:hidden">
           <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3.5">
-              <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center shrink-0">
-                <Bell className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 border border-emerald-200 flex items-center justify-center shrink-0">
+                <Bell className="w-5 h-5 text-emerald-800" />
               </div>
               <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-200">
-                  🔔 Portaera-bultzada
+                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">
+                  Portaera-bultzada
                 </span>
-                <h3 className="text-base sm:text-lg font-extrabold mt-0.5">
+                <h3 className="text-base sm:text-lg font-bold mt-0.5 text-slate-900">
                   {activeNudges[0].titulua}
                 </h3>
-                <p className="text-xs sm:text-sm text-white/90 mt-1 max-w-2xl leading-relaxed">
+                <p className="text-xs sm:text-sm text-slate-700 mt-1 max-w-2xl leading-relaxed">
                   {activeNudges[0].mezua}
                 </p>
               </div>
@@ -646,7 +646,7 @@ export default function ZentroDashboard() {
                       setActiveTab("behaketa");
                     }
                   }}
-                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white hover:bg-emerald-50 text-emerald-900 font-bold text-xs shadow-md transition cursor-pointer flex items-center justify-center gap-1.5"
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
                 >
                   <span>{activeNudges[0].ekintza_esteka.includes("/katalogoa") ? "Ikusi pilotuak" : "Egin neurketa orain"}</span>
                   <ArrowRight className="w-4 h-4" />
@@ -1252,28 +1252,28 @@ export default function ZentroDashboard() {
                 </p>
               </div>
 
-              {/* 🤖 LATXA B BLOKEA: EMAITZEN ETA OHARREN ANALISI KUALITATIBOA */}
-              <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-sky-950 rounded-2xl p-5 sm:p-6 text-white border border-indigo-500/30 shadow-md relative overflow-hidden">
+              {/* LATXA B BLOKEA: EMAITZEN ETA OHARREN ANALISI KUALITATIBOA */}
+              <div className="bg-slate-50/90 rounded-2xl p-5 sm:p-6 text-slate-900 border border-slate-200 border-l-4 border-l-indigo-600 relative overflow-hidden">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-sky-400 flex items-center justify-center text-white shadow-md shadow-indigo-500/30 shrink-0">
+                    <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-700 shrink-0">
                       <Bot className="w-5 h-5" />
                     </div>
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <h4 className="font-extrabold text-white text-sm">
+                        <h4 className="font-bold text-slate-900 text-sm">
                           Latxa: Emaitzen eta Oharren Analisi Kualitatiboa
                         </h4>
-                        <span className="px-2 py-0.5 rounded-full bg-indigo-500/30 border border-indigo-400/30 text-indigo-200 text-[9px] font-bold">
+                        <span className="px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-800 text-[10px] font-semibold">
                           Latxa 70B
                         </span>
                         {latxaAnalysisResult && (
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[9px] font-bold">
-                            💾 Gordeta{latxaAnalysisResult.sortze_data ? ` • ${new Date(latxaAnalysisResult.sortze_data).toLocaleDateString("eu-ES")}` : ""}
+                          <span className="px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] font-semibold">
+                            Gordeta{latxaAnalysisResult.sortze_data ? ` • ${new Date(latxaAnalysisResult.sortze_data).toLocaleDateString("eu-ES")}` : ""}
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] text-slate-300">
+                      <p className="text-[11px] text-slate-600 mt-0.5">
                         Zenbakietatik harago: aztertu behatzaileen oharrak, inertziak eta osatu lantaldearentzako txosten narratiboa.
                       </p>
                     </div>
@@ -1283,18 +1283,18 @@ export default function ZentroDashboard() {
                     type="button"
                     onClick={handleRunLatxaAnalysis}
                     disabled={isAnalyzingWithLatxa || expNeurketak.length === 0}
-                    className="px-4 py-2.5 bg-gradient-to-r from-indigo-500 via-sky-500 to-teal-400 hover:from-indigo-600 hover:to-teal-500 text-slate-950 font-black text-xs rounded-xl shadow-md transition cursor-pointer flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50"
+                    className="px-4 py-2 bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs rounded-xl shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5 shrink-0 disabled:opacity-50 print:hidden"
                   >
                     {isAnalyzingWithLatxa ? (
                       <>
-                        <RotateCcw className="w-3.5 h-3.5 animate-spin text-slate-950" />
-                        <span>Latxa oharrak aztertzen ari da...</span>
+                        <RotateCcw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Oharrak aztertzen...</span>
                       </>
                     ) : (
                       <>
-                        <Sparkles className="w-3.5 h-3.5 text-slate-950" />
+                        <Sparkles className="w-3.5 h-3.5" />
                         <span>
-                          {latxaAnalysisResult ? "Berritu analisia" : "✨ Sortu analisia eta txostena"}
+                          {latxaAnalysisResult ? "Berritu analisia" : "Sortu analisia eta txostena"}
                         </span>
                       </>
                     )}
@@ -1302,18 +1302,18 @@ export default function ZentroDashboard() {
                 </div>
 
                 {latxaAnalysisError && (
-                  <div className="mt-3 p-3 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-200 text-xs">
-                    ⚠️ {latxaAnalysisError}
+                  <div className="mt-3 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs">
+                    {latxaAnalysisError}
                   </div>
                 )}
 
                 {/* EMAITZA BISTARATZEA */}
                 {latxaAnalysisResult && (
-                  <div className="mt-4 pt-4 border-t border-indigo-500/20 space-y-3.5 animate-in fade-in duration-300">
+                  <div className="mt-4 pt-4 border-t border-slate-200 space-y-3.5 animate-in fade-in duration-300">
                     {/* Ondorio Nagusia */}
                     {latxaAnalysisResult.ondorio_nagusia && (
-                      <div className="bg-slate-800/90 border border-indigo-500/30 rounded-xl p-4 text-xs sm:text-sm text-slate-200 leading-relaxed">
-                        <span className="font-extrabold text-indigo-300 block mb-1 uppercase tracking-wider text-[10px]">
+                      <div className="bg-white border border-slate-200 rounded-xl p-4 text-xs sm:text-sm text-slate-800 leading-relaxed">
+                        <span className="font-bold text-indigo-800 block mb-1 uppercase tracking-wider text-[10px]">
                           Emaitzen balorazio orokorra
                         </span>
                         <p>{latxaAnalysisResult.ondorio_nagusia}</p>
@@ -1323,12 +1323,12 @@ export default function ZentroDashboard() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                       {/* Ohar Kualitatiboen Analisia */}
                       {latxaAnalysisResult.oharren_analisia && (
-                        <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-3.5">
-                          <span className="font-extrabold text-amber-300 block mb-1 uppercase tracking-wider text-[10px] flex items-center gap-1">
-                            <Lightbulb className="w-3 h-3 text-amber-400" />
+                        <div className="bg-white border border-slate-200 rounded-xl p-3.5">
+                          <span className="font-bold text-amber-800 block mb-1 uppercase tracking-wider text-[10px] flex items-center gap-1">
+                            <Lightbulb className="w-3 h-3 text-amber-600" />
                             Behatzaileen oharrak eta portaera-patroiak
                           </span>
-                          <p className="text-slate-300 leading-relaxed text-[11px]">
+                          <p className="text-slate-700 leading-relaxed text-[11px]">
                             {latxaAnalysisResult.oharren_analisia}
                           </p>
                         </div>
@@ -1336,12 +1336,12 @@ export default function ZentroDashboard() {
 
                       {/* Balorazio Kuantitatiboa */}
                       {latxaAnalysisResult.balorazio_kuantitatiboa && (
-                        <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-3.5">
-                          <span className="font-extrabold text-emerald-300 block mb-1 uppercase tracking-wider text-[10px] flex items-center gap-1">
-                            <TrendingUp className="w-3 h-3 text-emerald-400" />
+                        <div className="bg-white border border-slate-200 rounded-xl p-3.5">
+                          <span className="font-bold text-emerald-800 block mb-1 uppercase tracking-wider text-[10px] flex items-center gap-1">
+                            <TrendingUp className="w-3 h-3 text-emerald-600" />
                             Datuen eta igoeraren sendotasuna
                           </span>
-                          <p className="text-slate-300 leading-relaxed text-[11px]">
+                          <p className="text-slate-700 leading-relaxed text-[11px]">
                             {latxaAnalysisResult.balorazio_kuantitatiboa}
                           </p>
                         </div>
@@ -1350,14 +1350,14 @@ export default function ZentroDashboard() {
 
                     {/* Hurrengo urratsak */}
                     {latxaAnalysisResult.hurrengo_urratsak && latxaAnalysisResult.hurrengo_urratsak.length > 0 && (
-                      <div className="bg-indigo-950/60 border border-indigo-500/30 rounded-xl p-3.5">
-                        <span className="font-extrabold text-sky-300 block mb-1.5 uppercase tracking-wider text-[10px]">
-                          🧭 Lantaldearentzako hurrengo urrats gomendatuak:
+                      <div className="bg-indigo-50/70 border border-indigo-200/80 rounded-xl p-3.5">
+                        <span className="font-bold text-indigo-900 block mb-1.5 uppercase tracking-wider text-[10px]">
+                          Lantaldearentzako hurrengo urrats gomendatuak
                         </span>
-                        <ul className="space-y-1 text-[11px] text-slate-200">
+                        <ul className="space-y-1 text-[11px] text-slate-800">
                           {latxaAnalysisResult.hurrengo_urratsak.map((u, i) => (
                             <li key={i} className="flex items-start gap-1.5">
-                              <span className="text-teal-400 font-bold">•</span>
+                              <span className="text-indigo-700 font-bold">•</span>
                               <span>{u}</span>
                             </li>
                           ))}
@@ -1369,14 +1369,14 @@ export default function ZentroDashboard() {
                     {latxaAnalysisResult.txosten_laburpena && (
                       <div className="bg-white text-slate-900 rounded-xl p-4 border border-slate-200">
                         <div className="flex items-center justify-between gap-2 mb-2 pb-1.5 border-b border-slate-100">
-                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1">
                             <FileText className="w-3 h-3 text-indigo-600" />
                             Lantaldearekin partekatzeko txosten narratiboa
                           </span>
                           <button
                             type="button"
                             onClick={handleCopyReport}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-bold transition cursor-pointer"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold transition cursor-pointer print:hidden"
                             title="Kopiatu txosten osoa arbelean"
                           >
                             {copiedReport ? (
@@ -1680,15 +1680,15 @@ export default function ZentroDashboard() {
             <button
               type="button"
               onClick={() => setActiveTab("katalogoa")}
-              className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-indigo-600 via-sky-600 to-teal-500 hover:from-indigo-700 hover:to-teal-600 text-white font-bold text-sm shadow-md shadow-indigo-600/25 transition cursor-pointer flex items-center justify-center gap-2"
+              className="w-full py-3.5 px-5 rounded-xl bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-sm shadow-xs transition cursor-pointer flex items-center justify-center gap-2"
             >
               <Bot className="w-4 h-4" />
-              <span>🤖 Diseinatu Latxa Kopilotuarekin</span>
+              <span>Diseinatu Latxa Kopilotuarekin</span>
             </button>
             <button
               type="button"
               onClick={() => setActiveTab("katalogoa")}
-              className="w-full py-3.5 px-5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md shadow-emerald-600/25 transition cursor-pointer flex items-center justify-center gap-2"
+              className="w-full py-3.5 px-5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm shadow-xs transition cursor-pointer flex items-center justify-center gap-2"
             >
               <span>Ikusi pilotuen katalogoa</span>
               <ArrowRight className="w-4 h-4" />

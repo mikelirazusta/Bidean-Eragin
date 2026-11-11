@@ -20,6 +20,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
+import BideanLogo from "@/components/BideanLogo";
 
 const ERRONKA_AUKERAK = [
   {
@@ -156,9 +157,7 @@ export default function AuthPortal() {
     <div className="min-h-screen bg-gradient-to-b from-sky-50/50 via-slate-50 to-emerald-50/30 flex flex-col justify-center py-8 sm:px-6 lg:px-8">
       {/* Brand & Intro */}
       <div className="sm:mx-auto sm:w-full sm:max-w-lg text-center px-4">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-600 via-teal-500 to-emerald-500 text-white shadow-lg shadow-emerald-500/25 mb-3">
-          <Sparkles className="w-8 h-8" />
-        </div>
+        <BideanLogo size="lg" className="mx-auto mb-3 shadow-xs" />
         <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
           {uiTexts.app_title || "Bidean Eragin"}
         </h1>

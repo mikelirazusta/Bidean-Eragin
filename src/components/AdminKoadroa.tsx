@@ -736,7 +736,7 @@ export default function AdminKoadroa() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
+        <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto print:hidden">
           <button
             type="button"
             onClick={() => setIsPresentationMode(!isPresentationMode)}
@@ -878,28 +878,28 @@ export default function AdminKoadroa() {
         </div>
       </div>
 
-      {/* 🌐 C BLOKEA: KOMUNITATE OSOKO SINTESI SOZIOLINGUISTIKOA (LATXA 70B) */}
-      <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-sky-950 rounded-3xl p-6 sm:p-8 text-white border border-indigo-500/30 shadow-xl mb-8 relative overflow-hidden">
+      {/* C BLOKEA: KOMUNITATE OSOKO SINTESI SOZIOLINGUISTIKOA (LATXA 70B) */}
+      <div className="bg-white rounded-2xl p-6 sm:p-8 text-slate-900 border border-slate-200 border-l-4 border-l-indigo-600 mb-8 relative overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-500 to-sky-400 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30 shrink-0">
-              <Bot className="w-6 h-6" />
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-700 shrink-0">
+              <Bot className="w-5 h-5" />
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-base sm:text-lg font-extrabold text-white tracking-tight">
+                <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
                   Latxa: Donostiako Komunitatearen Txosten Soziolinguistiko Bateratua
                 </h3>
-                <span className="px-2 py-0.5 rounded-full bg-indigo-500/30 border border-indigo-400/30 text-indigo-200 text-[10px] font-bold">
+                <span className="px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-800 text-[10px] font-semibold">
                   C Blokea • Latxa 70B
                 </span>
                 {communityReport && (
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[10px] font-bold">
-                    💾 Gordeta{communityReport.sortze_data ? ` • ${new Date(communityReport.sortze_data).toLocaleDateString("eu-ES")}` : ""}
+                  <span className="px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] font-semibold">
+                    Gordeta{communityReport.sortze_data ? ` • ${new Date(communityReport.sortze_data).toLocaleDateString("eu-ES")}` : ""}
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-300 mt-0.5">
+              <p className="text-xs text-slate-600 mt-0.5">
                 Entitate guztien T0/T1/T2 datuak eta behatzaileen ohar kualitatiboak gurutzatuz sortutako sintesi exekutiboa.
               </p>
             </div>
@@ -909,33 +909,33 @@ export default function AdminKoadroa() {
             type="button"
             onClick={handleGenerateCommunityReport}
             disabled={isGeneratingCommunityReport || eragileak.length === 0}
-            className="px-5 py-2.5 bg-gradient-to-r from-indigo-500 via-sky-500 to-teal-400 hover:from-indigo-600 hover:to-teal-500 text-slate-950 font-black text-xs rounded-2xl shadow-lg transition cursor-pointer flex items-center justify-center gap-2 shrink-0 disabled:opacity-50"
+            className="px-5 py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs rounded-xl shadow-xs transition cursor-pointer flex items-center justify-center gap-2 shrink-0 disabled:opacity-50 print:hidden"
           >
             {isGeneratingCommunityReport ? (
               <>
-                <RotateCcw className="w-4 h-4 animate-spin text-slate-950" />
+                <RotateCcw className="w-4 h-4 animate-spin" />
                 <span>Komunitatearen datuak aztertzen...</span>
               </>
             ) : (
               <>
-                <Sparkles className="w-4 h-4 text-slate-950" />
-                <span>{communityReport ? "Berritu komunitate-txostena" : "✨ Sortu komunitate osoko txostena"}</span>
+                <Sparkles className="w-4 h-4" />
+                <span>{communityReport ? "Berritu komunitate-txostena" : "Sortu komunitate osoko txostena"}</span>
               </>
             )}
           </button>
         </div>
 
         {communityReportError && (
-          <div className="mt-3 p-3 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-200 text-xs">
-            ⚠️ {communityReportError}
+          <div className="mt-3 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs">
+            {communityReportError}
           </div>
         )}
 
         {communityReport && (
-          <div className="mt-4 pt-4 border-t border-indigo-500/20 space-y-4 animate-in fade-in duration-300">
+          <div className="mt-4 pt-4 border-t border-slate-200 space-y-4 animate-in fade-in duration-300">
             {communityReport.ondorio_orokorra && (
-              <div className="bg-slate-800/90 border border-indigo-500/30 rounded-2xl p-4 text-xs sm:text-sm text-slate-200 leading-relaxed">
-                <span className="font-extrabold text-indigo-300 block mb-1 uppercase tracking-wider text-[10px]">
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs sm:text-sm text-slate-800 leading-relaxed">
+                <span className="font-bold text-indigo-800 block mb-1 uppercase tracking-wider text-[10px]">
                   Balorazio soziolinguistiko orokorra
                 </span>
                 <p>{communityReport.ondorio_orokorra}</p>
@@ -944,35 +944,35 @@ export default function AdminKoadroa() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
               {communityReport.joera_kualitatiboak && (
-                <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-4">
-                  <span className="font-extrabold text-amber-300 block mb-1 uppercase tracking-wider text-[10px] flex items-center gap-1">
-                    <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                  <span className="font-bold text-amber-800 block mb-1 uppercase tracking-wider text-[10px] flex items-center gap-1">
+                    <Lightbulb className="w-3.5 h-3.5 text-amber-600" />
                     Behatzaileen oharretan atzemandako joerak
                   </span>
-                  <p className="text-slate-300 leading-relaxed">{communityReport.joera_kualitatiboak}</p>
+                  <p className="text-slate-700 leading-relaxed">{communityReport.joera_kualitatiboak}</p>
                 </div>
               )}
 
               {communityReport.arrakasta_gakoak && (
-                <div className="bg-slate-800/80 border border-slate-700 rounded-2xl p-4">
-                  <span className="font-extrabold text-emerald-300 block mb-1 uppercase tracking-wider text-[10px] flex items-center gap-1">
-                    <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                  <span className="font-bold text-emerald-800 block mb-1 uppercase tracking-wider text-[10px] flex items-center gap-1">
+                    <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
                     Arrakasta-faktoreak eta praktika onenak
                   </span>
-                  <p className="text-slate-300 leading-relaxed">{communityReport.arrakasta_gakoak}</p>
+                  <p className="text-slate-700 leading-relaxed">{communityReport.arrakasta_gakoak}</p>
                 </div>
               )}
             </div>
 
             {communityReport.gomendio_estrategikoak && communityReport.gomendio_estrategikoak.length > 0 && (
-              <div className="bg-indigo-950/60 border border-indigo-500/30 rounded-2xl p-4">
-                <span className="font-extrabold text-sky-300 block mb-1.5 uppercase tracking-wider text-[10px]">
-                  🧭 Koordinazio-taldearentzako gomendio estrategikoak:
+              <div className="bg-indigo-50/70 border border-indigo-200/80 rounded-xl p-4">
+                <span className="font-bold text-indigo-900 block mb-1.5 uppercase tracking-wider text-[10px]">
+                  Koordinazio-taldearentzako gomendio estrategikoak
                 </span>
-                <ul className="space-y-1 text-xs text-slate-200">
+                <ul className="space-y-1 text-xs text-slate-800">
                   {communityReport.gomendio_estrategikoak.map((g, i) => (
                     <li key={i} className="flex items-start gap-1.5">
-                      <span className="text-teal-400 font-bold">•</span>
+                      <span className="text-indigo-700 font-bold">•</span>
                       <span>{g}</span>
                     </li>
                   ))}
@@ -981,9 +981,9 @@ export default function AdminKoadroa() {
             )}
 
             {communityReport.txosten_exekutiboa && (
-              <div className="bg-white text-slate-900 rounded-2xl p-4 border border-slate-200">
-                <div className="flex items-center justify-between gap-2 mb-2 pb-1.5 border-b border-slate-100">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1">
+              <div className="bg-slate-50/70 text-slate-900 rounded-xl p-4 border border-slate-200">
+                <div className="flex items-center justify-between gap-2 mb-2 pb-1.5 border-b border-slate-200/80">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1">
                     <FileText className="w-3.5 h-3.5 text-indigo-600" />
                     Txosten Exekutiboa (Bazkide, Udal edo Prentsarako)
                   </span>
@@ -996,7 +996,7 @@ export default function AdminKoadroa() {
                         setTimeout(() => setCopiedCommunityReport(false), 2500);
                       } catch {}
                     }}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-bold transition cursor-pointer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-bold transition cursor-pointer print:hidden"
                   >
                     {copiedCommunityReport ? (
                       <>
@@ -2181,7 +2181,7 @@ export default function AdminKoadroa() {
                     >
                       <Bot className="w-3.5 h-3.5 text-indigo-600" />
                       <span>
-                        {isGeneratingNudgeLatxa ? "Latxa idazten..." : "✨ Sortu mezua Latxarekin"}
+                        {isGeneratingNudgeLatxa ? "Latxa idazten..." : "Sortu mezua Latxarekin"}
                       </span>
                     </button>
                   </div>

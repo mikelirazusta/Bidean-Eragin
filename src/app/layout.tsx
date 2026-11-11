@@ -1,8 +1,21 @@
 import type { Metadata, Viewport } from "next";
+import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-jakarta",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
+});
+
 export const viewport: Viewport = {
-  themeColor: "#059669",
+  themeColor: "#065f46",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -36,19 +49,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="eu" className="h-full antialiased font-sans">
+    <html
+      lang="eu"
+      className={`h-full antialiased font-sans ${plusJakarta.variable} ${jetbrainsMono.variable}`}
+    >
       <head>
-        <link rel="stylesheet" href="/tailwind.css" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Bidean Eragin" />
       </head>
-      <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 selection:bg-emerald-500 selection:text-white">
+      <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 selection:bg-emerald-700 selection:text-white">
         {children}
       </body>
     </html>
   );
 }
-

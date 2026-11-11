@@ -831,7 +831,7 @@ export default function BehatzaileKontagailua() {
                 </span>
               )}
             </div>
-            <div className="text-3xl font-mono font-extrabold tracking-wider text-emerald-400">
+            <div className="text-3xl font-mono font-extrabold tracking-wider text-emerald-400 tabular-nums">
               {timeFormatted}
             </div>
           </div>
@@ -881,23 +881,23 @@ export default function BehatzaileKontagailua() {
       </div>
 
       {/* Real-time Counter Stats Bar */}
-      <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 mb-5 flex items-center justify-between">
+      <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200 mb-5 flex items-center justify-between">
         <div>
-          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
             Jasotako elkarrizketak
           </span>
-          <span className="text-2xl font-black text-slate-900">
+          <span className="text-2xl font-black text-slate-900 tabular-nums">
             {totalInteractions}{" "}
-            <span className="text-xs font-semibold text-slate-400">elkarrizketa</span>
+            <span className="text-xs font-semibold text-slate-500">elkarrizketa</span>
           </span>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <span className="text-[11px] font-semibold text-emerald-600 uppercase tracking-wider block">
+            <span className="text-[11px] font-semibold text-emerald-700 uppercase tracking-wider block">
               Euskara %
             </span>
-            <span className="text-2xl font-black text-emerald-600">
+            <span className="text-2xl font-black text-emerald-700 tabular-nums">
               %{euskaraPct}
             </span>
           </div>
@@ -1037,9 +1037,9 @@ export default function BehatzaileKontagailua() {
           </div>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3.5">
           
-          {/* 🟢 EUSKARAZ BUTTON */}
+          {/* EUSKARAZ BUTTON (Matte tactile physical clicker) */}
           <div
             onClick={() => handleCount("euskaraz")}
             role="button"
@@ -1047,17 +1047,17 @@ export default function BehatzaileKontagailua() {
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") handleCount("euskaraz");
             }}
-            className="w-full h-32 sm:h-36 rounded-3xl bg-gradient-to-r from-emerald-500 via-emerald-600 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-xl shadow-emerald-600/30 flex items-center justify-between px-6 sm:px-8 transition active-press cursor-pointer border-2 border-emerald-400/40 relative overflow-hidden group select-none"
+            className="w-full h-32 sm:h-36 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white border border-emerald-800 border-b-4 border-b-emerald-950 active:border-b active:translate-y-0.5 flex items-center justify-between px-6 sm:px-8 transition active-press cursor-pointer relative overflow-hidden select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2"
           >
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-3xl font-black shadow-inner">
-                🟢
+              <div className="w-14 h-14 rounded-xl bg-emerald-800/80 border border-emerald-600/50 flex items-center justify-center shrink-0">
+                <span className="w-4 h-4 rounded-full bg-emerald-300 block" />
               </div>
               <div className="text-left">
                 <span className="text-2xl sm:text-3xl font-extrabold tracking-tight block">
                   {uiTexts.counter_btn_euskaraz || "Euskaraz"}
                 </span>
-                <span className="text-xs text-emerald-100 font-medium">
+                <span className="text-xs text-emerald-100/90 font-medium">
                   Sakatze bakoitzeko +1 (bibrazio 1)
                 </span>
               </div>
@@ -1068,13 +1068,13 @@ export default function BehatzaileKontagailua() {
                 <button
                   type="button"
                   onClick={(e) => handleDecrement(e, "euskaraz")}
-                  className="px-2.5 py-1.5 rounded-xl bg-black/25 hover:bg-black/40 text-white font-extrabold text-xs border border-white/20 transition cursor-pointer"
+                  className="px-2.5 py-1.5 rounded-lg bg-emerald-900/70 hover:bg-emerald-950 text-white font-bold text-xs border border-emerald-600/40 transition cursor-pointer"
                   title="Kendu 1 euskarazko zenbaketatik"
                 >
                   -1
                 </button>
               )}
-              <div className="text-right">
+              <div className="text-right tabular-nums">
                 <span className="text-4xl sm:text-5xl font-black tracking-tight block">
                   {euskarazCount}
                 </span>
@@ -1085,7 +1085,7 @@ export default function BehatzaileKontagailua() {
             </div>
           </div>
 
-          {/* 🔴 ERDARAZ BUTTON */}
+          {/* ERDARAZ BUTTON */}
           <div
             onClick={() => handleCount("erdaraz")}
             role="button"
@@ -1093,17 +1093,17 @@ export default function BehatzaileKontagailua() {
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") handleCount("erdaraz");
             }}
-            className="w-full h-28 sm:h-32 rounded-3xl bg-gradient-to-r from-rose-500 via-rose-600 to-red-600 hover:from-rose-600 hover:to-red-700 text-white shadow-lg shadow-rose-600/25 flex items-center justify-between px-6 sm:px-8 transition active-press cursor-pointer border-2 border-rose-400/40 relative overflow-hidden group select-none"
+            className="w-full h-28 sm:h-32 rounded-2xl bg-rose-700 hover:bg-rose-800 text-white border border-rose-800 border-b-4 border-b-rose-950 active:border-b active:translate-y-0.5 flex items-center justify-between px-6 sm:px-8 transition active-press cursor-pointer relative overflow-hidden select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2"
           >
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-2xl font-black shadow-inner">
-                🔴
+              <div className="w-12 h-12 rounded-xl bg-rose-800/80 border border-rose-600/50 flex items-center justify-center shrink-0">
+                <span className="w-3.5 h-3.5 rounded-sm bg-rose-200 block" />
               </div>
               <div className="text-left">
                 <span className="text-xl sm:text-2xl font-extrabold tracking-tight block">
                   {uiTexts.counter_btn_erdaraz || "Erdaraz"}
                 </span>
-                <span className="text-xs text-rose-100 font-medium">
+                <span className="text-xs text-rose-100/90 font-medium">
                   Gaztelania / beste bat (2 bibrazio)
                 </span>
               </div>
@@ -1114,13 +1114,13 @@ export default function BehatzaileKontagailua() {
                 <button
                   type="button"
                   onClick={(e) => handleDecrement(e, "erdaraz")}
-                  className="px-2.5 py-1.5 rounded-xl bg-black/25 hover:bg-black/40 text-white font-extrabold text-xs border border-white/20 transition cursor-pointer"
+                  className="px-2.5 py-1.5 rounded-lg bg-rose-900/70 hover:bg-rose-950 text-white font-bold text-xs border border-rose-600/40 transition cursor-pointer"
                   title="Kendu 1 erdarazko zenbaketatik"
                 >
                   -1
                 </button>
               )}
-              <div className="text-right">
+              <div className="text-right tabular-nums">
                 <span className="text-3xl sm:text-4xl font-black tracking-tight block">
                   {erdarazCount}
                 </span>
@@ -1131,7 +1131,7 @@ export default function BehatzaileKontagailua() {
             </div>
           </div>
 
-          {/* 🟡 ELEBI BUTTON */}
+          {/* ELEBI BUTTON */}
           <div
             onClick={() => handleCount("elebi")}
             role="button"
@@ -1139,17 +1139,17 @@ export default function BehatzaileKontagailua() {
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") handleCount("elebi");
             }}
-            className="w-full h-24 sm:h-28 rounded-3xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-slate-950 shadow-md shadow-amber-500/20 flex items-center justify-between px-6 sm:px-8 transition active-press cursor-pointer border-2 border-amber-300/60 relative overflow-hidden group select-none"
+            className="w-full h-24 sm:h-28 rounded-2xl bg-amber-400 hover:bg-amber-500 text-slate-950 border border-amber-500 border-b-4 border-b-amber-700 active:border-b active:translate-y-0.5 flex items-center justify-between px-6 sm:px-8 transition active-press cursor-pointer relative overflow-hidden select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-black/10 backdrop-blur-xs flex items-center justify-center text-xl font-black shadow-inner">
-                🟡
+              <div className="w-11 h-11 rounded-xl bg-amber-500/40 border border-amber-600/30 flex items-center justify-center shrink-0">
+                <span className="w-3.5 h-3.5 rounded-full bg-slate-900/80 block" />
               </div>
               <div className="text-left">
                 <span className="text-lg sm:text-xl font-extrabold tracking-tight block">
                   {uiTexts.counter_btn_elebi || "Elebi (bi hizkuntzatan)"}
                 </span>
-                <span className="text-xs text-amber-950/70 font-medium">
+                <span className="text-xs text-amber-950/80 font-medium">
                   Euskara eta erdara txandakatuta (3 bibrazio)
                 </span>
               </div>
@@ -1160,13 +1160,13 @@ export default function BehatzaileKontagailua() {
                 <button
                   type="button"
                   onClick={(e) => handleDecrement(e, "elebi")}
-                  className="px-2.5 py-1.5 rounded-xl bg-black/15 hover:bg-black/30 text-slate-950 font-extrabold text-xs border border-black/15 transition cursor-pointer"
+                  className="px-2.5 py-1.5 rounded-lg bg-amber-600/30 hover:bg-amber-600/50 text-slate-950 font-bold text-xs border border-amber-700/30 transition cursor-pointer"
                   title="Kendu 1 elebiko zenbaketatik"
                 >
                   -1
                 </button>
               )}
-              <div className="text-right">
+              <div className="text-right tabular-nums">
                 <span className="text-3xl sm:text-4xl font-black tracking-tight block">
                   {elebiCount}
                 </span>

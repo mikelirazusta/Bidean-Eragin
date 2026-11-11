@@ -232,7 +232,7 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
                   title="Latxak automatikoki beteko ditu hutsuneak zure entitaterako aproposak diren balioekin"
                 >
                   <Bot className="w-3 h-3 text-indigo-600" />
-                  <span>{isLatxaLoading ? "Latxa pentsatzen..." : "✨ Bete Latxarekin"}</span>
+                  <span>{isLatxaLoading ? "Latxa pentsatzen..." : "Bete Latxarekin"}</span>
                 </button>
                 <button
                   type="button"
@@ -412,7 +412,7 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
                   ) : (
                     <>
                       <Sparkles className="w-3 h-3" />
-                      <span>✨ Hobetu erredakzioa Latxarekin</span>
+                      <span>Hobetu erredakzioa Latxarekin</span>
                     </>
                   )}
                 </button>
