@@ -65,7 +65,7 @@ export default function Navbar() {
   const isAdmin = currentUser?.role === "admin";
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 print:hidden">
+    <header className="sticky top-0 z-50 bg-paper/95 backdrop-blur-md border-b border-line print:hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           
@@ -78,14 +78,14 @@ export default function Navbar() {
               <BideanLogo size="md" className="group-hover:scale-105 transition-transform" />
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-lg text-slate-900 tracking-tight">
+                  <span className="font-editorial font-semibold text-xl text-ink tracking-tight">
                     {uiTexts.app_title || "Bidean Eragin"}
                   </span>
-                  <span className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200/80 rounded-md">
+                  <span className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-bold bg-sand text-sea border border-line rounded-md">
                     Bagera
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 hidden md:block">
+                <p className="text-xs text-ink-muted hidden md:block">
                   {uiTexts.app_subtitle || "Euskararen erabilera sustatzeko esperimentu praktikoak"}
                 </p>
               </div>
@@ -100,8 +100,8 @@ export default function Navbar() {
                   onClick={() => setActiveTab("admin")}
                   className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-bold transition cursor-pointer ${
                     activeTab === "admin"
-                      ? "bg-indigo-600 text-white shadow-xs"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                      ? "bg-sea text-white"
+                      : "text-ink-muted hover:text-ink hover:bg-sand/70"
                   }`}
                 >
                   <ShieldCheck className="w-4 h-4" />
@@ -112,8 +112,8 @@ export default function Navbar() {
                   onClick={() => setActiveTab("behaketa")}
                   className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-bold transition cursor-pointer ${
                     activeTab === "behaketa"
-                      ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
-                      : "bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+                      ? "bg-euskara text-white"
+                      : "bg-euskara/10 text-euskara hover:bg-euskara/15"
                   }`}
                 >
                   <Timer className="w-4 h-4" />
@@ -122,10 +122,10 @@ export default function Navbar() {
 
                 <button
                   onClick={() => setActiveTab("panela")}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition cursor-pointer ${
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-semibold transition cursor-pointer ${
                     activeTab === "panela"
-                      ? "bg-slate-100 text-sky-700 shadow-xs"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                      ? "bg-sand text-ink border border-line"
+                      : "text-ink-muted hover:text-ink hover:bg-sand/70"
                   }`}
                 >
                   <LayoutDashboard className="w-4 h-4" />
@@ -134,10 +134,10 @@ export default function Navbar() {
 
                 <button
                   onClick={() => setActiveTab("katalogoa")}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition cursor-pointer ${
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-semibold transition cursor-pointer ${
                     activeTab === "katalogoa"
-                      ? "bg-slate-100 text-sky-700 shadow-xs"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                      ? "bg-sand text-ink border border-line"
+                      : "text-ink-muted hover:text-ink hover:bg-sand/70"
                   }`}
                 >
                   <BookOpen className="w-4 h-4" />
@@ -148,10 +148,10 @@ export default function Navbar() {
               <>
                 <button
                   onClick={() => setActiveTab("panela")}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition cursor-pointer ${
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-semibold transition cursor-pointer ${
                     activeTab === "panela"
-                      ? "bg-slate-100 text-sky-700 shadow-xs"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                      ? "bg-sand text-ink border border-line"
+                      : "text-ink-muted hover:text-ink hover:bg-sand/70"
                   }`}
                 >
                   <LayoutDashboard className="w-4 h-4" />
@@ -160,10 +160,10 @@ export default function Navbar() {
 
                 <button
                   onClick={() => setActiveTab("behaketa")}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-semibold transition cursor-pointer ${
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-bold transition cursor-pointer ${
                     activeTab === "behaketa"
-                      ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
-                      : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                      ? "bg-euskara text-white"
+                      : "bg-euskara/10 text-euskara hover:bg-euskara/15"
                   }`}
                 >
                   <Timer className="w-4 h-4" />
@@ -172,10 +172,10 @@ export default function Navbar() {
 
                 <button
                   onClick={() => setActiveTab("katalogoa")}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition cursor-pointer ${
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-semibold transition cursor-pointer ${
                     activeTab === "katalogoa"
-                      ? "bg-slate-100 text-sky-700 shadow-xs"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                      ? "bg-sand text-ink border border-line"
+                      : "text-ink-muted hover:text-ink hover:bg-sand/70"
                   }`}
                 >
                   <BookOpen className="w-4 h-4" />
@@ -352,11 +352,11 @@ export default function Navbar() {
       </div>
 
       {/* Mobile Fixed Bottom Navigation Bar */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200 pt-2 px-2 pb-safe flex items-center justify-around shadow-lg">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-paper/95 backdrop-blur-md border-t border-line pt-2 px-2 pb-safe flex items-center justify-around shadow-lg">
         <button
           onClick={() => setActiveTab("panela")}
           className={`flex flex-col items-center gap-0.5 text-[11px] font-medium py-1 px-2.5 rounded-xl cursor-pointer ${
-            activeTab === "panela" ? "text-sky-700 font-bold bg-sky-50" : "text-slate-500"
+            activeTab === "panela" ? "text-sea font-bold bg-sand" : "text-ink-muted"
           }`}
         >
           <LayoutDashboard className="w-5 h-5" />
@@ -365,7 +365,7 @@ export default function Navbar() {
         <button
           onClick={() => setActiveTab("katalogoa")}
           className={`flex flex-col items-center gap-0.5 text-[11px] font-medium py-1 px-2.5 rounded-xl cursor-pointer ${
-            activeTab === "katalogoa" ? "text-sky-700 font-bold bg-sky-50" : "text-slate-500"
+            activeTab === "katalogoa" ? "text-sea font-bold bg-sand" : "text-ink-muted"
           }`}
         >
           <BookOpen className="w-5 h-5" />
@@ -373,8 +373,8 @@ export default function Navbar() {
         </button>
         <button
           onClick={() => setActiveTab("behaketa")}
-          className={`flex flex-col items-center gap-0.5 text-[11px] font-bold py-1.5 px-3.5 rounded-xl bg-emerald-600 text-white shadow-md shadow-emerald-600/30 cursor-pointer ${
-            activeTab === "behaketa" ? "ring-2 ring-emerald-300" : ""
+          className={`flex flex-col items-center gap-0.5 text-[11px] font-bold py-1.5 px-3.5 rounded-xl bg-euskara text-white shadow-xs cursor-pointer ${
+            activeTab === "behaketa" ? "ring-2 ring-euskara/40" : ""
           }`}
         >
           <Timer className="w-5 h-5" />
@@ -384,7 +384,7 @@ export default function Navbar() {
           <button
             onClick={() => setActiveTab("admin")}
             className={`flex flex-col items-center gap-0.5 text-[11px] font-medium py-1 px-2.5 rounded-xl cursor-pointer ${
-              activeTab === "admin" ? "text-indigo-700 font-bold bg-indigo-50" : "text-slate-500"
+              activeTab === "admin" ? "text-sea font-bold bg-sand" : "text-ink-muted"
             }`}
           >
             <ShieldCheck className="w-5 h-5" />
@@ -393,7 +393,7 @@ export default function Navbar() {
         )}
         <button
           onClick={logout}
-          className="flex flex-col items-center gap-0.5 text-[11px] font-medium py-1 px-2 rounded-xl text-rose-600 hover:text-rose-800 cursor-pointer"
+          className="flex flex-col items-center gap-0.5 text-[11px] font-medium py-1 px-2 rounded-xl text-terracotta hover:opacity-80 cursor-pointer"
         >
           <LogOut className="w-5 h-5" />
           <span>Itxi</span>

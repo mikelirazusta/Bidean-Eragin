@@ -1,10 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, JetBrains_Mono, Newsreader } from "next/font/google";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-jakarta",
+  display: "swap",
+});
+
+const newsreader = Newsreader({
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  variable: "--font-newsreader",
   display: "swap",
 });
 
@@ -15,7 +22,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const viewport: Viewport = {
-  themeColor: "#065f46",
+  themeColor: "#103C4C",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -51,7 +58,7 @@ export default function RootLayout({
   return (
     <html
       lang="eu"
-      className={`h-full antialiased font-sans ${plusJakarta.variable} ${jetbrainsMono.variable}`}
+      className={`h-full antialiased font-sans ${plusJakarta.variable} ${newsreader.variable} ${jetbrainsMono.variable}`}
     >
       <head>
         <link rel="manifest" href="/manifest.json" />
@@ -60,7 +67,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Bidean Eragin" />
       </head>
-      <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 selection:bg-emerald-700 selection:text-white">
+      <body className="min-h-full flex flex-col bg-paper text-ink selection:bg-euskara selection:text-white">
         {children}
       </body>
     </html>

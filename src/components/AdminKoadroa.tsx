@@ -714,22 +714,22 @@ export default function AdminKoadroa() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       
       {/* Top Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-5 border-b border-line">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-100 text-indigo-900 text-xs font-bold mb-2">
-            <ShieldCheck className="w-4 h-4 text-indigo-600" />
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-sand border border-line text-sea text-xs font-bold mb-2">
+            <ShieldCheck className="w-4 h-4 text-sea" />
             <span>
               {isPresentationMode
                 ? "Bagera • Emaitzen aurkezpen publikoa"
                 : "Bagera • Koordinazio-panela"}
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+          <h1 className="font-editorial text-3xl sm:text-4xl font-semibold text-ink tracking-tight">
             {isPresentationMode
               ? "Bidean Eragin — Emaitza eta bilakaera orokorra"
               : "Bidean Eragin — Entitateen kudeaketa orokorra"}
           </h1>
-          <p className="text-xs sm:text-sm text-slate-600 mt-1">
+          <p className="text-xs sm:text-sm text-ink-muted mt-1">
             {isPresentationMode
               ? "Parte hartzen duten entitateen hizkuntza-ohituren bilakaera (T0 → T1 → T2)."
               : "Entitateen aurrerapena jarraitu, portaera-bultzadak kudeatu eta emaitzak aztertu."}
@@ -742,8 +742,8 @@ export default function AdminKoadroa() {
             onClick={() => setIsPresentationMode(!isPresentationMode)}
             className={`px-3.5 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 border transition cursor-pointer ${
               isPresentationMode
-                ? "bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-600/25"
-                : "bg-white hover:bg-indigo-50 text-indigo-700 border-indigo-200"
+                ? "bg-sea text-white border-sea"
+                : "bg-white hover:bg-sand text-sea border-line"
             }`}
             title="Ezkutatu administrazio-botoiak proiektorean edo publikoaren aurrean erakusteko"
           >
@@ -754,10 +754,10 @@ export default function AdminKoadroa() {
           <button
             type="button"
             onClick={() => window.print()}
-            className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
+            className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-sand text-ink border border-line font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
             title="Inprimatu edo gorde PDF txostena"
           >
-            <Printer className="w-4 h-4 text-slate-600" />
+            <Printer className="w-4 h-4 text-ink-muted" />
             <span>Inprimatu (PDF)</span>
           </button>
 
@@ -765,47 +765,47 @@ export default function AdminKoadroa() {
             <>
               <button
                 onClick={() => setShowNewPostModal(true)}
-                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition cursor-pointer"
+                className="px-4 py-2.5 rounded-xl bg-euskara hover:opacity-95 text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                <span>+ Entitate berria</span>
+                <span>Entitate berria</span>
               </button>
 
               <button
                 onClick={handleExportCSV}
-                className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-2 shadow-md transition cursor-pointer"
+                className="px-4 py-2.5 rounded-xl bg-sea hover:opacity-95 text-white font-bold text-xs flex items-center gap-2 transition cursor-pointer"
               >
-                <Download className="w-4 h-4 text-slate-300" />
+                <Download className="w-4 h-4 text-white/80" />
                 <span>Esportatu (CSV)</span>
               </button>
 
               <button
                 type="button"
                 onClick={openTextEditorModal}
-                className="px-3.5 py-2.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
+                className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-sand text-ink border border-line font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
                 title="Moldatu aplikazio osoko testuak eta etiketak erraz"
               >
-                <FileText className="w-3.5 h-3.5 text-sky-600" />
+                <FileText className="w-3.5 h-3.5 text-sea" />
                 <span>Testuak moldatu</span>
               </button>
 
               <button
                 type="button"
                 onClick={openAdminAccountModal}
-                className="px-3.5 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
+                className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-sand text-ink border border-line font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
                 title="Aldatu Bagerako administratzailearen helbide elektronikoa eta pasahitza"
               >
-                <Lock className="w-3.5 h-3.5 text-amber-600" />
+                <Lock className="w-3.5 h-3.5 text-ochre" />
                 <span>Admin kontua / pasahitza</span>
               </button>
 
               {(eragileak.length > 0 || neurketak.length > 0) && (
                 <button
                   onClick={() => setShowResetConfirmModal(true)}
-                  className="px-3.5 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
+                  className="px-3.5 py-2.5 rounded-xl bg-terracotta/10 hover:bg-terracotta/15 text-terracotta border border-terracotta/25 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
                   title="Ezabatu aurretik egindako proba, entitate eta neurketa guztiak"
                 >
-                  <RotateCcw className="w-3.5 h-3.5 text-rose-600" />
+                  <RotateCcw className="w-3.5 h-3.5" />
                   <span>Garbitu proba guztiak</span>
                 </button>
               )}
@@ -815,91 +815,91 @@ export default function AdminKoadroa() {
       </div>
 
       {/* Global KPIs Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-8">
         
         {/* KPI 1: Active Centers */}
-        <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
+        <div className="civic-card p-5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">
               Entitate aktiboak
             </span>
-            <div className="p-2 rounded-xl bg-sky-50 text-sky-600">
-              <Building2 className="w-5 h-5" />
+            <div className="p-2 rounded-lg bg-sand text-sea border border-line">
+              <Building2 className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-3xl font-black text-slate-900">{totalEragileak}</div>
-          <p className="text-[11px] text-slate-500 mt-1">Elkarte, ikastetxe, zerbitzu eta enpresak</p>
+          <div className="text-3xl font-extrabold text-ink tabular-nums">{totalEragileak}</div>
+          <p className="text-[11px] text-ink-muted mt-1">Elkarte, ikastetxe, zerbitzu eta enpresak</p>
         </div>
 
         {/* KPI 2: Measurements */}
-        <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
+        <div className="civic-card p-5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">
               Neurketak guztira
             </span>
-            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600">
-              <BarChart3 className="w-5 h-5" />
+            <div className="p-2 rounded-lg bg-euskara/10 text-euskara border border-euskara/20">
+              <BarChart3 className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-3xl font-black text-emerald-600">{totalNeurketak}</div>
-          <p className="text-[11px] text-slate-500 mt-1">T0, T1 eta T2 neurketa-saioak</p>
+          <div className="text-3xl font-extrabold text-euskara tabular-nums">{totalNeurketak}</div>
+          <p className="text-[11px] text-ink-muted mt-1">T0, T1 eta T2 neurketa-saioak</p>
         </div>
 
         {/* KPI 3: Average Growth */}
-        <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
+        <div className="civic-card p-5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">
               Batez besteko igoera
             </span>
-            <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
-              <TrendingUp className="w-5 h-5" />
+            <div className="p-2 rounded-lg bg-ochre/10 text-ochre border border-ochre/20">
+              <TrendingUp className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-3xl font-black text-emerald-600">
+          <div className="text-3xl font-extrabold text-euskara tabular-nums">
             {growthCount > 0 ? `${avgGrowth >= 0 ? "+" : ""}${avgGrowth}%` : "0%"}
           </div>
-          <p className="text-[11px] text-slate-500 mt-1">
+          <p className="text-[11px] text-ink-muted mt-1">
             {growthCount > 0 ? "Euskararen erabileraren hobekuntza" : "T0 eta T1/T2 neurketen zain"}
           </p>
         </div>
 
         {/* KPI 4: Experiments */}
-        <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
+        <div className="civic-card p-5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">
               Esperimentuak
             </span>
-            <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
-              <Sparkles className="w-5 h-5" />
+            <div className="p-2 rounded-lg bg-sand text-sea border border-line">
+              <Sparkles className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-3xl font-black text-slate-900">{totalEsperimentuak}</div>
-          <p className="text-[11px] text-slate-500 mt-1">{amaitutakoEsperimentuak} ziklo osatu</p>
+          <div className="text-3xl font-extrabold text-ink tabular-nums">{totalEsperimentuak}</div>
+          <p className="text-[11px] text-ink-muted mt-1 tabular-nums">{amaitutakoEsperimentuak} ziklo osatu</p>
         </div>
       </div>
 
       {/* C BLOKEA: KOMUNITATE OSOKO SINTESI SOZIOLINGUISTIKOA (LATXA 70B) */}
-      <div className="bg-white rounded-2xl p-6 sm:p-8 text-slate-900 border border-slate-200 border-l-4 border-l-indigo-600 mb-8 relative overflow-hidden">
+      <div className="civic-card p-6 sm:p-8 text-ink border-l-4 border-l-sea mb-8 relative overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-700 shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-sand border border-line flex items-center justify-center text-sea shrink-0">
               <Bot className="w-5 h-5" />
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
+                <h3 className="font-editorial text-lg sm:text-xl font-semibold text-ink tracking-tight">
                   Latxa: Donostiako Komunitatearen Txosten Soziolinguistiko Bateratua
                 </h3>
-                <span className="px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-800 text-[10px] font-semibold">
+                <span className="px-2 py-0.5 rounded-md bg-sand border border-line text-sea text-[10px] font-bold">
                   C Blokea • Latxa 70B
                 </span>
                 {communityReport && (
-                  <span className="px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] font-semibold">
+                  <span className="px-2 py-0.5 rounded-md bg-euskara/10 border border-euskara/20 text-euskara text-[10px] font-bold">
                     Gordeta{communityReport.sortze_data ? ` • ${new Date(communityReport.sortze_data).toLocaleDateString("eu-ES")}` : ""}
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-600 mt-0.5">
+              <p className="text-xs text-ink-muted mt-0.5">
                 Entitate guztien T0/T1/T2 datuak eta behatzaileen ohar kualitatiboak gurutzatuz sortutako sintesi exekutiboa.
               </p>
             </div>
@@ -909,7 +909,7 @@ export default function AdminKoadroa() {
             type="button"
             onClick={handleGenerateCommunityReport}
             disabled={isGeneratingCommunityReport || eragileak.length === 0}
-            className="px-5 py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs rounded-xl shadow-xs transition cursor-pointer flex items-center justify-center gap-2 shrink-0 disabled:opacity-50 print:hidden"
+            className="px-5 py-2.5 bg-sea hover:opacity-95 text-white font-bold text-xs rounded-xl transition cursor-pointer flex items-center justify-center gap-2 shrink-0 disabled:opacity-50 print:hidden"
           >
             {isGeneratingCommunityReport ? (
               <>
@@ -1022,28 +1022,28 @@ export default function AdminKoadroa() {
 
       {/* Visual T0 -> T1 -> T2 Comparative Progress Chart Across Participating Centers */}
       {eragileak.length > 0 && (
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm mb-8">
+        <div className="civic-card p-6 sm:p-8 mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
             <div>
               <div className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-emerald-600" />
-                <h3 className="font-bold text-slate-900 text-base sm:text-lg">
+                <BarChart3 className="w-5 h-5 text-euskara" />
+                <h3 className="font-editorial text-xl font-semibold text-ink">
                   Entitateen bilakaera konparatiboa (T0 → T1 → T2 euskararen erabilera %)
                 </h3>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-ink-muted mt-0.5">
                 Entitate bakoitzaren hasierako argazkia (T0), berehalako eragina (T1) eta ohitura finkatua (T2).
               </p>
             </div>
             <div className="flex items-center gap-3 text-[11px] font-bold">
-              <span className="flex items-center gap-1.5 text-sky-700">
-                <span className="w-3 h-3 rounded-xs bg-sky-500 inline-block" /> T0 (aurretik)
+              <span className="flex items-center gap-1.5 text-sea">
+                <span className="w-3 h-3 rounded-xs bg-sea inline-block" /> T0 (aurretik)
               </span>
-              <span className="flex items-center gap-1.5 text-amber-700">
-                <span className="w-3 h-3 rounded-xs bg-amber-500 inline-block" /> T1 (berehala)
+              <span className="flex items-center gap-1.5 text-ochre">
+                <span className="w-3 h-3 rounded-xs bg-ochre inline-block" /> T1 (berehala)
               </span>
-              <span className="flex items-center gap-1.5 text-emerald-700">
-                <span className="w-3 h-3 rounded-xs bg-emerald-500 inline-block" /> T2 (sendotua)
+              <span className="flex items-center gap-1.5 text-euskara">
+                <span className="w-3 h-3 rounded-xs bg-euskara inline-block" /> T2 (sendotua)
               </span>
             </div>
           </div>
@@ -1074,46 +1074,46 @@ export default function AdminKoadroa() {
               return (
                 <div
                   key={eragile.id}
-                  className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80"
+                  className="p-4 rounded-xl bg-paper border border-line"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-900 text-sm">
+                      <span className="font-bold text-ink text-sm">
                         {isPresentationMode
                           ? getPublicEragileLabel(eragile, "eragilea")
                           : eragile.izena}
                       </span>
                       {!isPresentationMode && (
                         <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
                             Number(eragile.publikoa) === 1
-                              ? "bg-emerald-100 text-emerald-800"
-                              : "bg-slate-200 text-slate-700"
+                              ? "bg-euskara/10 text-euskara border-euskara/20"
+                              : "bg-sand text-ink-muted border-line"
                           }`}
                         >
                           {Number(eragile.publikoa) === 1
-                            ? "🔓 Publikoa"
-                            : `🔒 ${getPublicEragileLabel(eragile, "eragilea")}`}
+                            ? "Publikoa"
+                            : getPublicEragileLabel(eragile, "eragilea")}
                         </span>
                       )}
                       {exp && !isPresentationMode && (
-                        <span className="text-xs text-slate-500">
+                        <span className="text-xs text-ink-muted">
                           ({exp.gunea} • Helburua: +%{exp.xede_portzentajea})
                         </span>
                       )}
                     </div>
                     {diff !== null ? (
                       <span
-                        className={`px-2.5 py-0.5 rounded-full text-xs font-extrabold ${
+                        className={`px-2.5 py-0.5 rounded-md text-xs font-bold tabular-nums ${
                           diff >= 0
-                            ? "bg-emerald-100 text-emerald-800"
-                            : "bg-rose-100 text-rose-800"
+                            ? "bg-euskara/10 text-euskara border border-euskara/20"
+                            : "bg-terracotta/10 text-terracotta border border-terracotta/20"
                         }`}
                       >
                         {diff >= 0 ? `+${diff}%` : `${diff}%`} bilakaera
                       </span>
                     ) : (
-                      <span className="text-[11px] font-semibold text-slate-400">
+                      <span className="text-[11px] font-semibold text-ink-muted tabular-nums">
                         {p0 !== null ? `T0 neurtuta (%${p0})` : "Lehen neurketaren zain"}
                       </span>
                     )}
@@ -1122,19 +1122,19 @@ export default function AdminKoadroa() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                     {(
                       [
-                        { label: "T0", val: p0, color: "bg-sky-500", text: "text-sky-700" },
-                        { label: "T1", val: p1, color: "bg-amber-500", text: "text-amber-700" },
-                        { label: "T2", val: p2, color: "bg-emerald-500", text: "text-emerald-700" },
+                        { label: "T0", val: p0, color: "bg-sea", text: "text-sea" },
+                        { label: "T1", val: p1, color: "bg-ochre", text: "text-ochre" },
+                        { label: "T2", val: p2, color: "bg-euskara", text: "text-euskara" },
                       ] as const
                     ).map((bar) => (
-                      <div key={bar.label} className="bg-white rounded-xl p-2.5 border border-slate-200/70">
+                      <div key={bar.label} className="bg-white rounded-lg p-2.5 border border-line">
                         <div className="flex items-center justify-between text-xs mb-1">
-                          <span className={`font-extrabold ${bar.text}`}>{bar.label}</span>
-                          <span className="font-black text-slate-800">
+                          <span className={`font-bold ${bar.text}`}>{bar.label}</span>
+                          <span className="font-bold text-ink tabular-nums">
                             {bar.val !== null ? `%${bar.val}` : "—"}
                           </span>
                         </div>
-                        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="w-full h-2 bg-sand rounded-full overflow-hidden">
                           <div
                             className={`h-full ${bar.color} rounded-full transition-all duration-500`}
                             style={{ width: `${bar.val !== null ? Math.max(bar.val, 4) : 0}%` }}
@@ -1151,10 +1151,10 @@ export default function AdminKoadroa() {
       )}
 
       {/* Pilots Comparison & Effectiveness Ranking */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm mb-8">
+      <div className="civic-card p-6 sm:p-8 mb-8">
         <div className="flex items-center gap-2 mb-4">
-          <TrendingUp className="w-5 h-5 text-emerald-600" />
-          <h3 className="font-bold text-slate-900 text-base sm:text-lg">
+          <TrendingUp className="w-5 h-5 text-euskara" />
+          <h3 className="font-editorial text-xl font-semibold text-ink">
             Pilotuen eraginkortasun-konparaketa (emaitza errealak)
           </h3>
         </div>

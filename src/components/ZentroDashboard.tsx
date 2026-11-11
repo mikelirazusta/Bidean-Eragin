@@ -486,19 +486,19 @@ export default function ZentroDashboard() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       
       {/* Top Organization Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-5 border-b border-line">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="px-3 py-0.5 text-xs font-bold rounded-full bg-sky-100 text-sky-800 uppercase tracking-wider">
+            <span className="px-2.5 py-0.5 text-[11px] font-bold rounded-md bg-sand text-sea border border-line uppercase tracking-wider">
               {activeEragilea?.mota || "Entitatea"}
             </span>
-            <span className="text-xs text-slate-400">• Panela eta aurrerapena</span>
+            <span className="text-xs text-ink-muted">• Panela eta aurrerapena</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+          <h1 className="font-editorial text-3xl sm:text-4xl font-semibold text-ink tracking-tight">
             {activeEragilea?.izena || "Zure entitatea"}
           </h1>
-          <p className="text-xs sm:text-sm text-slate-600 mt-0.5">
-            Erronka: <em>&ldquo;{activeEragilea?.erronka_nagusia}&rdquo;</em>
+          <p className="text-xs sm:text-sm text-ink-muted mt-1">
+            Erronka: <em className="text-ink">&ldquo;{activeEragilea?.erronka_nagusia}&rdquo;</em>
           </p>
         </div>
 
@@ -671,34 +671,34 @@ export default function ZentroDashboard() {
           <div className="lg:col-span-5 space-y-6">
             
             {/* Hypothesis Card */}
-            <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
+            <div className="civic-card p-6">
               <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-xl bg-sky-50 text-sky-600">
-                    <FlaskConical className="w-5 h-5" />
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-lg bg-sand text-sea border border-line">
+                    <FlaskConical className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-slate-900 text-sm">
+                    <h3 className="font-bold text-ink text-sm">
                       Zuen hipotesia
                     </h3>
-                    <span className="text-[11px] text-slate-400">
+                    <span className="text-[11px] text-ink-muted">
                       Pilotua: {currentExp.pilotu_izena || "Euskaraz barra-barra txapak"}
                     </span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-emerald-100 text-emerald-800">
+                  <span className="px-2.5 py-1 text-xs font-bold rounded-md bg-euskara/10 text-euskara border border-euskara/20 tabular-nums">
                     Xedea: +%{currentExp.xede_portzentajea}
                   </span>
                   {!isEditingHypothesis && (
                     <button
                       type="button"
                       onClick={handleOpenEditHypothesis}
-                      className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold inline-flex items-center gap-1 transition cursor-pointer"
+                      className="px-2.5 py-1 rounded-lg bg-paper hover:bg-sand text-ink border border-line text-xs font-semibold inline-flex items-center gap-1 transition cursor-pointer print:hidden"
                       title="Editatu hipotesia eta xehetasunak"
                     >
-                      <Pencil className="w-3.5 h-3.5 text-amber-600" />
+                      <Pencil className="w-3.5 h-3.5 text-ink-muted" />
                       <span>Editatu</span>
                     </button>
                   )}
@@ -720,7 +720,7 @@ export default function ZentroDashboard() {
                           className="text-[10px] font-extrabold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2 py-0.5 rounded-md cursor-pointer inline-flex items-center gap-1 disabled:opacity-50"
                         >
                           <Bot className="w-3 h-3" />
-                          <span>{isImprovingHypoWithLatxa ? "Fintzen..." : "✨ Hobetu Latxarekin"}</span>
+                          <span>{isImprovingHypoWithLatxa ? "Fintzen..." : "Hobetu Latxarekin"}</span>
                         </button>
                         <button
                           type="button"
@@ -817,20 +817,20 @@ export default function ZentroDashboard() {
                 </form>
               ) : (
                 <>
-                  <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 my-3">
-                    <p className="text-xs sm:text-sm font-semibold text-slate-800 italic leading-relaxed">
+                  <div className="bg-paper rounded-xl p-4 border border-line border-l-4 border-l-euskara my-3">
+                    <p className="font-editorial text-base sm:text-[17px] text-ink italic leading-relaxed">
                       &ldquo;{currentExp.hipotesia}&rdquo;
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-xs text-slate-500 pt-1">
+                  <div className="grid grid-cols-2 gap-2 text-xs text-ink-muted pt-1">
                     <div>
-                      <span className="block text-[10px] text-slate-400 uppercase font-bold">Taldea</span>
-                      <span className="font-semibold text-slate-700">{currentExp.taldea}</span>
+                      <span className="block text-[10px] text-ink-muted uppercase font-bold tracking-wider">Taldea</span>
+                      <span className="font-semibold text-ink">{currentExp.taldea}</span>
                     </div>
                     <div>
-                      <span className="block text-[10px] text-slate-400 uppercase font-bold">Gunea</span>
-                      <span className="font-semibold text-slate-700">{currentExp.gunea}</span>
+                      <span className="block text-[10px] text-ink-muted uppercase font-bold tracking-wider">Gunea</span>
+                      <span className="font-semibold text-ink">{currentExp.gunea}</span>
                     </div>
                   </div>
                 </>
@@ -838,25 +838,25 @@ export default function ZentroDashboard() {
             </div>
 
             {/* Aurrerapen Barra */}
-            <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
+            <div className="civic-card p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="font-bold text-slate-900 text-sm">
+                  <h3 className="font-bold text-ink text-sm">
                     Hobekuntza-zikloaren aurrerapena
                   </h3>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-ink-muted tabular-nums">
                     {completedStepsCount} / {steps.length} urrats osatuta
                   </p>
                 </div>
-                <span className="text-sm font-black text-emerald-600">
+                <span className="text-sm font-extrabold text-euskara tabular-nums">
                   %{progressPct}
                 </span>
               </div>
 
               {/* Progress Bar */}
-              <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden mb-6">
+              <div className="w-full bg-sand h-2 rounded-full overflow-hidden mb-6 border border-line">
                 <div
-                  className="bg-gradient-to-r from-sky-500 to-emerald-500 h-full rounded-full transition-all duration-500"
+                  className="bg-euskara h-full rounded-full transition-all duration-500"
                   style={{ width: `${progressPct}%` }}
                 />
               </div>
@@ -998,24 +998,24 @@ export default function ZentroDashboard() {
           <div className="lg:col-span-7 space-y-6">
             
             {/* Chart Card */}
-            <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200">
+            <div className="civic-card p-6 sm:p-8">
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <div className="flex items-center gap-2">
-                    <BarChart3 className="w-5 h-5 text-sky-600" />
-                    <h3 className="font-bold text-slate-900 text-base sm:text-lg">
+                    <BarChart3 className="w-5 h-5 text-sea" />
+                    <h3 className="font-editorial text-xl font-semibold text-ink">
                       Neurketa konparatiboa: T0 vs T1 vs T2
                     </h3>
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs text-ink-muted mt-0.5">
                     Euskararen erabileraren eboluzioa fase bakoitzean (%)
                   </p>
                 </div>
 
                 {sustainedGain !== null && sustainedGain > 0 && (
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-emerald-100 text-emerald-800 text-xs font-extrabold shadow-xs">
-                    <TrendingUp className="w-4 h-4 text-emerald-600" />
-                    <span>+%{sustainedGain} igoera egonkorra!</span>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-euskara/10 border border-euskara/20 text-euskara text-xs font-bold tabular-nums">
+                    <TrendingUp className="w-4 h-4" />
+                    <span>+%{sustainedGain} igoera egonkorra</span>
                   </div>
                 )}
               </div>
@@ -1025,26 +1025,26 @@ export default function ZentroDashboard() {
                 
                 {/* T0 Bar */}
                 <div className="flex flex-col items-center">
-                  <div className="h-56 w-full max-w-[90px] bg-slate-100 rounded-2xl p-1.5 flex flex-col justify-end relative shadow-inner">
+                  <div className="h-56 w-full max-w-[92px] bg-sand rounded-xl p-1.5 flex flex-col justify-end relative border border-line">
                     {t0Pct !== null ? (
                       <div
-                        className="w-full bg-gradient-to-t from-sky-600 to-sky-400 rounded-xl transition-all duration-700 flex flex-col items-center justify-center text-white font-extrabold text-sm shadow-sm"
+                        className="w-full bg-sea rounded-lg transition-all duration-700 flex flex-col items-center justify-center text-white font-bold text-sm tabular-nums"
                         style={{ height: `${Math.max(t0Pct, 15)}%` }}
                       >
                         <span>%{t0Pct}</span>
                       </div>
                     ) : (
-                      <div className="h-full flex items-center justify-center text-[10px] text-slate-400 text-center font-medium p-1">
+                      <div className="h-full flex items-center justify-center text-[10px] text-ink-muted text-center font-medium p-1">
                         Zain (ez dago daturik)
                       </div>
                     )}
                   </div>
 
                   <div className="text-center mt-3 w-full">
-                    <span className="font-extrabold text-xs text-slate-900 block">
+                    <span className="font-bold text-xs text-ink block">
                       T0 neurketa
                     </span>
-                    <span className="text-[10px] text-slate-500 block">
+                    <span className="text-[10px] text-ink-muted block">
                       {t0Stats
                         ? t0Stats.count === 1
                           ? "1 saio erregistratua"
@@ -1052,7 +1052,7 @@ export default function ZentroDashboard() {
                         : "Oinarrizkoa (aurretik)"}
                     </span>
                     {t0Stats && (
-                      <span className="text-[10px] text-emerald-700 font-bold block mt-0.5">
+                      <span className="text-[10px] text-sea font-bold block mt-0.5 tabular-nums">
                         %{t0Stats.pct} euskara ({t0Stats.totalEuskaraz}/{t0Stats.totalInteractions})
                       </span>
                     )}
@@ -1062,36 +1062,36 @@ export default function ZentroDashboard() {
                         setObservationConfig({ expId: currentExp.id, phase: "T0" });
                         setActiveTab("behaketa");
                       }}
-                      className={`mt-2 inline-flex items-center justify-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border transition cursor-pointer w-full ${
+                      className={`mt-2 inline-flex items-center justify-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border transition cursor-pointer w-full print:hidden ${
                         t0Stats
-                          ? "text-sky-700 bg-sky-50 hover:bg-sky-100 border-sky-200"
-                          : "text-white bg-sky-600 hover:bg-sky-700 border-transparent shadow-xs"
+                          ? "text-sea bg-paper hover:bg-sand border-line"
+                          : "text-white bg-sea hover:opacity-95 border-transparent"
                       }`}
                       title="Egin beste behaketa-saio bat T0 batez bestekoa sendotzeko"
                     >
                       <Plus className="w-3 h-3" />
-                      <span>{t0Stats ? "+ Beste saio bat" : "Neurtu T0"}</span>
+                      <span>{t0Stats ? "Beste saio bat" : "Neurtu T0"}</span>
                     </button>
                   </div>
                 </div>
 
                 {/* T1 Bar */}
                 <div className="flex flex-col items-center">
-                  <div className="h-56 w-full max-w-[90px] bg-slate-100 rounded-2xl p-1.5 flex flex-col justify-end relative shadow-inner">
+                  <div className="h-56 w-full max-w-[92px] bg-sand rounded-xl p-1.5 flex flex-col justify-end relative border border-line">
                     {t1Pct !== null ? (
                       <div
-                        className="w-full bg-gradient-to-t from-teal-600 to-emerald-400 rounded-xl transition-all duration-700 flex flex-col items-center justify-center text-white font-extrabold text-sm shadow-sm"
+                        className="w-full bg-ochre rounded-lg transition-all duration-700 flex flex-col items-center justify-center text-white font-bold text-sm tabular-nums"
                         style={{ height: `${Math.max(t1Pct, 15)}%` }}
                       >
                         <span>%{t1Pct}</span>
                         {immediateGain !== null && (
-                          <span className="text-[10px] bg-white/20 px-1 rounded-sm mt-0.5">
+                          <span className="text-[10px] bg-black/20 px-1.5 rounded-sm mt-0.5">
                             {immediateGain >= 0 ? `+${immediateGain}%` : `${immediateGain}%`}
                           </span>
                         )}
                       </div>
                     ) : (
-                      <div className="h-full flex flex-col items-center justify-center text-[10px] text-slate-400 text-center font-medium p-1">
+                      <div className="h-full flex flex-col items-center justify-center text-[10px] text-ink-muted text-center font-medium p-1">
                         <span>T1 zain</span>
                         {t0Stats && (
                           <button
@@ -1099,7 +1099,7 @@ export default function ZentroDashboard() {
                               setObservationConfig({ expId: currentExp.id, phase: "T1" });
                               setActiveTab("behaketa");
                             }}
-                            className="mt-2 text-[10px] text-sky-700 font-bold underline cursor-pointer"
+                            className="mt-2 text-[10px] text-sea font-bold underline cursor-pointer print:hidden"
                           >
                             Neurtu T1
                           </button>
@@ -1109,10 +1109,10 @@ export default function ZentroDashboard() {
                   </div>
 
                   <div className="text-center mt-3 w-full">
-                    <span className="font-extrabold text-xs text-slate-900 block">
+                    <span className="font-bold text-xs text-ink block">
                       T1 neurketa
                     </span>
-                    <span className="text-[10px] text-slate-500 block">
+                    <span className="text-[10px] text-ink-muted block">
                       {t1Stats
                         ? t1Stats.count === 1
                           ? "1 saio erregistratua"
@@ -1120,7 +1120,7 @@ export default function ZentroDashboard() {
                         : "Berehalakoa (1. astea)"}
                     </span>
                     {t1Stats && (
-                      <span className="text-[10px] text-emerald-700 font-bold block mt-0.5">
+                      <span className="text-[10px] text-ochre font-bold block mt-0.5 tabular-nums">
                         %{t1Stats.pct} euskara ({t1Stats.totalEuskaraz}/{t1Stats.totalInteractions})
                       </span>
                     )}
@@ -1131,15 +1131,15 @@ export default function ZentroDashboard() {
                           setObservationConfig({ expId: currentExp.id, phase: "T1" });
                           setActiveTab("behaketa");
                         }}
-                        className={`mt-2 inline-flex items-center justify-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border transition cursor-pointer w-full ${
+                        className={`mt-2 inline-flex items-center justify-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border transition cursor-pointer w-full print:hidden ${
                           t1Stats
-                            ? "text-teal-700 bg-teal-50 hover:bg-teal-100 border-teal-200"
-                            : "text-white bg-teal-600 hover:bg-teal-700 border-transparent shadow-xs"
+                            ? "text-ink bg-paper hover:bg-sand border-line"
+                            : "text-white bg-ochre hover:opacity-95 border-transparent"
                         }`}
                         title="Egin beste behaketa-saio bat T1 fasean"
                       >
                         <Plus className="w-3 h-3" />
-                        <span>{t1Stats ? "+ Beste saio bat" : "Neurtu T1"}</span>
+                        <span>{t1Stats ? "Beste saio bat" : "Neurtu T1"}</span>
                       </button>
                     )}
                   </div>
@@ -1147,21 +1147,21 @@ export default function ZentroDashboard() {
 
                 {/* T2 Bar */}
                 <div className="flex flex-col items-center">
-                  <div className="h-56 w-full max-w-[90px] bg-slate-100 rounded-2xl p-1.5 flex flex-col justify-end relative shadow-inner">
+                  <div className="h-56 w-full max-w-[92px] bg-sand rounded-xl p-1.5 flex flex-col justify-end relative border border-line">
                     {t2Pct !== null ? (
                       <div
-                        className="w-full bg-gradient-to-t from-emerald-600 to-teal-400 rounded-xl transition-all duration-700 flex flex-col items-center justify-center text-white font-extrabold text-sm shadow-sm"
+                        className="w-full bg-euskara rounded-lg transition-all duration-700 flex flex-col items-center justify-center text-white font-bold text-sm tabular-nums"
                         style={{ height: `${Math.max(t2Pct, 15)}%` }}
                       >
                         <span>%{t2Pct}</span>
                         {sustainedGain !== null && (
-                          <span className="text-[10px] bg-white/20 px-1 rounded-sm mt-0.5">
+                          <span className="text-[10px] bg-black/20 px-1.5 rounded-sm mt-0.5">
                             {sustainedGain >= 0 ? `+${sustainedGain}%` : `${sustainedGain}%`}
                           </span>
                         )}
                       </div>
                     ) : (
-                      <div className="h-full flex flex-col items-center justify-center text-[10px] text-slate-400 text-center font-medium p-1">
+                      <div className="h-full flex flex-col items-center justify-center text-[10px] text-ink-muted text-center font-medium p-1">
                         <span>T2 zain</span>
                         {t1Stats && (
                           <button
@@ -1169,7 +1169,7 @@ export default function ZentroDashboard() {
                               setObservationConfig({ expId: currentExp.id, phase: "T2" });
                               setActiveTab("behaketa");
                             }}
-                            className="mt-2 text-[10px] text-sky-700 font-bold underline cursor-pointer"
+                            className="mt-2 text-[10px] text-euskara font-bold underline cursor-pointer print:hidden"
                           >
                             Neurtu T2
                           </button>
@@ -1179,10 +1179,10 @@ export default function ZentroDashboard() {
                   </div>
 
                   <div className="text-center mt-3 w-full">
-                    <span className="font-extrabold text-xs text-slate-900 block">
+                    <span className="font-bold text-xs text-ink block">
                       T2 neurketa
                     </span>
-                    <span className="text-[10px] text-slate-500 block">
+                    <span className="text-[10px] text-ink-muted block">
                       {t2Stats
                         ? t2Stats.count === 1
                           ? "1 saio erregistratua"
@@ -1190,7 +1190,7 @@ export default function ZentroDashboard() {
                         : "Epe ertaina (14 egunera)"}
                     </span>
                     {t2Stats && (
-                      <span className="text-[10px] text-emerald-700 font-bold block mt-0.5">
+                      <span className="text-[10px] text-euskara font-bold block mt-0.5 tabular-nums">
                         %{t2Stats.pct} euskara ({t2Stats.totalEuskaraz}/{t2Stats.totalInteractions})
                       </span>
                     )}
@@ -1201,15 +1201,15 @@ export default function ZentroDashboard() {
                           setObservationConfig({ expId: currentExp.id, phase: "T2" });
                           setActiveTab("behaketa");
                         }}
-                        className={`mt-2 inline-flex items-center justify-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border transition cursor-pointer w-full ${
+                        className={`mt-2 inline-flex items-center justify-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border transition cursor-pointer w-full print:hidden ${
                           t2Stats
-                            ? "text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-200"
-                            : "text-white bg-emerald-600 hover:bg-emerald-700 border-transparent shadow-xs"
+                            ? "text-euskara bg-paper hover:bg-sand border-line"
+                            : "text-white bg-euskara hover:opacity-95 border-transparent"
                         }`}
                         title="Egin beste behaketa-saio bat T2 fasean"
                       >
                         <Plus className="w-3 h-3" />
-                        <span>{t2Stats ? "+ Beste saio bat" : "Neurtu T2"}</span>
+                        <span>{t2Stats ? "Beste saio bat" : "Neurtu T2"}</span>
                       </button>
                     )}
                   </div>

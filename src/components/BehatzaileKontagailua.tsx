@@ -623,24 +623,24 @@ export default function BehatzaileKontagailua() {
       </div>
 
       {/* Top Header Card */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-md border border-slate-200 mb-5">
+      <div className="civic-card p-5 sm:p-6 mb-5">
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
-              <Eye className="w-4 h-4 text-emerald-600" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-sand border border-line text-euskara flex items-center justify-center">
+              <Eye className="w-4 h-4" />
             </div>
             <div>
-              <h1 className="font-bold text-slate-900 text-base sm:text-lg">
+              <h1 className="font-editorial font-semibold text-ink text-xl sm:text-2xl">
                 {uiTexts.counter_title || "Elkarrizketen kontagailua"}
               </h1>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-ink-muted">
                 {activeEragilea?.izena || "Zure entitatea"} • {uiTexts.counter_subtitle || "Zuzeneko behaketa-saioa"}
               </p>
             </div>
           </div>
 
           {/* Phase Badge */}
-          <div className="flex items-center bg-slate-100 rounded-xl p-1 border border-slate-200">
+          <div className="flex items-center bg-sand rounded-xl p-1 border border-line">
             {(["T0", "T1", "T2"] as const).map((p) => (
               <button
                 key={p}
@@ -648,14 +648,14 @@ export default function BehatzaileKontagailua() {
                   if (!sessionActive) setPhase(p);
                 }}
                 disabled={sessionActive}
-                className={`px-2.5 py-1 text-xs font-extrabold rounded-lg transition cursor-pointer ${
+                className={`px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
                   phase === p
                     ? p === "T0"
-                      ? "bg-sky-600 text-white shadow-xs"
+                      ? "bg-sea text-white"
                       : p === "T1"
-                      ? "bg-amber-600 text-white shadow-xs"
-                      : "bg-emerald-600 text-white shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
+                      ? "bg-ochre text-white"
+                      : "bg-euskara text-white"
+                    : "text-ink-muted hover:text-ink"
                 } ${sessionActive ? "opacity-70 cursor-not-allowed" : ""}`}
               >
                 {p}
@@ -666,17 +666,17 @@ export default function BehatzaileKontagailua() {
 
         {/* Phase Explanation & Average Status */}
         <div className="space-y-2">
-          <div className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex items-start gap-2">
-            <HelpCircle className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+          <div className="text-xs text-ink-muted bg-paper p-2.5 rounded-xl border border-line flex items-start gap-2">
+            <HelpCircle className="w-4 h-4 text-ink-muted shrink-0 mt-0.5" />
             <span>
               {phase === "T0" && (
-                <strong>T0 (hasierako argazkia):</strong>
+                <strong className="text-ink">T0 (hasierako argazkia):</strong>
               )}
               {phase === "T1" && (
-                <strong>T1 (lehen eragina):</strong>
+                <strong className="text-ink">T1 (lehen eragina):</strong>
               )}
               {phase === "T2" && (
-                <strong>T2 (ohitura egonkortua):</strong>
+                <strong className="text-ink">T2 (ohitura egonkortua):</strong>
               )}{" "}
               {phase === "T0" &&
                 (uiTexts.counter_t0_desc ||
@@ -694,16 +694,16 @@ export default function BehatzaileKontagailua() {
           <div
             className={`p-2.5 rounded-xl border text-xs flex items-center justify-between ${
               existingPhaseCount > 0
-                ? "bg-emerald-50/80 border-emerald-200 text-emerald-950"
-                : "bg-sky-50/60 border-sky-200 text-sky-950"
+                ? "bg-euskara/5 border-euskara/25 text-ink"
+                : "bg-sand/70 border-line text-ink"
             }`}
           >
             <div className="flex items-center gap-2">
-              <span className="text-base">{existingPhaseCount > 0 ? "📈" : "🎯"}</span>
+              <TrendingUp className="w-4 h-4 text-euskara shrink-0" />
               <span>
                 {existingPhaseCount > 0 ? (
                   <span>
-                    Dagoeneko <strong>{existingPhaseCount} saio</strong> jaso dira fase honetan (orain arteko batez bestekoa: <strong>%{currentPhaseAvg}</strong>). Saio berri honek batez bestekoa aberastuko du!
+                    Dagoeneko <strong className="tabular-nums">{existingPhaseCount} saio</strong> jaso dira fase honetan (batez bestekoa: <strong className="tabular-nums">%{currentPhaseAvg}</strong>). Saio berri honek batez bestekoa aberastuko du.
                   </span>
                 ) : (
                   <span>
@@ -713,7 +713,7 @@ export default function BehatzaileKontagailua() {
               </span>
             </div>
             {existingPhaseCount > 0 && (
-              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-800 shrink-0">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-euskara/15 text-euskara shrink-0 tabular-nums">
                 {existingPhaseCount + 1}. saioa
               </span>
             )}
@@ -722,11 +722,11 @@ export default function BehatzaileKontagailua() {
 
         {/* Experiment Target Details */}
         {currentExp && (
-          <div className="mt-3 pt-3 border-t border-slate-100 text-xs text-slate-700 flex items-center justify-between">
+          <div className="mt-3 pt-3 border-t border-line text-xs text-ink-muted flex items-center justify-between">
             <span className="truncate pr-2">
-              📍 Gunea: <strong>{currentExp.gunea}</strong>
+              Gunea: <strong className="text-ink">{currentExp.gunea}</strong>
             </span>
-            <span className="shrink-0 font-semibold text-emerald-700">
+            <span className="shrink-0 font-bold text-euskara tabular-nums">
               Helburua: +%{currentExp.xede_portzentajea}
             </span>
           </div>
@@ -735,13 +735,13 @@ export default function BehatzaileKontagailua() {
 
       {/* Duration Selector (Configurable: 5, 10, 15, 20, 30 min, or Free Mode) */}
       {!sessionActive && (
-        <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200 mb-5">
+        <div className="civic-card p-5 mb-5">
           <div className="flex items-center justify-between mb-2.5">
-            <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-              <Clock className="w-4 h-4 text-emerald-600" />
+            <label className="text-xs font-bold text-ink flex items-center gap-1.5">
+              <Clock className="w-4 h-4 text-euskara" />
               <span>Aukeratu behaketaren iraupena:</span>
             </label>
-            <span className="text-[11px] text-slate-500 font-medium">
+            <span className="text-[11px] text-ink-muted font-medium">
               Nahi beste denboraz neur dezakezu
             </span>
           </div>
@@ -756,10 +756,10 @@ export default function BehatzaileKontagailua() {
                   setSelectedMinutes(m);
                   setSecondsRemaining(m * 60);
                 }}
-                className={`py-2 px-2 text-xs font-bold rounded-xl border text-center transition cursor-pointer ${
+                className={`py-2 px-2 text-xs font-bold rounded-xl border text-center transition cursor-pointer tabular-nums ${
                   timerMode === "countdown" && selectedMinutes === m
-                    ? "bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/30 ring-2 ring-emerald-500/20"
-                    : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
+                    ? "bg-sea text-white border-sea"
+                    : "bg-paper border-line text-ink hover:bg-sand"
                 }`}
               >
                 {m} min
@@ -774,17 +774,17 @@ export default function BehatzaileKontagailua() {
               }}
               className={`py-2 px-2 text-xs font-bold rounded-xl border text-center transition cursor-pointer ${
                 timerMode === "free"
-                  ? "bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/30 ring-2 ring-emerald-500/20"
-                  : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
+                  ? "bg-sea text-white border-sea"
+                  : "bg-paper border-line text-ink hover:bg-sand"
               }`}
               title="Mugarik gabeko behaketa (kronometroa aurrera doa)"
             >
-              ⏱️ Librea
+              Librea
             </button>
           </div>
 
           {/* Custom Minute Input */}
-          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
+          <div className="pt-2 border-t border-line flex items-center justify-between text-xs text-ink-muted">
             <span>Edo zehaztu eskuz nahi duzun denbora:</span>
             <div className="flex items-center gap-1.5">
               <input
@@ -798,16 +798,16 @@ export default function BehatzaileKontagailua() {
                   setTimerMode("countdown");
                   setSecondsRemaining(val * 60);
                 }}
-                className="w-16 px-2 py-1 text-center font-bold text-slate-900 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                className="w-16 px-2 py-1 text-center font-bold text-ink border border-line bg-paper rounded-lg text-xs focus:ring-2 focus:ring-sea focus:outline-hidden tabular-nums"
               />
-              <span className="font-semibold text-slate-700">minutu</span>
+              <span className="font-semibold text-ink">minutu</span>
             </div>
           </div>
         </div>
       )}
 
       {/* Timer & Controls Bar */}
-      <div className="bg-slate-900 text-white rounded-3xl p-5 shadow-xl mb-5 flex items-center justify-between">
+      <div className="bg-sea text-white rounded-2xl p-5 mb-5 flex items-center justify-between border border-sea">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center">
             <Timer className={`w-6 h-6 text-emerald-400 ${sessionActive && !isPaused ? "animate-pulse" : ""}`} />
@@ -1047,17 +1047,17 @@ export default function BehatzaileKontagailua() {
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") handleCount("euskaraz");
             }}
-            className="w-full h-32 sm:h-36 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white border border-emerald-800 border-b-4 border-b-emerald-950 active:border-b active:translate-y-0.5 flex items-center justify-between px-6 sm:px-8 transition active-press cursor-pointer relative overflow-hidden select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2"
+            className="w-full h-32 sm:h-36 rounded-2xl bg-euskara hover:opacity-95 text-white border border-euskara border-b-4 border-b-[#073D2B] active:border-b active:translate-y-0.5 flex items-center justify-between px-6 sm:px-8 transition active-press cursor-pointer relative overflow-hidden select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-euskara focus-visible:ring-offset-2"
           >
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-xl bg-emerald-800/80 border border-emerald-600/50 flex items-center justify-center shrink-0">
-                <span className="w-4 h-4 rounded-full bg-emerald-300 block" />
+              <div className="w-12 h-12 rounded-xl bg-black/15 border border-white/15 flex items-center justify-center shrink-0">
+                <span className="w-4 h-4 rounded-full bg-emerald-200 block" />
               </div>
               <div className="text-left">
                 <span className="text-2xl sm:text-3xl font-extrabold tracking-tight block">
                   {uiTexts.counter_btn_euskaraz || "Euskaraz"}
                 </span>
-                <span className="text-xs text-emerald-100/90 font-medium">
+                <span className="text-xs text-white/80 font-medium">
                   Sakatze bakoitzeko +1 (bibrazio 1)
                 </span>
               </div>
@@ -1068,7 +1068,7 @@ export default function BehatzaileKontagailua() {
                 <button
                   type="button"
                   onClick={(e) => handleDecrement(e, "euskaraz")}
-                  className="px-2.5 py-1.5 rounded-lg bg-emerald-900/70 hover:bg-emerald-950 text-white font-bold text-xs border border-emerald-600/40 transition cursor-pointer"
+                  className="px-2.5 py-1.5 rounded-lg bg-black/25 hover:bg-black/40 text-white font-bold text-xs border border-white/15 transition cursor-pointer"
                   title="Kendu 1 euskarazko zenbaketatik"
                 >
                   -1
@@ -1078,7 +1078,7 @@ export default function BehatzaileKontagailua() {
                 <span className="text-4xl sm:text-5xl font-black tracking-tight block">
                   {euskarazCount}
                 </span>
-                <span className="text-xs font-bold text-emerald-100">
+                <span className="text-xs font-bold text-white/85">
                   {totalInteractions > 0 ? `${Math.round((euskarazCount / totalInteractions) * 100)}%` : "0%"}
                 </span>
               </div>
@@ -1093,17 +1093,17 @@ export default function BehatzaileKontagailua() {
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") handleCount("erdaraz");
             }}
-            className="w-full h-28 sm:h-32 rounded-2xl bg-rose-700 hover:bg-rose-800 text-white border border-rose-800 border-b-4 border-b-rose-950 active:border-b active:translate-y-0.5 flex items-center justify-between px-6 sm:px-8 transition active-press cursor-pointer relative overflow-hidden select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2"
+            className="w-full h-28 sm:h-32 rounded-2xl bg-terracotta hover:opacity-95 text-white border border-terracotta border-b-4 border-b-[#8A2E1B] active:border-b active:translate-y-0.5 flex items-center justify-between px-6 sm:px-8 transition active-press cursor-pointer relative overflow-hidden select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta focus-visible:ring-offset-2"
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-rose-800/80 border border-rose-600/50 flex items-center justify-center shrink-0">
-                <span className="w-3.5 h-3.5 rounded-sm bg-rose-200 block" />
+              <div className="w-11 h-11 rounded-xl bg-black/15 border border-white/15 flex items-center justify-center shrink-0">
+                <span className="w-3.5 h-3.5 rounded-sm bg-orange-100 block" />
               </div>
               <div className="text-left">
                 <span className="text-xl sm:text-2xl font-extrabold tracking-tight block">
                   {uiTexts.counter_btn_erdaraz || "Erdaraz"}
                 </span>
-                <span className="text-xs text-rose-100/90 font-medium">
+                <span className="text-xs text-white/80 font-medium">
                   Gaztelania / beste bat (2 bibrazio)
                 </span>
               </div>
@@ -1114,7 +1114,7 @@ export default function BehatzaileKontagailua() {
                 <button
                   type="button"
                   onClick={(e) => handleDecrement(e, "erdaraz")}
-                  className="px-2.5 py-1.5 rounded-lg bg-rose-900/70 hover:bg-rose-950 text-white font-bold text-xs border border-rose-600/40 transition cursor-pointer"
+                  className="px-2.5 py-1.5 rounded-lg bg-black/25 hover:bg-black/40 text-white font-bold text-xs border border-white/15 transition cursor-pointer"
                   title="Kendu 1 erdarazko zenbaketatik"
                 >
                   -1
@@ -1124,7 +1124,7 @@ export default function BehatzaileKontagailua() {
                 <span className="text-3xl sm:text-4xl font-black tracking-tight block">
                   {erdarazCount}
                 </span>
-                <span className="text-xs font-bold text-rose-100">
+                <span className="text-xs font-bold text-white/85">
                   {totalInteractions > 0 ? `${Math.round((erdarazCount / totalInteractions) * 100)}%` : "0%"}
                 </span>
               </div>
@@ -1139,7 +1139,7 @@ export default function BehatzaileKontagailua() {
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") handleCount("elebi");
             }}
-            className="w-full h-24 sm:h-28 rounded-2xl bg-amber-400 hover:bg-amber-500 text-slate-950 border border-amber-500 border-b-4 border-b-amber-700 active:border-b active:translate-y-0.5 flex items-center justify-between px-6 sm:px-8 transition active-press cursor-pointer relative overflow-hidden select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+            className="w-full h-24 sm:h-28 rounded-2xl bg-[#E8A838] hover:bg-[#DF9E2C] text-ink border border-[#C98A1C] border-b-4 border-b-[#99650D] active:border-b active:translate-y-0.5 flex items-center justify-between px-6 sm:px-8 transition active-press cursor-pointer relative overflow-hidden select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ochre focus-visible:ring-offset-2"
           >
             <div className="flex items-center gap-4">
               <div className="w-11 h-11 rounded-xl bg-amber-500/40 border border-amber-600/30 flex items-center justify-center shrink-0">

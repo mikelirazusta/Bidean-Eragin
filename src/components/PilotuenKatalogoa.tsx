@@ -778,19 +778,19 @@ export default function PilotuenKatalogoa() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       
       {/* Title & Context Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 pb-6 border-b border-slate-200/80">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 pb-6 border-b border-line">
         <div className="max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold mb-3">
-            <Layers className="w-3.5 h-3.5 text-emerald-600" />
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-sand text-sea border border-line text-xs font-bold mb-3">
+            <Layers className="w-3.5 h-3.5 text-euskara" />
             <span>Pilotuen katalogoa • Errezetak</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+          <h1 className="font-editorial text-3xl sm:text-4xl font-semibold text-ink tracking-tight">
             {uiTexts.katalogoa_title || "Aukeratu edo sortu zure esku-hartze pilotua"}
           </h1>
-          <p className="mt-2 text-slate-600 text-sm sm:text-base leading-relaxed">
+          <p className="mt-2 text-ink-muted text-sm sm:text-base leading-relaxed">
             {activeEragilea ? (
               <span>
-                <strong>{activeEragilea.izena}</strong>: aukeratu beheko pilotua edo sortu zurea zure erronkari (
+                <strong className="text-ink">{activeEragilea.izena}</strong>: aukeratu beheko pilotua edo sortu zurea zure erronkari (
                 <em>&ldquo;{activeEragilea.erronka_nagusia}&rdquo;</em>) aurre egiteko.
               </span>
             ) : (
@@ -803,7 +803,7 @@ export default function PilotuenKatalogoa() {
         <div className="shrink-0">
           <button
             onClick={handleOpenCreateModal}
-            className="w-full sm:w-auto px-5 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm shadow-xs flex items-center justify-center gap-2 transition cursor-pointer"
+            className="w-full sm:w-auto px-5 py-3 rounded-xl bg-euskara hover:opacity-95 text-white font-bold text-sm flex items-center justify-center gap-2 transition cursor-pointer"
           >
             <PlusCircle className="w-4 h-4" />
             <span>Sortu pilotu berria</span>
@@ -812,23 +812,23 @@ export default function PilotuenKatalogoa() {
       </div>
 
       {/* LATXA KOPILOTUA & AHOLKULARI SOZIOLINGUISTIKOA */}
-      <div className="bg-white rounded-2xl p-6 sm:p-8 text-slate-900 border border-slate-200 border-l-4 border-l-indigo-600 mb-12 relative">
+      <div className="bg-white rounded-2xl p-6 sm:p-8 text-ink border border-line border-l-4 border-l-sea mb-12 relative">
         <div className="relative z-10">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-700 shrink-0">
+              <div className="w-11 h-11 rounded-xl bg-sand border border-line flex items-center justify-center text-sea shrink-0">
                 <Bot className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
+                  <h2 className="font-editorial text-xl sm:text-2xl font-semibold text-ink tracking-tight">
                     Latxa Kopilotua: Aholkulari Soziolinguistikoa
                   </h2>
-                  <span className="px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-800 text-[10px] font-semibold">
+                  <span className="px-2 py-0.5 rounded-md bg-sand border border-line text-sea text-[10px] font-bold">
                     Latxa 70B
                   </span>
                 </div>
-                <p className="text-xs text-slate-600 mt-0.5">
+                <p className="text-xs text-ink-muted mt-0.5">
                   Azaldu zure erronka eta Latxak esku-hartze aproposena eta hipotesi neurgarria proposatuko dizkizu.
                 </p>
               </div>
@@ -837,9 +837,9 @@ export default function PilotuenKatalogoa() {
 
           <form onSubmit={handleAskLatxaCopilot} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+              <label className="block text-xs font-bold text-ink mb-1.5 flex items-center justify-between">
                 <span>Zuen entitatearen egoera edo erronka:</span>
-                <span className="text-[11px] text-slate-500 font-normal">
+                <span className="text-[11px] text-ink-muted font-normal">
                   {activeEragilea ? `${activeEragilea.izena} (${activeEragilea.mota})` : "Entitatea"}
                 </span>
               </label>
@@ -849,12 +849,12 @@ export default function PilotuenKatalogoa() {
                   value={copilotChallenge}
                   onChange={(e) => setCopilotChallenge(e.target.value)}
                   placeholder="Adibidez: Tabernan gaztelaniaz hasten dira bezero gehienak, edo lantaldeak lotsa du euskaraz abiatzeko..."
-                  className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-600 focus:bg-white transition"
+                  className="flex-1 bg-paper border border-line rounded-xl px-4 py-3 text-xs sm:text-sm text-ink placeholder:text-ink-muted/60 focus:outline-hidden focus:ring-2 focus:ring-sea focus:bg-white transition"
                 />
                 <button
                   type="submit"
                   disabled={isCopilotLoading || !copilotChallenge.trim()}
-                  className="px-6 py-3 rounded-xl bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs sm:text-sm shadow-xs transition cursor-pointer flex items-center justify-center gap-2 shrink-0 disabled:opacity-50"
+                  className="px-6 py-3 rounded-xl bg-sea hover:opacity-95 text-white font-bold text-xs sm:text-sm transition cursor-pointer flex items-center justify-center gap-2 shrink-0 disabled:opacity-50"
                 >
                   {isCopilotLoading ? (
                     <>
@@ -1422,26 +1422,26 @@ export default function PilotuenKatalogoa() {
           return (
             <div
               key={pilotu.id}
-              className={`group bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 flex flex-col justify-between shadow-lg transition-all duration-200 hover:-translate-y-1 ${theme.cardBorder}`}
+              className={`group bg-white rounded-2xl border border-line hover:border-sea/40 p-6 sm:p-7 flex flex-col justify-between transition-colors ${theme.cardBorder}`}
             >
               <div>
                 {/* Card Top: Icon & Badge */}
                 <div className="flex items-center justify-between mb-4">
                   <div
-                    className={`w-14 h-14 rounded-2xl bg-gradient-to-tr ${theme.accentGradient} flex items-center justify-center text-white shadow-md shadow-emerald-600/20`}
+                    className={`w-12 h-12 rounded-xl bg-sand border border-line flex items-center justify-center text-sea`}
                   >
-                    <Icon className="w-7 h-7" />
+                    <Icon className="w-6 h-6" />
                   </div>
                   <div className="flex flex-col items-end gap-1.5">
                     <span
-                      className={`px-3 py-1 text-xs font-bold rounded-full border ${theme.badgeColor}`}
+                      className={`px-2.5 py-0.5 text-[11px] font-bold rounded-md border ${theme.badgeColor}`}
                     >
                       {pilotu.mota}
                     </span>
-                    <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full">
+                    <span className="text-[10px] font-bold text-ink-muted bg-paper border border-line px-2 py-0.5 rounded-md tabular-nums">
                       {activeExpCount > 0
-                        ? `🔥 ${activeExpCount} entitatetan martxan`
-                        : "🌱 Prest abiatzeko"}
+                        ? `${activeExpCount} entitatetan martxan`
+                        : "Prest abiatzeko"}
                     </span>
                   </div>
                 </div>

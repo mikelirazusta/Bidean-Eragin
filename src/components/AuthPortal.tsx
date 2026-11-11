@@ -154,52 +154,52 @@ export default function AuthPortal() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50/50 via-slate-50 to-emerald-50/30 flex flex-col justify-center py-8 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-paper flex flex-col justify-center py-8 sm:px-6 lg:px-8">
       {/* Brand & Intro */}
       <div className="sm:mx-auto sm:w-full sm:max-w-lg text-center px-4">
         <BideanLogo size="lg" className="mx-auto mb-3 shadow-xs" />
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+        <h1 className="font-editorial text-4xl font-semibold text-ink tracking-tight">
           {uiTexts.app_title || "Bidean Eragin"}
         </h1>
-        <p className="mt-1 text-sm font-semibold text-emerald-800">
+        <p className="mt-1 text-sm font-semibold text-euskara">
           {uiTexts.app_subtitle || "Portaera-ekonomia eta esperimentazio arina • Bagera"}
         </p>
-        <p className="mt-1.5 text-xs sm:text-sm text-slate-600">
+        <p className="mt-1.5 text-xs sm:text-sm text-ink-muted">
           {uiTexts.auth_intro || "Euskararen erabilera aktibatzeko tresna praktikoa. Jarraitu zure entitatearen aurrerapena 3 urrats errazetan:"}
         </p>
 
         {/* 3-Step Visual Journey Guide */}
-        <div className="mt-4 grid grid-cols-3 gap-2 text-left">
-          <div className="bg-white/90 border border-slate-200/80 rounded-2xl p-2.5 shadow-xs">
-            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-extrabold text-[10px] mb-1">
-              1
+        <div className="mt-5 grid grid-cols-3 gap-2.5 text-left">
+          <div className="bg-white border border-line rounded-xl p-3">
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-md bg-euskara/10 text-euskara font-bold text-[10px] mb-1.5 tabular-nums">
+              01
             </span>
-            <p className="text-[11px] font-extrabold text-slate-900 leading-tight">
+            <p className="text-[11px] font-bold text-ink leading-tight">
               {uiTexts.auth_step1_title || "Hipotesia definitu"}
             </p>
-            <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">
+            <p className="text-[10px] text-ink-muted mt-0.5 leading-snug">
               {uiTexts.auth_step1_desc || "Zure entitateko erronka eta helburua zehaztu."}
             </p>
           </div>
-          <div className="bg-white/90 border border-slate-200/80 rounded-2xl p-2.5 shadow-xs">
-            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-sky-100 text-sky-800 font-extrabold text-[10px] mb-1">
-              2
+          <div className="bg-white border border-line rounded-xl p-3">
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-md bg-sea/10 text-sea font-bold text-[10px] mb-1.5 tabular-nums">
+              02
             </span>
-            <p className="text-[11px] font-extrabold text-slate-900 leading-tight">
+            <p className="text-[11px] font-bold text-ink leading-tight">
               {uiTexts.auth_step2_title || "T0 / T1 / T2 neurtu"}
             </p>
-            <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">
+            <p className="text-[10px] text-ink-muted mt-0.5 leading-snug">
               {uiTexts.auth_step2_desc || "10 minutuko neurketa erraza mugikorrarekin."}
             </p>
           </div>
-          <div className="bg-white/90 border border-slate-200/80 rounded-2xl p-2.5 shadow-xs">
-            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-indigo-100 text-indigo-800 font-extrabold text-[10px] mb-1">
-              3
+          <div className="bg-white border border-line rounded-xl p-3">
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-md bg-sand text-ink font-bold text-[10px] mb-1.5 tabular-nums border border-line">
+              03
             </span>
-            <p className="text-[11px] font-extrabold text-slate-900 leading-tight">
+            <p className="text-[11px] font-bold text-ink leading-tight">
               {uiTexts.auth_step3_title || "Eragina ikusi"}
             </p>
-            <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">
+            <p className="text-[10px] text-ink-muted mt-0.5 leading-snug">
               {uiTexts.auth_step3_desc || "Emaitza errealak modu pribatuan aztertu."}
             </p>
           </div>
@@ -207,10 +207,10 @@ export default function AuthPortal() {
       </div>
 
       <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-lg px-4">
-        <div className="bg-white py-7 px-6 sm:px-10 shadow-xl shadow-slate-200/60 rounded-3xl border border-slate-200/80">
+        <div className="bg-white py-7 px-6 sm:px-10 rounded-2xl border border-line">
           
           {/* Main Role Selector: Entitateak vs Bagera Admin */}
-          <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1.5 rounded-2xl mb-6">
+          <div className="grid grid-cols-2 gap-1.5 bg-sand p-1.5 rounded-xl mb-6 border border-line">
             <button
               type="button"
               onClick={() => {
@@ -220,13 +220,13 @@ export default function AuthPortal() {
                 setActiveTab("login");
                 setErrorMessage("");
               }}
-              className={`py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer ${
+              className={`py-2.5 px-3 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer ${
                 portalRole === "eragilea"
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-white text-ink border border-line shadow-2xs"
+                  : "text-ink-muted hover:text-ink"
               }`}
             >
-              <Building2 className="w-4 h-4 text-emerald-600" />
+              <Building2 className="w-4 h-4 text-euskara" />
               <span>Entitateak / Eragileak</span>
             </button>
 
@@ -239,10 +239,10 @@ export default function AuthPortal() {
                 setLoginPassword("");
                 setErrorMessage("");
               }}
-              className={`py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer ${
+              className={`py-2.5 px-3 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer ${
                 portalRole === "admin"
-                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
-                  : "text-slate-600 hover:text-slate-900"
+                  ? "bg-sea text-white"
+                  : "text-ink-muted hover:text-ink"
               }`}
             >
               <ShieldCheck className="w-4 h-4" />

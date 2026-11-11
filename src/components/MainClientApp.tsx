@@ -33,7 +33,7 @@ function MainContent() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
+    <div className="min-h-screen flex flex-col bg-paper text-ink">
       <Navbar />
 
       <main className="flex-1 pb-24 lg:pb-14">
@@ -45,7 +45,7 @@ function MainContent() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white py-6 mt-auto print:hidden">
+      <footer className="border-t border-line bg-white py-6 mt-auto print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-bold text-slate-800">{uiTexts.app_title || "Bidean Eragin"}</span>
