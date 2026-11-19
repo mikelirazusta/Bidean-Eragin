@@ -15,25 +15,26 @@ export default function BideanLogo({ size = "md", className = "" }: BideanLogoPr
 
   return (
     <div
-      className={`${dims} rounded-xl bg-sea text-white flex items-center justify-center border border-sea/20 shrink-0 ${className}`}
+      className={`${dims} rounded-xl bg-gradient-to-br from-[#144B5E] via-[#103C4C] to-[#0B2A36] text-white flex items-center justify-center border border-sea/25 shadow-2xs shrink-0 ${className}`}
       aria-hidden="true"
     >
       <svg
         viewBox="0 0 32 32"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        className="w-[62%] h-[62%]"
+        className="w-[68%] h-[68%]"
       >
-        <rect x="4" y="18" width="5" height="9" rx="1.5" fill="currentColor" fillOpacity="0.45" />
-        <rect x="12.5" y="12" width="5" height="15" rx="1.5" fill="currentColor" fillOpacity="0.78" />
-        <rect x="21" y="5" width="5" height="22" rx="1.5" fill="#6EE7B7" />
+        <line x1="4.5" y1="26.5" x2="27.5" y2="26.5" stroke="#F7F5F0" strokeOpacity="0.25" strokeWidth="1.2" strokeLinecap="round" />
+        <rect x="6" y="18" width="4.8" height="7.5" rx="1.2" fill="#F7F5F0" fillOpacity="0.4" />
+        <rect x="13.6" y="13.5" width="4.8" height="12" rx="1.2" fill="#F7F5F0" fillOpacity="0.75" />
+        <rect x="21.2" y="8" width="4.8" height="17.5" rx="1.2" fill="#34D399" />
         <path
-          d="M6.5 14L15 8.5L23.5 3.5"
-          stroke="#FFFFFF"
-          strokeWidth="1.9"
+          d="M7.8 14.5C12.2 12.2 17 8.5 23.6 5.2"
+          stroke="#F7F5F0"
+          strokeWidth="1.6"
           strokeLinecap="round"
-          strokeLinejoin="round"
         />
+        <circle cx="23.6" cy="5.2" r="2" fill="#F7F5F0" />
       </svg>
     </div>
   );

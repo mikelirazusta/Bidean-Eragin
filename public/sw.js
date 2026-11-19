@@ -1,7 +1,7 @@
 // Service Worker for Bidean Eragin PWA
 // Provides offline-first caching for static assets, pages, and cached data
 
-const CACHE_NAME = "bidean-eragin-v6";
+const CACHE_NAME = "bidean-eragin-v7";
 const STATIC_ASSETS = [
   "/manifest.json",
   "/tailwind.css",
@@ -9,8 +9,7 @@ const STATIC_ASSETS = [
   "/icons/icon-192x192.png",
   "/icons/icon-512x512.png",
   "/icons/icon-maskable.png",
-  "/favicon.png",
-  "/apple-touch-icon.png",
+  "/icons/apple-touch-icon.png",
 ];
 
 // Install Event: pre-cache static assets

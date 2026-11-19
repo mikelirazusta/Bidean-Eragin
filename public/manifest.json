@@ -6,8 +6,8 @@
   "id": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#059669",
+  "background_color": "#F7F5F0",
+  "theme_color": "#103C4C",
   "orientation": "portrait-primary",
   "categories": ["productivity", "education", "utilities"],
   "icons": [
@@ -39,16 +39,16 @@
   "shortcuts": [
     {
       "name": "Behatzaile Kontagailua",
-      "short_name": "Neurketa",
+      "short_name": "Neurtu",
       "description": "Zuzeneko behaketa eta hizkuntza-kontagailua ireki",
-      "url": "/",
+      "url": "/?tab=behaketa",
       "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
     },
     {
-      "name": "Zentroaren Panela",
+      "name": "Entitatearen Panela",
       "short_name": "Panela",
       "description": "Neurketa eta emaitzen koadroa ikusi",
-      "url": "/",
+      "url": "/?tab=panela",
       "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
     }
   ]
