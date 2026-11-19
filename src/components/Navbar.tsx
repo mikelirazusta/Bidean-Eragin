@@ -76,23 +76,24 @@ export default function Navbar() {
   const isAdmin = currentUser?.role === "admin";
 
   return (
-    <header className="sticky top-0 z-50 bg-paper/95 backdrop-blur-md border-b border-line print:hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+    <>
+    <header className="sticky top-0 z-40 bg-paper/95 backdrop-blur-md border-b border-line print:hidden">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between gap-2 h-15 sm:h-16">
           
           {/* Logo & Brand */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
               onClick={() => setActiveTab(isAdmin && userRole === "admin" ? "admin" : "panela")}
-              className="flex items-center gap-2.5 text-left group transition cursor-pointer"
+              className="flex items-center gap-2 sm:gap-2.5 text-left group transition cursor-pointer min-w-0"
             >
-              <BideanLogo size="md" className="group-hover:scale-105 transition-transform" />
-              <div>
+              <BideanLogo size="md" className="group-hover:scale-105 transition-transform shrink-0" />
+              <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="font-editorial font-semibold text-xl text-ink tracking-tight">
+                  <span className="font-editorial font-semibold text-lg sm:text-xl text-ink tracking-tight truncate">
                     {uiTexts.app_title || "Bidean Eragin"}
                   </span>
-                  <span className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-bold bg-sand text-sea border border-line rounded-md">
+                  <span className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-bold bg-sand text-sea border border-line rounded-md shrink-0">
                     Bagera
                   </span>
                 </div>
@@ -201,8 +202,8 @@ export default function Navbar() {
 
             {/* If regular agent: Display Center & User badge */}
             {!isAdmin && activeEragilea && (
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-sand border border-line text-xs font-bold text-ink max-w-[160px] sm:max-w-[200px] truncate">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <div className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-lg bg-sand border border-line text-xs font-bold text-ink max-w-[110px] sm:max-w-[200px] truncate">
                   {getMotaIcon(activeEragilea.mota)}
                   <span className="truncate">{activeEragilea.izena}</span>
                 </div>
@@ -250,7 +251,7 @@ export default function Navbar() {
                 <div
                   role="dialog"
                   aria-label="Bultzadak eta gogorarazpenak"
-                  className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-lg border border-line p-4 z-50"
+                  className="fixed left-3 right-3 top-16 sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-96 bg-white rounded-2xl shadow-lg border border-line p-4 z-50"
                 >
                   <div className="flex items-center justify-between border-b border-line pb-2 mb-3">
                     <div className="flex items-center gap-2">
@@ -368,51 +369,52 @@ export default function Navbar() {
           </div>
         )}
       </div>
-
-      {/* Mobile Fixed Bottom Navigation Bar (no accidental logout button) */}
-      <nav
-        aria-label="Nabigazio nagusia"
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-paper/95 backdrop-blur-md border-t border-line pt-2 px-2 pb-safe flex items-center justify-around shadow-md"
-      >
-        <button
-          onClick={() => setActiveTab("panela")}
-          className={`flex flex-col items-center gap-0.5 text-[11px] font-medium py-1 px-3 rounded-xl cursor-pointer ${
-            activeTab === "panela" ? "text-sea font-bold bg-sand" : "text-ink-muted"
-          }`}
-        >
-          <LayoutDashboard className="w-5 h-5" />
-          <span>Panela</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("katalogoa")}
-          className={`flex flex-col items-center gap-0.5 text-[11px] font-medium py-1 px-3 rounded-xl cursor-pointer ${
-            activeTab === "katalogoa" ? "text-sea font-bold bg-sand" : "text-ink-muted"
-          }`}
-        >
-          <BookOpen className="w-5 h-5" />
-          <span>Pilotuak</span>
-        </button>
-        <button
-          onClick={() => setActiveTab("behaketa")}
-          className={`flex flex-col items-center gap-0.5 text-[11px] font-bold py-1.5 px-4 rounded-xl bg-euskara text-white shadow-xs cursor-pointer ${
-            activeTab === "behaketa" ? "ring-2 ring-euskara/40" : ""
-          }`}
-        >
-          <Timer className="w-5 h-5" />
-          <span>Neurtu</span>
-        </button>
-        {isAdmin && (
-          <button
-            onClick={() => setActiveTab("admin")}
-            className={`flex flex-col items-center gap-0.5 text-[11px] font-medium py-1 px-3 rounded-xl cursor-pointer ${
-              activeTab === "admin" ? "text-sea font-bold bg-sand" : "text-ink-muted"
-            }`}
-          >
-            <ShieldCheck className="w-5 h-5" />
-            <span>Admin</span>
-          </button>
-        )}
-      </nav>
     </header>
+
+    {/* Mobile Fixed Bottom Navigation Bar (sibling outside <header> so backdrop-blur never traps fixed positioning) */}
+    <nav
+      aria-label="Nabigazio nagusia"
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-paper/95 backdrop-blur-md border-t border-line pt-2 px-2 pb-safe flex items-center justify-around shadow-md print:hidden"
+    >
+      <button
+        onClick={() => setActiveTab("panela")}
+        className={`flex flex-col items-center gap-0.5 text-[11px] font-medium py-1 px-3 rounded-xl cursor-pointer ${
+          activeTab === "panela" ? "text-sea font-bold bg-sand" : "text-ink-muted"
+        }`}
+      >
+        <LayoutDashboard className="w-5 h-5" />
+        <span>Panela</span>
+      </button>
+      <button
+        onClick={() => setActiveTab("katalogoa")}
+        className={`flex flex-col items-center gap-0.5 text-[11px] font-medium py-1 px-3 rounded-xl cursor-pointer ${
+          activeTab === "katalogoa" ? "text-sea font-bold bg-sand" : "text-ink-muted"
+        }`}
+      >
+        <BookOpen className="w-5 h-5" />
+        <span>Pilotuak</span>
+      </button>
+      <button
+        onClick={() => setActiveTab("behaketa")}
+        className={`flex flex-col items-center gap-0.5 text-[11px] font-bold py-1.5 px-4 rounded-xl bg-euskara text-white shadow-xs cursor-pointer ${
+          activeTab === "behaketa" ? "ring-2 ring-euskara/40" : ""
+        }`}
+      >
+        <Timer className="w-5 h-5" />
+        <span>Neurtu</span>
+      </button>
+      {isAdmin && (
+        <button
+          onClick={() => setActiveTab("admin")}
+          className={`flex flex-col items-center gap-0.5 text-[11px] font-medium py-1 px-3 rounded-xl cursor-pointer ${
+            activeTab === "admin" ? "text-sea font-bold bg-sand" : "text-ink-muted"
+          }`}
+        >
+          <ShieldCheck className="w-5 h-5" />
+          <span>Admin</span>
+        </button>
+      )}
+    </nav>
+    </>
   );
 }

@@ -903,7 +903,7 @@ export default function PilotuenKatalogoa() {
                 className={`p-4 sm:p-5 rounded-xl border ${
                   !copilotResult.bat_dator
                     ? "bg-amber-50/80 border-amber-200 text-amber-950"
-                    : "bg-euskara/10/80 border-euskara/25 text-emerald-950"
+                    : "bg-euskara/10 border-euskara/25 text-emerald-950"
                 }`}
               >
                 <div className="flex items-start gap-3">
@@ -1098,7 +1098,7 @@ export default function PilotuenKatalogoa() {
                 (copilotChoice === "berria" || !copilotResult.bat_dator) &&
                 copilotResult.pilotu_berria && (
                   <div className="bg-euskara/5 border border-euskara/25 rounded-xl p-5 text-ink">
-                    <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-euskara/25/80">
+                    <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-euskara/25">
                       <span className="text-[11px] font-bold uppercase tracking-wider text-euskara flex items-center gap-1.5">
                         <Layers className="w-3.5 h-3.5 text-euskara" />
                         Zuretzat diseinatutako pilotu berria
@@ -1205,7 +1205,7 @@ export default function PilotuenKatalogoa() {
                         </p>
 
                         {copilotResult.pilotu_berria.urratsak && copilotResult.pilotu_berria.urratsak.length > 0 && (
-                          <div className="bg-white p-3.5 rounded-lg border border-euskara/25/80 mb-2">
+                          <div className="bg-white p-3.5 rounded-lg border border-euskara/25 mb-2">
                             <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted block mb-1">
                               Esku-hartzearen urratsak:
                             </span>
@@ -1289,7 +1289,7 @@ export default function PilotuenKatalogoa() {
                           onChange={(e) =>
                             setCopilotResult((prev) => (prev ? { ...prev, hipotesia: e.target.value } : prev))
                           }
-                          className="w-full bg-sea/10/40 border border-sea/40 rounded-xl p-3 text-sm font-bold text-ink"
+                          className="w-full bg-sea/10 border border-sea/40 rounded-xl p-3 text-sm font-bold text-ink"
                         />
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
@@ -1808,7 +1808,7 @@ export default function PilotuenKatalogoa() {
                 </div>
 
                 {uploadProgressText && (
-                  <div className="p-2.5 rounded-xl bg-euskara/15/80 border border-euskara/40 text-euskara text-xs font-bold flex items-center gap-2 animate-pulse">
+                  <div className="p-2.5 rounded-xl bg-euskara/15 border border-euskara/40 text-euskara text-xs font-bold flex items-center gap-2 animate-pulse">
                     <span>⏳ {uploadProgressText}</span>
                   </div>
                 )}
@@ -1936,7 +1936,7 @@ export default function PilotuenKatalogoa() {
                 : "";
 
               return (
-                <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-euskara/10/70 border border-euskara/25 space-y-4">
+                <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-euskara/10 border border-euskara/25 space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                       <h4 className="text-sm font-extrabold text-ink flex items-center gap-2">
@@ -1967,7 +1967,7 @@ export default function PilotuenKatalogoa() {
                   </div>
 
                   {uploadProgressText && (
-                    <div className="p-2.5 rounded-xl bg-euskara/15/80 border border-euskara/40 text-euskara text-xs font-bold flex items-center gap-2 animate-pulse">
+                    <div className="p-2.5 rounded-xl bg-euskara/15 border border-euskara/40 text-euskara text-xs font-bold flex items-center gap-2 animate-pulse">
                       <span>⏳ {uploadProgressText}</span>
                     </div>
                   )}
@@ -2089,7 +2089,7 @@ export default function PilotuenKatalogoa() {
                       {activePreviewMat && (
                         <div className="mt-3 rounded-2xl overflow-hidden border border-line bg-slate-900">
                           <div className="px-4 py-2 bg-slate-800 text-white text-xs font-bold flex items-center justify-between">
-                            <span> � Aurreikuspena: {activePreviewMat.izena}</span>
+                            <span>  Aurreikuspena: {activePreviewMat.izena}</span>
                             <button
                               type="button"
                               onClick={() => setPreviewMaterialId(null)}
@@ -2249,7 +2249,7 @@ export default function PilotuenKatalogoa() {
 
       {/* DELETE PILOT CONFIRMATION MODAL */}
       {pilotToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-lg border border-line">
             <div className="flex items-start gap-3 mb-4">
               <div className="p-2.5 bg-terracotta/15 text-terracotta rounded-2xl shrink-0">

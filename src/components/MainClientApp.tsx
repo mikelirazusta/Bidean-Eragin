@@ -36,7 +36,7 @@ function MainContent() {
     <div className="min-h-screen flex flex-col bg-paper text-ink">
       <Navbar />
 
-      <main className="flex-1 pb-24 lg:pb-14">
+      <main className="flex-1 pb-8 lg:pb-14">
         {activeTab === "panela" && <ZentroDashboard />}
         {activeTab === "katalogoa" && <PilotuenKatalogoa />}
         {activeTab === "behaketa" && <BehatzaileKontagailua />}
@@ -44,7 +44,7 @@ function MainContent() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-line bg-white py-6 mt-auto print:hidden">
+      <footer className="border-t border-line bg-white pt-6 pb-24 lg:pb-6 mt-auto print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-ink-muted">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-bold text-ink">{uiTexts.app_title || "Bidean Eragin"}</span>

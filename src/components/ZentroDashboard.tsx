@@ -564,7 +564,7 @@ export default function ZentroDashboard() {
       {/* GUIDED NEXT STEP BANNER (Always clear what to do next) */}
       <div className="mb-6 bg-white text-ink rounded-2xl p-5 sm:p-6 border border-line border-l-4 border-l-emerald-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 print:hidden">
         <div className="flex items-start gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-euskara/10 border border-euskara/25/80 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-euskara/10 border border-euskara/25 flex items-center justify-center shrink-0">
             <Compass className="w-5 h-5 text-euskara" />
           </div>
           <div>
@@ -633,7 +633,7 @@ export default function ZentroDashboard() {
 
       {/* ACTIVE NUDGE BANNER (if any unread nudge exists) */}
       {activeNudges.length > 0 && (
-        <div className="mb-8 bg-euskara/10/90 rounded-2xl p-5 sm:p-6 text-emerald-950 border border-euskara/25 relative overflow-hidden print:hidden">
+        <div className="mb-8 bg-euskara/10 rounded-2xl p-5 sm:p-6 text-emerald-950 border border-euskara/25 relative overflow-hidden print:hidden">
           <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3.5">
               <div className="w-10 h-10 rounded-xl bg-euskara/15 border border-euskara/25 flex items-center justify-center shrink-0">
@@ -964,7 +964,7 @@ export default function ZentroDashboard() {
               </div>
             </div>
 
-            {/* � Pribatutasuna komunitatean Card */}
+            {/*  Pribatutasuna komunitatean Card */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-line">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-2.5">
@@ -1003,8 +1003,8 @@ export default function ZentroDashboard() {
               <div className="mt-4 pt-3 border-t border-line flex items-center justify-between gap-2">
                 <span className="text-[11px] font-bold text-ink-muted">
                   {Number(activeEragilea.publikoa) === 1
-                    ? " � Izen publikoa aktibatuta"
-                    : " � Modu anonimoa aktibatuta (#ID)"}
+                    ? "  Izen publikoa aktibatuta"
+                    : "  Modu anonimoa aktibatuta (#ID)"}
                 </span>
                 <button
                   type="button"
@@ -1382,7 +1382,7 @@ export default function ZentroDashboard() {
 
                     {/* Hurrengo urratsak */}
                     {latxaAnalysisResult.hurrengo_urratsak && latxaAnalysisResult.hurrengo_urratsak.length > 0 && (
-                      <div className="bg-sea/5 border border-sea/25/80 rounded-xl p-3.5">
+                      <div className="bg-sea/5 border border-sea/25 rounded-xl p-3.5">
                         <span className="font-bold text-sea block mb-1.5 uppercase tracking-wider text-[10px]">
                           Lantaldearentzako hurrengo urrats gomendatuak
                         </span>
@@ -1521,7 +1521,7 @@ export default function ZentroDashboard() {
                 </div>
 
                 {/* T2 Card */}
-                <div className="bg-euskara/10/70 rounded-2xl p-4 border border-emerald-100 flex flex-col justify-between">
+                <div className="bg-euskara/10 rounded-2xl p-4 border border-emerald-100 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-xs font-bold text-emerald-950">T2 (sendotua)</span>
@@ -1549,7 +1549,7 @@ export default function ZentroDashboard() {
                         setObservationConfig({ expId: currentExp.id, phase: "T2" });
                         setActiveTab("behaketa");
                       }}
-                      className="mt-3 text-[11px] font-bold text-euskara hover:text-euskara bg-white hover:bg-euskara/15/80 py-1.5 px-3 rounded-xl border border-euskara/25 transition text-center cursor-pointer inline-flex items-center justify-center gap-1"
+                      className="mt-3 text-[11px] font-bold text-euskara hover:text-euskara bg-white hover:bg-euskara/15 py-1.5 px-3 rounded-xl border border-euskara/25 transition text-center cursor-pointer inline-flex items-center justify-center gap-1"
                     >
                       <Plus className="w-3 h-3" />
                       <span>{t2Stats ? "Gehitu T2 saioa" : "Hasi T2 saioa"}</span>
@@ -1752,7 +1752,7 @@ export default function ZentroDashboard() {
                   required
                   value={quickHipotesia}
                   onChange={(e) => setQuickHipotesia(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-euskara/40 bg-euskara/10/40 text-xs sm:text-sm font-semibold text-ink focus:ring-2 focus:ring-euskara/40 focus:outline-hidden"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-euskara/40 bg-euskara/10 text-xs sm:text-sm font-semibold text-ink focus:ring-2 focus:ring-euskara/40 focus:outline-hidden"
                 />
               </div>
 
@@ -1888,7 +1888,7 @@ export default function ZentroDashboard() {
 
       {/* EDIT SINGLE MEASUREMENT SESSION MODAL */}
       {neurketaToEdit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-lg border border-line">
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-line">
               <div className="flex items-center gap-2.5">
@@ -2046,7 +2046,7 @@ export default function ZentroDashboard() {
 
       {/* DELETE HYPOTHESIS CONFIRMATION MODAL */}
       {expToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-lg border border-line">
             <div className="flex items-start gap-3 mb-4">
               <div className="p-2.5 bg-terracotta/15 text-terracotta rounded-2xl shrink-0">
@@ -2093,7 +2093,7 @@ export default function ZentroDashboard() {
 
       {/* DELETE MEASUREMENT SESSION CONFIRMATION MODAL */}
       {neurketaToDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-lg border border-line">
             <div className="flex items-start gap-3 mb-4">
               <div className="p-2.5 bg-terracotta/15 text-terracotta rounded-2xl shrink-0">

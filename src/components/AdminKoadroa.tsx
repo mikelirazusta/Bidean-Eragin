@@ -1012,7 +1012,7 @@ export default function AdminKoadroa() {
             </div>
 
             {communityReport.gomendio_estrategikoak && communityReport.gomendio_estrategikoak.length > 0 && (
-              <div className="bg-sea/5 border border-sea/25/80 rounded-xl p-4">
+              <div className="bg-sea/5 border border-sea/25 rounded-xl p-4">
                 <span className="font-bold text-sea block mb-1.5 uppercase tracking-wider text-[10px]">
                   Koordinazio-taldearentzako gomendio estrategikoak
                 </span>
@@ -1311,8 +1311,146 @@ export default function AdminKoadroa() {
           </div>
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
+        {/* Mobile Cards View (< md) */}
+        <div className="md:hidden space-y-3">
+          {filteredEragileak.map((eragile) => {
+            const exp = esperimentuak.find((e) => e.eragile_id === eragile.id);
+            const expNeurketak = neurketak.filter((n) => n.esperimentu_id === exp?.id);
+            const t0List = expNeurketak.filter((n) => n.unea === "T0");
+            const t1List = expNeurketak.filter((n) => n.unea === "T1");
+            const t2List = expNeurketak.filter((n) => n.unea === "T2");
+            const calcPct = (list: typeof expNeurketak) => {
+              const eusk = list.reduce((s, n) => s + (n.euskaraz_count || 0), 0);
+              const tot = list.reduce((s, n) => s + (n.euskaraz_count || 0) + (n.erdaraz_count || 0) + (n.elebi_count || 0), 0);
+              return tot > 0 ? Math.round((eusk / tot) * 100) : null;
+            };
+            const t0Pct = calcPct(t0List);
+            const t1Pct = calcPct(t1List);
+            const t2Pct = calcPct(t2List);
+
+            return (
+              <div key={eragile.id} className="rounded-xl border border-line bg-paper/50 p-3.5 space-y-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="font-bold text-ink text-sm truncate">
+                      {isPresentationMode
+                        ? getPublicEragileLabel(eragile, "eragilea")
+                        : eragile.izena}
+                    </div>
+                    <div className="text-[11px] text-ink-muted capitalize mt-0.5">
+                      {eragile.mota}
+                    </div>
+                  </div>
+                  {!isPresentationMode && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateEragilea({
+                          id: eragile.id,
+                          publikoa: Number(eragile.publikoa) === 1 ? 0 : 1,
+                        })
+                      }
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold inline-flex items-center gap-1 shrink-0 cursor-pointer ${
+                        Number(eragile.publikoa) === 1
+                          ? "bg-euskara/15 text-euskara"
+                          : "bg-sand text-ink-muted"
+                      }`}
+                    >
+                      {Number(eragile.publikoa) === 1 ? (
+                        <>
+                          <Unlock className="w-2.5 h-2.5" />
+                          <span>Publikoa</span>
+                        </>
+                      ) : (
+                        <>
+                          <Lock className="w-2.5 h-2.5" />
+                          <span>Pribatua</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+
+                {exp ? (
+                  <div className="bg-white rounded-lg p-2.5 border border-line">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-xs text-ink font-medium leading-snug">
+                        &ldquo;{exp.hipotesia}&rdquo;
+                      </p>
+                      {!isPresentationMode && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDeleteError(null);
+                            setExpToDelete({ exp, eragileIzena: eragile.izena });
+                          }}
+                          className="p-1 rounded-md text-ink-muted hover:text-terracotta hover:bg-terracotta/10 shrink-0 cursor-pointer"
+                          title="Ezabatu hipotesia"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="text-[10px] text-ink-muted mt-1">
+                      Gunea: {exp.gunea} • Xedea: +%{exp.xede_portzentajea}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-ink-muted">{eragile.erronka_nagusia}</p>
+                )}
+
+                <div className="grid grid-cols-3 gap-1.5 text-center text-[11px]">
+                  <div className="bg-white rounded-lg py-1.5 border border-line">
+                    <span className="text-ink-muted block text-[10px]">T0</span>
+                    <span className="font-bold text-ink tabular-nums">{t0Pct !== null ? `%${t0Pct}` : "—"}</span>
+                  </div>
+                  <div className="bg-white rounded-lg py-1.5 border border-line">
+                    <span className="text-ink-muted block text-[10px]">T1</span>
+                    <span className="font-bold text-euskara tabular-nums">{t1Pct !== null ? `%${t1Pct}` : "—"}</span>
+                  </div>
+                  <div className="bg-white rounded-lg py-1.5 border border-line">
+                    <span className="text-ink-muted block text-[10px]">T2</span>
+                    <span className="font-bold text-sea tabular-nums">{t2Pct !== null ? `%${t2Pct}` : "—"}</span>
+                  </div>
+                </div>
+
+                {!isPresentationMode && (
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-line">
+                    <button
+                      type="button"
+                      onClick={() => openEditEragileModal(eragile, exp)}
+                      className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-sand text-ink border border-line font-semibold text-xs inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      <span>Editatu</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCurrentEragileId(eragile.id);
+                        setActiveTab("panela");
+                      }}
+                      className="px-2.5 py-1.5 rounded-lg bg-sea/10 text-sea font-semibold text-xs inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>Panela</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEragileToDelete(eragile)}
+                      className="ml-auto px-2.5 py-1.5 rounded-lg bg-terracotta/10 text-terracotta border border-terracotta/25 font-semibold text-xs inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Ezabatu</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Desktop Table (>= md) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-line text-ink-muted font-semibold uppercase text-[10px]">
@@ -1970,7 +2108,7 @@ export default function AdminKoadroa() {
 
       {/* EDIT SINGLE MEASUREMENT SESSION MODAL */}
       {neurketaToEdit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-lg border border-line">
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-line">
               <div className="flex items-center gap-2.5">
@@ -2144,7 +2282,7 @@ export default function AdminKoadroa() {
 
       {/* DELETE SINGLE CENTER / STAND CONFIRMATION MODAL */}
       {eragileToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-lg border border-line">
             <div className="flex items-start gap-3 mb-4">
               <div className="p-2.5 bg-terracotta/15 text-terracotta rounded-2xl shrink-0">
@@ -2193,7 +2331,7 @@ export default function AdminKoadroa() {
 
       {/* DELETE SINGLE HYPOTHESIS / EXPERIMENT CONFIRMATION MODAL */}
       {expToDelete && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-lg border border-line">
             <div className="flex items-start gap-3 mb-4">
               <div className="p-2.5 bg-terracotta/15 text-terracotta rounded-2xl shrink-0">
@@ -2245,7 +2383,7 @@ export default function AdminKoadroa() {
 
       {/* RESET ALL TEST DATA CONFIRMATION MODAL */}
       {showResetConfirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-lg border border-line">
             <div className="flex items-start gap-3 mb-4">
               <div className="p-2.5 bg-terracotta/15 text-terracotta rounded-2xl shrink-0">
@@ -2285,7 +2423,7 @@ export default function AdminKoadroa() {
 
       {/* SEND CUSTOM BULTZADA MODAL */}
       {selectedEragileForNudge && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-lg border border-line animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-2xl bg-sea/15 text-sea flex items-center justify-center">
@@ -2536,7 +2674,7 @@ export default function AdminKoadroa() {
                   rows={3}
                   value={postHipotesia}
                   onChange={(e) => setPostHipotesia(e.target.value)}
-                  className="w-full border border-euskara/40 bg-euskara/10/30 rounded-xl px-3.5 py-2 text-xs font-semibold text-ink focus:ring-2 focus:ring-euskara/40 focus:outline-hidden"
+                  className="w-full border border-euskara/40 bg-euskara/10 rounded-xl px-3.5 py-2 text-xs font-semibold text-ink focus:ring-2 focus:ring-euskara/40 focus:outline-hidden"
                 />
               </div>
 
@@ -2681,7 +2819,7 @@ export default function AdminKoadroa() {
 
       {/* Admin Account & Password Update Modal */}
       {showAdminAccountModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-lg border border-line animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2.5">

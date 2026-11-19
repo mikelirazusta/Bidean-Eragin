@@ -460,7 +460,7 @@ export default function AuthPortal() {
                             }}
                             className={`p-2.5 rounded-xl border text-left cursor-pointer transition flex items-start gap-2.5 ${
                               isSelected
-                                ? "bg-euskara/10/70 border-emerald-500 shadow-xs ring-1 ring-emerald-500"
+                                ? "bg-euskara/10 border-emerald-500 shadow-xs ring-1 ring-emerald-500"
                                 : "bg-white border-line hover:bg-paper"
                             }`}
                           >

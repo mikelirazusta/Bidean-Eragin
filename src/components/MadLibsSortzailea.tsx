@@ -250,7 +250,7 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
             </div>
 
             {latxaAdvice && (
-              <div className="mb-3 p-2.5 rounded-xl bg-sea/10/80 border border-sea/25/80 text-xs text-sea flex items-start gap-2">
+              <div className="mb-3 p-2.5 rounded-xl bg-sea/10 border border-sea/25 text-xs text-sea flex items-start gap-2">
                 <Lightbulb className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                 <span>
                   <strong>Latxaren aholkua:</strong> {latxaAdvice}

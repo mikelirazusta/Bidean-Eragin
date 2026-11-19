@@ -497,13 +497,13 @@ export default function BehatzaileKontagailua() {
       {/* Stand & Observer Selector Card */}
       <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white rounded-2xl p-5 shadow-lg mb-4 border border-slate-700/80">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2 border-b border-slate-700/60">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
             <Store className="w-4 h-4 text-emerald-400" />
             <span className="text-xs font-bold text-slate-200 uppercase tracking-wider">
               {isAdmin ? "Gaurko neurketaren entitatea eta behatzailea" : "Zure entitateko neurketa-gunea"}
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
             {/* Sound Toggle */}
             <button
               type="button"
@@ -531,7 +531,7 @@ export default function BehatzaileKontagailua() {
               title="Modu diskretua: pantaila ilundu eta kolore deigarriak ezkutatu inork ez nabaritzeko"
             >
               {stealthMode ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-              <span>{stealthMode ? "Modu diskretua ON" : " �️ Modu diskretua"}</span>
+              <span>{stealthMode ? "Modu diskretua ON" : "  Modu diskretua"}</span>
             </button>
 
             {isAdmin && (
@@ -577,7 +577,7 @@ export default function BehatzaileKontagailua() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                � {isAdmin ? "Zein entitatetan zaude?" : "Zure entitatea eta behaketa-gunea:"}
+                 {isAdmin ? "Zein entitatetan zaude?" : "Zure entitatea eta behaketa-gunea:"}
               </label>
               {isAdmin ? (
                 <select
@@ -607,7 +607,7 @@ export default function BehatzaileKontagailua() {
 
             <div>
               <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                � Behatzailearen izena (nor ari da neurtzen?):
+                 Behatzailearen izena (nor ari da neurtzen?):
               </label>
               <input
                 type="text"
@@ -698,7 +698,7 @@ export default function BehatzaileKontagailua() {
                 : "bg-sand/70 border-line text-ink"
             }`}
           >
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
               <TrendingUp className="w-4 h-4 text-euskara shrink-0" />
               <span>
                 {existingPhaseCount > 0 ? (
@@ -827,7 +827,7 @@ export default function BehatzaileKontagailua() {
               </span>
               {wakeLockActive && (
                 <span className="px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[9px] font-bold">
-                  � Pantaila esna
+                   Pantaila esna
                 </span>
               )}
             </div>
@@ -928,7 +928,7 @@ export default function BehatzaileKontagailua() {
       {stealthMode ? (
         <div className="bg-slate-950 text-ink-muted rounded-2xl p-5 border border-slate-800 shadow-lg space-y-3 select-none">
           <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
               <EyeOff className="w-4 h-4 text-ink-muted" />
               <span className="text-xs font-bold text-ink-muted">
                 Ohar-bloka / zerrenda (modu ezkutua)
@@ -1201,12 +1201,12 @@ export default function BehatzaileKontagailua() {
 
         <div className="flex flex-wrap gap-1.5 mb-2.5">
           {[
-            " � Lehen hitza euskaraz",
-            " � Euskaratik erdarara pasa dira",
-            " � Herritarrak euskaraz jarraitu du",
-            " � Harrera ona dinamikari",
+            "  Lehen hitza euskaraz",
+            "  Euskaratik erdarara pasa dira",
+            "  Herritarrak euskaraz jarraitu du",
+            "  Harrera ona dinamikari",
             "⏳ Jende ilara / presa",
-            " � Taldeko elkarrizketa",
+            "  Taldeko elkarrizketa",
           ].map((tag) => {
             const isAdded = notes.includes(tag);
             return (
@@ -1258,7 +1258,7 @@ export default function BehatzaileKontagailua() {
           Behatzailearen gida praktikoa (modu diskretua):
         </h4>
         <ul className="list-disc pl-4 space-y-1 mt-1 text-ink">
-          <li>Sakatu goiko <strong>&ldquo; �️ Modu diskretua&rdquo;</strong> botoia pantaila iluntzeko eta kolore deigarriak ezkutatzeko.</li>
+          <li>Sakatu goiko <strong>&ldquo;  Modu diskretua&rdquo;</strong> botoia pantaila iluntzeko eta kolore deigarriak ezkutatzeko.</li>
           <li>Soinua lehenetsita <strong>isilik</strong> dago, eta aukera bakoitzak <strong>bibrazio-eredu ezberdina</strong> du pantailari begiratu gabe zenbatu ahal izateko.</li>
           <li>Nahastu bazara, erabili <strong>-1</strong> botoia edo desegin botoia edozein unetan.</li>
           <li>Amaitutakoan, sakatu <strong>&ldquo;Gorde&rdquo;</strong> emaitzak erregistratzeko.</li>
@@ -1267,7 +1267,7 @@ export default function BehatzaileKontagailua() {
 
       {/* SAVE MEASUREMENT MODAL */}
       {showSaveModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-lg border border-line animate-in fade-in zoom-in-95 duration-150 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-2xl bg-euskara/15 text-euskara flex items-center justify-center">
@@ -1286,15 +1286,15 @@ export default function BehatzaileKontagailua() {
             {/* Results Recap */}
             <div className="bg-paper rounded-2xl p-4 border border-line mb-4 grid grid-cols-3 gap-2 text-center">
               <div>
-                <span className="text-[10px] font-bold text-ink-muted block"> � Euskaraz</span>
+                <span className="text-[10px] font-bold text-ink-muted block">  Euskaraz</span>
                 <span className="text-xl font-black text-euskara">{euskarazCount}</span>
               </div>
               <div>
-                <span className="text-[10px] font-bold text-ink-muted block"> � Erdaraz</span>
+                <span className="text-[10px] font-bold text-ink-muted block">  Erdaraz</span>
                 <span className="text-xl font-black text-terracotta">{erdarazCount}</span>
               </div>
               <div>
-                <span className="text-[10px] font-bold text-ink-muted block"> � Elebi</span>
+                <span className="text-[10px] font-bold text-ink-muted block">  Elebi</span>
                 <span className="text-xl font-black text-amber-600">{elebiCount}</span>
               </div>
             </div>
@@ -1366,7 +1366,7 @@ export default function BehatzaileKontagailua() {
 
             {!isOnline && (
               <div className="bg-amber-50 text-amber-900 border border-amber-200 rounded-2xl p-3 mb-4 text-xs flex items-center gap-2">
-                <span className="text-base"> �</span>
+                <span className="text-base"> </span>
                 <span className="leading-snug">
                   Lineaz kanpo zaude. Neurketa gailuan gordeko da seguru, eta internetera konektatzean automatikoki sinkronizatuko da.
                 </span>
@@ -1500,7 +1500,7 @@ export default function BehatzaileKontagailua() {
                   required
                   value={newStandHipotesia}
                   onChange={(e) => setNewStandHipotesia(e.target.value)}
-                  className="w-full border border-euskara/40 bg-euskara/10/30 rounded-xl px-3 py-2 text-xs font-semibold text-ink focus:ring-2 focus:ring-euskara/40 focus:outline-hidden"
+                  className="w-full border border-euskara/40 bg-euskara/10 rounded-xl px-3 py-2 text-xs font-semibold text-ink focus:ring-2 focus:ring-euskara/40 focus:outline-hidden"
                 />
               </div>
 
