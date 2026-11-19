@@ -225,6 +225,23 @@ export default function AdminKoadroa() {
   const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
   const [isResettingAll, setIsResettingAll] = useState(false);
 
+  React.useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (expToDelete) setExpToDelete(null);
+      else if (eragileToDelete) setEragileToDelete(null);
+      else if (showResetConfirmModal) setShowResetConfirmModal(false);
+      else if (neurketaToEdit) setNeurketaToEdit(null);
+      else if (eragileToEdit) setEragileToEdit(null);
+      else if (showAdminAccountModal) setShowAdminAccountModal(false);
+      else if (showTextEditorModal) setShowTextEditorModal(false);
+      else if (selectedEragileForNudge) setSelectedEragileForNudge(null);
+      else if (showNewPostModal) setShowNewPostModal(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  });
+
   // Edit Center & Hypothesis Modal state
   const [eragileToEdit, setEragileToEdit] = useState<Eragilea | null>(null);
   const [editIzena, setEditIzena] = useState("");
@@ -956,16 +973,16 @@ export default function AdminKoadroa() {
         </div>
 
         {communityReportError && (
-          <div className="mt-3 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs">
+          <div className="mt-3 p-3 rounded-xl bg-terracotta/10 border border-terracotta/25 text-terracotta text-xs">
             {communityReportError}
           </div>
         )}
 
         {communityReport && (
-          <div className="mt-4 pt-4 border-t border-slate-200 space-y-4 animate-in fade-in duration-300">
+          <div className="mt-4 pt-4 border-t border-line space-y-4 animate-in fade-in duration-300">
             {communityReport.ondorio_orokorra && (
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs sm:text-sm text-slate-800 leading-relaxed">
-                <span className="font-bold text-indigo-800 block mb-1 uppercase tracking-wider text-[10px]">
+              <div className="bg-paper border border-line rounded-xl p-4 text-xs sm:text-sm text-ink leading-relaxed">
+                <span className="font-bold text-sea block mb-1 uppercase tracking-wider text-[10px]">
                   Balorazio soziolinguistiko orokorra
                 </span>
                 <p>{communityReport.ondorio_orokorra}</p>
@@ -974,35 +991,35 @@ export default function AdminKoadroa() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
               {communityReport.joera_kualitatiboak && (
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                <div className="bg-paper border border-line rounded-xl p-4">
                   <span className="font-bold text-amber-800 block mb-1 uppercase tracking-wider text-[10px] flex items-center gap-1">
                     <Lightbulb className="w-3.5 h-3.5 text-amber-600" />
                     Behatzaileen oharretan atzemandako joerak
                   </span>
-                  <p className="text-slate-700 leading-relaxed">{communityReport.joera_kualitatiboak}</p>
+                  <p className="text-ink leading-relaxed">{communityReport.joera_kualitatiboak}</p>
                 </div>
               )}
 
               {communityReport.arrakasta_gakoak && (
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-                  <span className="font-bold text-emerald-800 block mb-1 uppercase tracking-wider text-[10px] flex items-center gap-1">
-                    <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+                <div className="bg-paper border border-line rounded-xl p-4">
+                  <span className="font-bold text-euskara block mb-1 uppercase tracking-wider text-[10px] flex items-center gap-1">
+                    <TrendingUp className="w-3.5 h-3.5 text-euskara" />
                     Arrakasta-faktoreak eta praktika onenak
                   </span>
-                  <p className="text-slate-700 leading-relaxed">{communityReport.arrakasta_gakoak}</p>
+                  <p className="text-ink leading-relaxed">{communityReport.arrakasta_gakoak}</p>
                 </div>
               )}
             </div>
 
             {communityReport.gomendio_estrategikoak && communityReport.gomendio_estrategikoak.length > 0 && (
-              <div className="bg-indigo-50/70 border border-indigo-200/80 rounded-xl p-4">
-                <span className="font-bold text-indigo-900 block mb-1.5 uppercase tracking-wider text-[10px]">
+              <div className="bg-sea/5 border border-sea/25/80 rounded-xl p-4">
+                <span className="font-bold text-sea block mb-1.5 uppercase tracking-wider text-[10px]">
                   Koordinazio-taldearentzako gomendio estrategikoak
                 </span>
-                <ul className="space-y-1 text-xs text-slate-800">
+                <ul className="space-y-1 text-xs text-ink">
                   {communityReport.gomendio_estrategikoak.map((g, i) => (
                     <li key={i} className="flex items-start gap-1.5">
-                      <span className="text-indigo-700 font-bold">•</span>
+                      <span className="text-sea font-bold">•</span>
                       <span>{g}</span>
                     </li>
                   ))}
@@ -1011,10 +1028,10 @@ export default function AdminKoadroa() {
             )}
 
             {communityReport.txosten_exekutiboa && (
-              <div className="bg-slate-50/70 text-slate-900 rounded-xl p-4 border border-slate-200">
-                <div className="flex items-center justify-between gap-2 mb-2 pb-1.5 border-b border-slate-200/80">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1">
-                    <FileText className="w-3.5 h-3.5 text-indigo-600" />
+              <div className="bg-paper/70 text-ink rounded-xl p-4 border border-line">
+                <div className="flex items-center justify-between gap-2 mb-2 pb-1.5 border-b border-line">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted flex items-center gap-1">
+                    <FileText className="w-3.5 h-3.5 text-sea" />
                     Txosten Exekutiboa (Bazkide, Udal edo Prentsarako)
                   </span>
                   <button
@@ -1026,12 +1043,12 @@ export default function AdminKoadroa() {
                         setTimeout(() => setCopiedCommunityReport(false), 2500);
                       } catch {}
                     }}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-bold transition cursor-pointer print:hidden"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white hover:bg-sand text-ink border border-line text-[10px] font-bold transition cursor-pointer print:hidden"
                   >
                     {copiedCommunityReport ? (
                       <>
-                        <Check className="w-3 h-3 text-emerald-600" />
-                        <span className="text-emerald-700">Kopiatuta!</span>
+                        <Check className="w-3 h-3 text-euskara" />
+                        <span className="text-euskara">Kopiatuta!</span>
                       </>
                     ) : (
                       <>
@@ -1041,7 +1058,7 @@ export default function AdminKoadroa() {
                     )}
                   </button>
                 </div>
-                <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-line font-medium">
+                <p className="text-xs text-ink leading-relaxed whitespace-pre-line font-medium">
                   {communityReport.txosten_exekutiboa}
                 </p>
               </div>
@@ -1218,32 +1235,32 @@ export default function AdminKoadroa() {
             return (
               <div
                 key={pilotu.id}
-                className="bg-slate-50 rounded-2xl p-4 border border-slate-200/90 flex flex-col justify-between"
+                className="bg-paper rounded-2xl p-4 border border-line/90 flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-slate-900">
+                    <span className="text-xs font-bold text-ink">
                       {pilotu.izena}
                     </span>
-                    <span className="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-bold">
+                    <span className="px-2 py-0.5 rounded-full bg-slate-200 text-ink text-[10px] font-bold">
                       {pilotExpsCount} esperimentu
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 line-clamp-2">
+                  <p className="text-xs text-ink-muted line-clamp-2">
                     {pilotu.azpititulua}
                   </p>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-slate-200 flex items-center justify-between">
-                  <span className="text-[11px] text-slate-400 font-semibold">
+                <div className="mt-4 pt-3 border-t border-line flex items-center justify-between">
+                  <span className="text-[11px] text-ink-muted font-semibold">
                     Batez besteko efektua:
                   </span>
                   {pilotAvgGrowth !== null ? (
-                    <span className="text-xs font-black text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-lg">
+                    <span className="text-xs font-black text-euskara bg-euskara/15 px-2 py-0.5 rounded-lg">
                       {pilotAvgGrowth >= 0 ? `+${pilotAvgGrowth}%` : `${pilotAvgGrowth}%`} igoera
                     </span>
                   ) : (
-                    <span className="text-[11px] font-bold text-slate-500 bg-slate-200/80 px-2 py-0.5 rounded-lg">
+                    <span className="text-[11px] font-bold text-ink-muted bg-slate-200/80 px-2 py-0.5 rounded-lg">
                       Datuen zain (T0/T1)
                     </span>
                   )}
@@ -1255,35 +1272,35 @@ export default function AdminKoadroa() {
       </div>
 
       {/* Centers Table */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm">
+      <div className="bg-white rounded-2xl p-6 sm:p-8 border border-line shadow-sm">
         
         {/* Table Filters */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
           <div>
-            <h3 className="font-bold text-slate-900 text-base sm:text-lg">
+            <h3 className="font-bold text-ink text-base sm:text-lg">
               Parte hartzen duten entitateak ({filteredEragileak.length})
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-ink-muted mt-0.5">
               Egin klik entitatearen panelean sartzeko edo hipotesia eta emaitzak ikusteko.
             </p>
           </div>
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <div className="relative w-full sm:w-64">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+              <Search className="w-4 h-4 text-ink-muted absolute left-3 top-2.5" />
               <input
                 type="text"
                 placeholder="Bilatu entitatea..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-line text-xs focus:ring-2 focus:ring-sea/40 focus:outline-hidden"
               />
             </div>
 
             <select
               value={filterMota}
               onChange={(e) => setFilterMota(e.target.value)}
-              className="px-3 py-1.5 rounded-xl border border-slate-300 text-xs text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden bg-white"
+              className="px-3 py-1.5 rounded-xl border border-line text-xs text-ink focus:ring-2 focus:ring-sea/40 focus:outline-hidden bg-white"
             >
               <option value="all">Mota guztiak</option>
               <option value="ikastetxea">Ikastetxeak</option>
@@ -1298,7 +1315,7 @@ export default function AdminKoadroa() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-slate-200 text-slate-400 font-semibold uppercase text-[10px]">
+              <tr className="border-b border-line text-ink-muted font-semibold uppercase text-[10px]">
                 <th className="pb-3">Entitatea</th>
                 <th className="pb-3">Mota</th>
                 <th className="pb-3">Hipotesia eta erronka</th>
@@ -1326,10 +1343,10 @@ export default function AdminKoadroa() {
                 const t2Pct = calcPhasePct(t2List);
 
                 return (
-                  <tr key={eragile.id} className="hover:bg-slate-50/70 transition">
+                  <tr key={eragile.id} className="hover:bg-paper/70 transition">
                     <td className="py-3.5 pr-3">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-bold text-slate-900 text-sm">
+                        <span className="font-bold text-ink text-sm">
                           {isPresentationMode
                             ? getPublicEragileLabel(eragile, "eragilea")
                             : eragile.izena}
@@ -1345,8 +1362,8 @@ export default function AdminKoadroa() {
                             }
                             className={`px-2 py-0.5 rounded-full text-[10px] font-bold inline-flex items-center gap-1 transition cursor-pointer ${
                               Number(eragile.publikoa) === 1
-                                ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
-                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                ? "bg-euskara/15 text-euskara hover:bg-emerald-200"
+                                : "bg-sand text-ink-muted hover:bg-slate-200"
                             }`}
                             title="Sakatu pribatutasun-egoera aldatzeko (izen publikoa vs kode anonimoa #ID)"
                           >
@@ -1365,14 +1382,14 @@ export default function AdminKoadroa() {
                         )}
                       </div>
                       {!isPresentationMode && (
-                        <span className="text-[11px] text-slate-400 block mt-0.5">
+                        <span className="text-[11px] text-ink-muted block mt-0.5">
                           {eragile.arduraduna}
                           {eragile.email ? ` (${eragile.email})` : ""}
                         </span>
                       )}
                     </td>
 
-                    <td className="py-3.5 pr-3 capitalize font-medium text-slate-600">
+                    <td className="py-3.5 pr-3 capitalize font-medium text-ink-muted">
                       {eragile.mota}
                     </td>
 
@@ -1382,12 +1399,12 @@ export default function AdminKoadroa() {
                           <div className="min-w-0">
                             <p
                               onClick={() => !isPresentationMode && openEditEragileModal(eragile, exp)}
-                              className="text-slate-800 font-medium line-clamp-2 cursor-pointer hover:text-indigo-700 transition"
+                              className="text-ink font-medium line-clamp-2 cursor-pointer hover:text-sea transition"
                               title="Egin klik hipotesia editatzeko"
                             >
                               &ldquo;{exp.hipotesia}&rdquo;
                             </p>
-                            <span className="text-[10px] text-slate-400 block mt-0.5 truncate">
+                            <span className="text-[10px] text-ink-muted block mt-0.5 truncate">
                               Gunea: {exp.gunea} • Xedea: +%{exp.xede_portzentajea}
                             </span>
                           </div>
@@ -1398,7 +1415,7 @@ export default function AdminKoadroa() {
                                 setDeleteError(null);
                                 setExpToDelete({ exp, eragileIzena: eragile.izena });
                               }}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition shrink-0 cursor-pointer"
+                              className="p-1.5 rounded-lg text-ink-muted hover:text-terracotta hover:bg-terracotta/10 transition shrink-0 cursor-pointer"
                               title="Ezabatu hipotesia (entitatea mantenduta)"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -1406,20 +1423,20 @@ export default function AdminKoadroa() {
                           )}
                         </div>
                       ) : (
-                        <span className="text-slate-500 truncate block">{eragile.erronka_nagusia}</span>
+                        <span className="text-ink-muted truncate block">{eragile.erronka_nagusia}</span>
                       )}
                     </td>
 
                     <td className="py-3.5 pr-3">
                       {exp ? (
                         <div>
-                          <span className="font-semibold text-slate-800 block">
+                          <span className="font-semibold text-ink block">
                             {exp.pilotu_izena || "Euskaraz barra-barra txapak"}
                           </span>
                           <span
                             className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold mt-0.5 ${
                               exp.estatusa === "Amaituta"
-                                ? "bg-emerald-100 text-emerald-800"
+                                ? "bg-euskara/15 text-euskara"
                                 : exp.estatusa === "T2_zain"
                                 ? "bg-amber-100 text-amber-800"
                                 : "bg-sky-100 text-sky-800"
@@ -1429,7 +1446,7 @@ export default function AdminKoadroa() {
                           </span>
                         </div>
                       ) : (
-                        <span className="text-slate-400 italic">Esperimentu gabe</span>
+                        <span className="text-ink-muted italic">Esperimentu gabe</span>
                       )}
                     </td>
 
@@ -1437,7 +1454,7 @@ export default function AdminKoadroa() {
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span
                           className={`px-2 py-0.5 rounded-md flex items-center justify-center font-bold text-[10px] ${
-                            t0List.length > 0 ? "bg-sky-600 text-white" : "bg-slate-100 text-slate-400"
+                            t0List.length > 0 ? "bg-sky-600 text-white" : "bg-sand text-ink-muted"
                           }`}
                           title={t0List.length > 0 ? `T0: ${t0List.length} saio (%${t0Pct} euskara)` : "T0 egin gabe"}
                         >
@@ -1445,7 +1462,7 @@ export default function AdminKoadroa() {
                         </span>
                         <span
                           className={`px-2 py-0.5 rounded-md flex items-center justify-center font-bold text-[10px] ${
-                            t1List.length > 0 ? "bg-amber-600 text-white" : "bg-slate-100 text-slate-400"
+                            t1List.length > 0 ? "bg-amber-600 text-white" : "bg-sand text-ink-muted"
                           }`}
                           title={t1List.length > 0 ? `T1: ${t1List.length} saio (%${t1Pct} euskara)` : "T1 egin gabe"}
                         >
@@ -1453,7 +1470,7 @@ export default function AdminKoadroa() {
                         </span>
                         <span
                           className={`px-2 py-0.5 rounded-md flex items-center justify-center font-bold text-[10px] ${
-                            t2List.length > 0 ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-400"
+                            t2List.length > 0 ? "bg-euskara text-white" : "bg-sand text-ink-muted"
                           }`}
                           title={t2List.length > 0 ? `T2: ${t2List.length} saio (%${t2Pct} euskara)` : "T2 egin gabe"}
                         >
@@ -1468,7 +1485,7 @@ export default function AdminKoadroa() {
                           setCurrentEragileId(eragile.id);
                           setActiveTab("panela");
                         }}
-                        className="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 font-semibold text-xs inline-flex items-center gap-1 transition cursor-pointer"
+                        className="px-2.5 py-1.5 rounded-lg border border-line hover:bg-sand text-ink font-semibold text-xs inline-flex items-center gap-1 transition cursor-pointer"
                         title="Ikusi entitatearen panela"
                       >
                         <Eye className="w-3.5 h-3.5 text-sky-600" />
@@ -1485,10 +1502,10 @@ export default function AdminKoadroa() {
                                 setCurrentEragileId(eragile.id);
                                 setActiveTab("behaketa");
                               }}
-                              className="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs inline-flex items-center gap-1 transition cursor-pointer"
+                              className="px-2.5 py-1.5 rounded-lg bg-euskara/10 hover:bg-euskara/15 text-euskara border border-euskara/25 font-bold text-xs inline-flex items-center gap-1 transition cursor-pointer"
                               title="Neurtu entitate hau zuzenean"
                             >
-                              <Timer className="w-3.5 h-3.5 text-emerald-600" />
+                              <Timer className="w-3.5 h-3.5 text-euskara" />
                               <span>Neurtu ({t0List.length === 0 ? "T0" : t1List.length === 0 ? "T1" : "T2"})</span>
                             </button>
                           )}
@@ -1511,7 +1528,7 @@ export default function AdminKoadroa() {
                               setSelectedEragileForNudge(eragile);
                               setNudgeTitle(
                                 hasT1 && !hasT2
-                                  ? "T2 neurketa egiteko unea iritsi da! 🚀"
+                                  ? "T2 neurketa egiteko unea iritsi da! "
                                   : hasT0 && !hasT1
                                   ? "Nola doa pilotua? Egin T1 neurketa!"
                                   : "Kaixo! Zure esperimentuaren berri jakin nahi dugu"
@@ -1522,7 +1539,7 @@ export default function AdminKoadroa() {
                                   : `Kaixo ${eragile.izena}, animatu hurrengo urratsa egitera eta kontatu nola doan prozesua!`
                               );
                             }}
-                            className="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-xs inline-flex items-center gap-1 transition cursor-pointer"
+                            className="px-2.5 py-1.5 rounded-lg bg-sea/10 hover:bg-sea/15 text-sea font-semibold text-xs inline-flex items-center gap-1 transition cursor-pointer"
                             title="Bidali bultzada-mezu bat"
                           >
                             <MessageSquare className="w-3.5 h-3.5" />
@@ -1531,10 +1548,10 @@ export default function AdminKoadroa() {
 
                           <button
                             onClick={() => setEragileToDelete(eragile)}
-                            className="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold text-xs inline-flex items-center gap-1 transition cursor-pointer"
+                            className="px-2.5 py-1.5 rounded-lg bg-terracotta/10 hover:bg-terracotta/15 text-terracotta border border-terracotta/25 font-semibold text-xs inline-flex items-center gap-1 transition cursor-pointer"
                             title="Ezabatu entitatea eta bere proba-neurketa guztiak"
                           >
-                            <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                            <Trash2 className="w-3.5 h-3.5 text-terracotta" />
                             <span>Ezabatu</span>
                           </button>
                         </>
@@ -1547,18 +1564,18 @@ export default function AdminKoadroa() {
           </table>
 
           {filteredEragileak.length === 0 && (
-            <div className="text-center py-12 px-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 my-4">
-              <Store className="w-10 h-10 text-slate-400 mx-auto mb-2" />
-              <h4 className="font-bold text-slate-800 text-sm mb-1">
+            <div className="text-center py-12 px-4 bg-paper rounded-2xl border-2 border-dashed border-line my-4">
+              <Store className="w-10 h-10 text-ink-muted mx-auto mb-2" />
+              <h4 className="font-bold text-ink text-sm mb-1">
                 Oraindik ez dago entitaterik zerrendan
               </h4>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4">
+              <p className="text-xs text-ink-muted max-w-sm mx-auto mb-4">
                 Sortu hemen entitate berri bat segundo gutxitan eta hasi zuzenean neurtzen:
               </p>
               <button
                 type="button"
                 onClick={() => setShowNewPostModal(true)}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm inline-flex items-center gap-2 cursor-pointer"
+                className="px-4 py-2 bg-euskara hover:opacity-95 text-white font-bold text-xs rounded-xl shadow-sm inline-flex items-center gap-2 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>+ Gehitu 1. entitatea</span>
@@ -1570,13 +1587,13 @@ export default function AdminKoadroa() {
 
       {/* Individual Measurements / Sessions Management Table (Hidden in Presentation Mode) */}
       {!isPresentationMode && neurketak.length > 0 && (
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm mt-8">
+        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-line shadow-sm mt-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
             <div>
-              <h3 className="font-bold text-slate-900 text-base sm:text-lg">
+              <h3 className="font-bold text-ink text-base sm:text-lg">
                 Egindako neurketen saioak ({neurketak.length})
               </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-ink-muted mt-0.5">
                 Neurketa baten datuak (behatzailea, fasea, zenbakiak edo oharrak) zuzendu edo proba-saio bat ezabatu dezakezu hemen.
               </p>
             </div>
@@ -1585,7 +1602,7 @@ export default function AdminKoadroa() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-200 text-slate-400 font-semibold uppercase text-[10px]">
+                <tr className="border-b border-line text-ink-muted font-semibold uppercase text-[10px]">
                   <th className="pb-3">Entitatea</th>
                   <th className="pb-3">Fasea</th>
                   <th className="pb-3">Behatzailea</th>
@@ -1602,8 +1619,8 @@ export default function AdminKoadroa() {
                   const pct = tot > 0 ? Math.round(((n.euskaraz_count || 0) / tot) * 100) : 0;
 
                   return (
-                    <tr key={n.id} className="hover:bg-slate-50/70 transition">
-                      <td className="py-3 pr-3 font-bold text-slate-900">
+                    <tr key={n.id} className="hover:bg-paper/70 transition">
+                      <td className="py-3 pr-3 font-bold text-ink">
                         {eragilea?.izena || "Entitatea"}
                       </td>
                       <td className="py-3 pr-3">
@@ -1613,26 +1630,26 @@ export default function AdminKoadroa() {
                               ? "bg-sky-100 text-sky-800"
                               : n.unea === "T1"
                               ? "bg-amber-100 text-amber-800"
-                              : "bg-emerald-100 text-emerald-800"
+                              : "bg-euskara/15 text-euskara"
                           }`}
                         >
                           {n.unea}
                         </span>
                       </td>
-                      <td className="py-3 pr-3 text-slate-600 font-medium">
-                        {n.behatzailea || <span className="text-slate-400 italic">Izendatu gabe</span>}
+                      <td className="py-3 pr-3 text-ink-muted font-medium">
+                        {n.behatzailea || <span className="text-ink-muted italic">Izendatu gabe</span>}
                       </td>
                       <td className="py-3 pr-3">
-                        <span className="font-bold text-emerald-700">{n.euskaraz_count} eusk</span>
+                        <span className="font-bold text-euskara">{n.euskaraz_count} eusk</span>
                         {" / "}
-                        <span className="text-rose-600 font-semibold">{n.erdaraz_count} erd</span>
+                        <span className="text-terracotta font-semibold">{n.erdaraz_count} erd</span>
                         {" / "}
                         <span className="text-amber-600 font-semibold">{n.elebi_count} elebi</span>
-                        <span className="ml-2 px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-bold text-[10px]">
+                        <span className="ml-2 px-1.5 py-0.5 rounded bg-sand text-ink font-bold text-[10px]">
                           %{pct}
                         </span>
                       </td>
-                      <td className="py-3 pr-3 text-slate-500">
+                      <td className="py-3 pr-3 text-ink-muted">
                         {new Date(n.data_ordu).toLocaleString("eu-ES", {
                           day: "2-digit",
                           month: "2-digit",
@@ -1653,9 +1670,9 @@ export default function AdminKoadroa() {
                           type="button"
                           disabled={neurketaDeletingId === n.id}
                           onClick={() => handleDeleteSingleNeurketa(n.id)}
-                          className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold text-[11px] inline-flex items-center gap-1 transition cursor-pointer disabled:opacity-50"
+                          className="px-2.5 py-1 rounded-lg bg-terracotta/10 hover:bg-terracotta/15 text-terracotta border border-terracotta/25 font-semibold text-[11px] inline-flex items-center gap-1 transition cursor-pointer disabled:opacity-50"
                         >
-                          <Trash2 className="w-3 h-3 text-rose-600" />
+                          <Trash2 className="w-3 h-3 text-terracotta" />
                           <span>{neurketaDeletingId === n.id ? "Ezabatzen..." : "Ezabatu saioa"}</span>
                         </button>
                       </td>
@@ -1671,17 +1688,17 @@ export default function AdminKoadroa() {
       {/* EDIT CENTER & HYPOTHESIS MODAL */}
       {eragileToEdit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl border border-slate-200 my-8 max-h-[92vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-5 pb-3 border-b border-slate-100">
+          <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-2xl w-full shadow-lg border border-line my-8 max-h-[92vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-5 pb-3 border-b border-line">
               <div className="flex items-center gap-2.5">
                 <div className="p-2.5 bg-amber-100 text-amber-800 rounded-2xl">
                   <Pencil className="w-5 h-5 text-amber-600" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900 text-base sm:text-lg">
+                  <h3 className="font-bold text-ink text-base sm:text-lg">
                     Entitatea eta hipotesia editatu
                   </h3>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-ink-muted">
                     Zuzendu entitatearen datuak, sarbide-kredentzialak eta hipotesia
                   </p>
                 </div>
@@ -1689,7 +1706,7 @@ export default function AdminKoadroa() {
               <button
                 type="button"
                 onClick={() => setEragileToEdit(null)}
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+                className="text-ink-muted hover:text-ink-muted p-1.5 rounded-lg hover:bg-sand transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1697,15 +1714,15 @@ export default function AdminKoadroa() {
 
             <form onSubmit={handleSaveEditEragileAndExp} className="space-y-5">
               {/* Section 1: Entitatearen datuak */}
-              <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 space-y-3">
-                <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                  <Store className="w-3.5 h-3.5 text-slate-600" />
+              <div className="bg-paper rounded-2xl p-4 border border-line space-y-3">
+                <h4 className="text-xs font-extrabold uppercase tracking-wider text-ink-muted flex items-center gap-1.5">
+                  <Store className="w-3.5 h-3.5 text-ink-muted" />
                   <span>1. Entitatearen datuak eta sarbidea</span>
                 </h4>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                    <label className="block text-xs font-bold text-ink mb-1">
                       Entitatearen izena *
                     </label>
                     <input
@@ -1713,18 +1730,18 @@ export default function AdminKoadroa() {
                       required
                       value={editIzena}
                       onChange={(e) => setEditIzena(e.target.value)}
-                      className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                      className="w-full border border-line bg-white rounded-xl px-3 py-2 text-xs font-medium text-ink focus:ring-2 focus:ring-sea/40 focus:outline-hidden"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                    <label className="block text-xs font-bold text-ink mb-1">
                       Mota
                     </label>
                     <select
                       value={editMota}
                       onChange={(e) => setEditMota(e.target.value)}
-                      className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                      className="w-full border border-line bg-white rounded-xl px-3 py-2 text-xs font-medium text-ink focus:ring-2 focus:ring-sea/40 focus:outline-hidden"
                     >
                       <option value="merkataritza">Merkataritza / zerbitzua</option>
                       <option value="ikastetxea">Ikastetxea</option>
@@ -1736,33 +1753,33 @@ export default function AdminKoadroa() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                    <label className="block text-xs font-bold text-ink mb-1">
                       Arduraduna
                     </label>
                     <input
                       type="text"
                       value={editArduraduna}
                       onChange={(e) => setEditArduraduna(e.target.value)}
-                      className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                      className="w-full border border-line bg-white rounded-xl px-3 py-2 text-xs font-medium text-ink focus:ring-2 focus:ring-sea/40 focus:outline-hidden"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                    <label className="block text-xs font-bold text-ink mb-1">
                       Erronka nagusia
                     </label>
                     <input
                       type="text"
                       value={editErronka}
                       onChange={(e) => setEditErronka(e.target.value)}
-                      className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                      className="w-full border border-line bg-white rounded-xl px-3 py-2 text-xs font-medium text-ink focus:ring-2 focus:ring-sea/40 focus:outline-hidden"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                    <label className="block text-xs font-bold text-ink mb-1">
                       Helbide elektronikoa (entitateak saioa hasteko)
                     </label>
                     <input
@@ -1770,12 +1787,12 @@ export default function AdminKoadroa() {
                       value={editEmail}
                       onChange={(e) => setEditEmail(e.target.value)}
                       placeholder="Adib.: entitatea@gmail.com"
-                      className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                      className="w-full border border-line bg-white rounded-xl px-3 py-2 text-xs font-medium text-ink focus:ring-2 focus:ring-sea/40 focus:outline-hidden"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                    <label className="block text-xs font-bold text-ink mb-1">
                       Pasahitz berria (utzi hutsik ez aldatzeko)
                     </label>
                     <input
@@ -1783,17 +1800,17 @@ export default function AdminKoadroa() {
                       value={editPassword}
                       onChange={(e) => setEditPassword(e.target.value)}
                       placeholder="Adib.: bidean123"
-                      className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                      className="w-full border border-line bg-white rounded-xl px-3 py-2 text-xs font-medium text-ink focus:ring-2 focus:ring-sea/40 focus:outline-hidden"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Section 2: Esperimentua eta hipotesia */}
-              <div className="bg-emerald-50/50 rounded-2xl p-4 border border-emerald-200 space-y-3">
+              <div className="bg-euskara/5 rounded-2xl p-4 border border-euskara/25 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h4 className="text-xs font-extrabold uppercase tracking-wider text-emerald-900 flex items-center gap-1.5">
-                    <FlaskConical className="w-3.5 h-3.5 text-emerald-600" />
+                  <h4 className="text-xs font-extrabold uppercase tracking-wider text-euskara flex items-center gap-1.5">
+                    <FlaskConical className="w-3.5 h-3.5 text-euskara" />
                     <span>2. Hipotesia eta esperimentuaren xehetasunak (aukerakoa)</span>
                   </h4>
                   <div className="flex flex-wrap items-center gap-2">
@@ -1803,9 +1820,9 @@ export default function AdminKoadroa() {
                         const generated = `Gure ustez, ${editTaldea || "entitateko kideek"} ${editPertsonak || "herritarrekin eta bezeroekin"}, ${editGunea || "harrera edo gune nagusian"} esku-hartze pilotua aktibatuta, euskararen erabilera %${editXedePct} igoko da.`;
                         setEditHipotesia(generated);
                       }}
-                      className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 bg-white px-2.5 py-1 rounded-lg border border-emerald-200 shadow-2xs transition cursor-pointer"
+                      className="text-[11px] font-bold text-euskara hover:text-euskara bg-white px-2.5 py-1 rounded-lg border border-euskara/25 shadow-2xs transition cursor-pointer"
                     >
-                      ✨ Sortu esaldia azpiko eremuekin
+                      Sortu esaldia azpiko eremuekin
                     </button>
                     {editExpId && eragileToEdit && (
                       <button
@@ -1817,7 +1834,7 @@ export default function AdminKoadroa() {
                             setExpToDelete({ exp: targetExp, eragileIzena: eragileToEdit.izena });
                           }
                         }}
-                        className="text-[11px] font-bold text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-2.5 py-1 rounded-lg border border-rose-200 transition cursor-pointer inline-flex items-center gap-1"
+                        className="text-[11px] font-bold text-terracotta hover:text-terracotta bg-terracotta/10 hover:bg-terracotta/15 px-2.5 py-1 rounded-lg border border-terracotta/25 transition cursor-pointer inline-flex items-center gap-1"
                         title="Ezabatu entitate honen hipotesia eta neurketak"
                       >
                         <Trash2 className="w-3 h-3" />
@@ -1828,7 +1845,7 @@ export default function AdminKoadroa() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-800 mb-1">
+                  <label className="block text-xs font-bold text-ink mb-1">
                     Hipotesia (utzi hutsik oraindik esperimenturik ez badu)
                   </label>
                   <textarea
@@ -1836,13 +1853,13 @@ export default function AdminKoadroa() {
                     value={editHipotesia}
                     onChange={(e) => setEditHipotesia(e.target.value)}
                     placeholder="Idatzi hemen entitate honetarako adostutako hipotesia..."
-                    className="w-full border border-emerald-300 bg-white rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                    className="w-full border border-euskara/40 bg-white rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-ink focus:ring-2 focus:ring-euskara/40 focus:outline-hidden"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    <label className="block text-[11px] font-bold text-ink mb-1">
                       Nork (taldea)
                     </label>
                     <input
@@ -1850,11 +1867,11 @@ export default function AdminKoadroa() {
                       value={editTaldea}
                       onChange={(e) => setEditTaldea(e.target.value)}
                       placeholder="Adib.: Entitateko kideek"
-                      className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs text-slate-900"
+                      className="w-full border border-line bg-white rounded-xl px-3 py-2 text-xs text-ink"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    <label className="block text-[11px] font-bold text-ink mb-1">
                       Norekin (pertsonak)
                     </label>
                     <input
@@ -1862,11 +1879,11 @@ export default function AdminKoadroa() {
                       value={editPertsonak}
                       onChange={(e) => setEditPertsonak(e.target.value)}
                       placeholder="Adib.: Herritarrekin"
-                      className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs text-slate-900"
+                      className="w-full border border-line bg-white rounded-xl px-3 py-2 text-xs text-ink"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    <label className="block text-[11px] font-bold text-ink mb-1">
                       Non (gunea)
                     </label>
                     <input
@@ -1874,14 +1891,14 @@ export default function AdminKoadroa() {
                       value={editGunea}
                       onChange={(e) => setEditGunea(e.target.value)}
                       placeholder="Adib.: Harrera-gunean"
-                      className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs text-slate-900"
+                      className="w-full border border-line bg-white rounded-xl px-3 py-2 text-xs text-ink"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    <label className="block text-[11px] font-bold text-ink mb-1">
                       Xede-igoera (%):
                     </label>
                     <input
@@ -1890,18 +1907,18 @@ export default function AdminKoadroa() {
                       max={100}
                       value={editXedePct}
                       onChange={(e) => setEditXedePct(Number(e.target.value))}
-                      className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs font-bold text-emerald-700"
+                      className="w-full border border-line bg-white rounded-xl px-3 py-2 text-xs font-bold text-euskara"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    <label className="block text-[11px] font-bold text-ink mb-1">
                       Pilotua:
                     </label>
                     <select
                       value={editPilotuId}
                       onChange={(e) => setEditPilotuId(e.target.value)}
-                      className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs text-slate-900"
+                      className="w-full border border-line bg-white rounded-xl px-3 py-2 text-xs text-ink"
                     >
                       {pilotuak.map((p) => (
                         <option key={p.id} value={p.id}>
@@ -1912,13 +1929,13 @@ export default function AdminKoadroa() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    <label className="block text-[11px] font-bold text-ink mb-1">
                       Fasea / estatusa:
                     </label>
                     <select
                       value={editEstatusa}
                       onChange={(e) => setEditEstatusa(e.target.value)}
-                      className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs text-slate-900"
+                      className="w-full border border-line bg-white rounded-xl px-3 py-2 text-xs text-ink"
                     >
                       <option value="T0_zain">T0 zain</option>
                       <option value="T1_zain">T1 zain</option>
@@ -1929,18 +1946,18 @@ export default function AdminKoadroa() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-line">
                 <button
                   type="button"
                   onClick={() => setEragileToEdit(null)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                  className="px-4 py-2 text-xs font-semibold text-ink-muted hover:bg-sand rounded-xl transition cursor-pointer"
                 >
                   Utzi
                 </button>
                 <button
                   type="submit"
                   disabled={isSavingEdit || !editIzena.trim()}
-                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2.5 bg-sea hover:opacity-95 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   <Save className="w-3.5 h-3.5" />
                   <span>{isSavingEdit ? "Gordetzen..." : "Gorde aldaketak"}</span>
@@ -1954,17 +1971,17 @@ export default function AdminKoadroa() {
       {/* EDIT SINGLE MEASUREMENT SESSION MODAL */}
       {neurketaToEdit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-200">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-lg border border-line">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-line">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 bg-amber-100 text-amber-800 rounded-xl">
                   <Pencil className="w-4 h-4 text-amber-600" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900 text-base">
+                  <h3 className="font-bold text-ink text-base">
                     Neurketa-saioa editatu
                   </h3>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-ink-muted">
                     Zuzendu entitatea, fasea, behatzailea edo elkarrizketa kopuruak
                   </p>
                 </div>
@@ -1972,7 +1989,7 @@ export default function AdminKoadroa() {
               <button
                 type="button"
                 onClick={() => setNeurketaToEdit(null)}
-                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+                className="text-ink-muted hover:text-ink-muted p-1 rounded-lg hover:bg-sand transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1980,7 +1997,7 @@ export default function AdminKoadroa() {
 
             <form onSubmit={handleSaveEditNeurketa} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-ink mb-1">
                   Entitatea (eragilea)
                 </label>
                 <select
@@ -1991,7 +2008,7 @@ export default function AdminKoadroa() {
                     const matchingExp = esperimentuak.find((ex) => ex.eragile_id === nextEragileId);
                     setEditNeuExpId(matchingExp?.id || "");
                   }}
-                  className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  className="w-full border border-line rounded-xl px-3 py-2 text-xs font-bold text-ink bg-paper focus:bg-white focus:ring-2 focus:ring-sea/40 focus:outline-hidden"
                 >
                   {eragileak.map((er) => (
                     <option key={er.id} value={er.id}>
@@ -2001,13 +2018,13 @@ export default function AdminKoadroa() {
                 </select>
                 {esperimentuak.filter((ex) => ex.eragile_id === editNeuEragileId).length > 1 && (
                   <div className="mt-2">
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                    <label className="block text-[11px] font-bold text-ink-muted mb-1">
                       Esperimentua / gunea
                     </label>
                     <select
                       value={editNeuExpId}
                       onChange={(e) => setEditNeuExpId(e.target.value)}
-                      className="w-full border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-900"
+                      className="w-full border border-line rounded-xl px-3 py-1.5 text-xs font-semibold text-ink"
                     >
                       {esperimentuak
                         .filter((ex) => ex.eragile_id === editNeuEragileId)
@@ -2023,13 +2040,13 @@ export default function AdminKoadroa() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-ink mb-1">
                     Fasea (T0 / T1 / T2)
                   </label>
                   <select
                     value={editNeuUnea}
                     onChange={(e) => setEditNeuUnea(e.target.value as "T0" | "T1" | "T2")}
-                    className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900"
+                    className="w-full border border-line rounded-xl px-3 py-2 text-xs font-bold text-ink"
                   >
                     <option value="T0">T0 (hasierako neurketa)</option>
                     <option value="T1">T1 (tarteko neurketa)</option>
@@ -2038,21 +2055,21 @@ export default function AdminKoadroa() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-ink mb-1">
                     Behatzailea
                   </label>
                   <input
                     type="text"
                     value={editNeuBehatzailea}
                     onChange={(e) => setEditNeuBehatzailea(e.target.value)}
-                    className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900"
+                    className="w-full border border-line rounded-xl px-3 py-2 text-xs text-ink"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-2.5">
-                <div className="bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
-                  <label className="block text-[10px] font-extrabold uppercase text-emerald-800 mb-1">
+                <div className="bg-euskara/10 p-2.5 rounded-xl border border-euskara/25">
+                  <label className="block text-[10px] font-extrabold uppercase text-euskara mb-1">
                     Euskaraz
                   </label>
                   <input
@@ -2060,12 +2077,12 @@ export default function AdminKoadroa() {
                     min={0}
                     value={editNeuEusk}
                     onChange={(e) => setEditNeuEusk(Math.max(0, Number(e.target.value)))}
-                    className="w-full bg-white border border-emerald-300 rounded-lg px-2.5 py-1.5 text-sm font-black text-emerald-800"
+                    className="w-full bg-white border border-euskara/40 rounded-lg px-2.5 py-1.5 text-sm font-black text-euskara"
                   />
                 </div>
 
-                <div className="bg-rose-50 p-2.5 rounded-xl border border-rose-200">
-                  <label className="block text-[10px] font-extrabold uppercase text-rose-800 mb-1">
+                <div className="bg-terracotta/10 p-2.5 rounded-xl border border-terracotta/25">
+                  <label className="block text-[10px] font-extrabold uppercase text-terracotta mb-1">
                     Erdaraz
                   </label>
                   <input
@@ -2073,7 +2090,7 @@ export default function AdminKoadroa() {
                     min={0}
                     value={editNeuErd}
                     onChange={(e) => setEditNeuErd(Math.max(0, Number(e.target.value)))}
-                    className="w-full bg-white border border-rose-300 rounded-lg px-2.5 py-1.5 text-sm font-black text-rose-800"
+                    className="w-full bg-white border border-terracotta/40 rounded-lg px-2.5 py-1.5 text-sm font-black text-terracotta"
                   />
                 </div>
 
@@ -2092,29 +2109,29 @@ export default function AdminKoadroa() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-ink mb-1">
                   Oharrak
                 </label>
                 <textarea
                   rows={2}
                   value={editNeuOharrak}
                   onChange={(e) => setEditNeuOharrak(e.target.value)}
-                  className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900"
+                  className="w-full border border-line rounded-xl px-3 py-2 text-xs text-ink"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-line">
                 <button
                   type="button"
                   onClick={() => setNeurketaToEdit(null)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                  className="px-4 py-2 text-xs font-semibold text-ink-muted hover:bg-sand rounded-xl transition cursor-pointer"
                 >
                   Utzi
                 </button>
                 <button
                   type="submit"
                   disabled={isSavingNeurketaEdit}
-                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2.5 bg-sea hover:opacity-95 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   <Save className="w-3.5 h-3.5" />
                   <span>{isSavingNeurketaEdit ? "Gordetzen..." : "Gorde saioa"}</span>
@@ -2128,35 +2145,35 @@ export default function AdminKoadroa() {
       {/* DELETE SINGLE CENTER / STAND CONFIRMATION MODAL */}
       {eragileToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-200">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-lg border border-line">
             <div className="flex items-start gap-3 mb-4">
-              <div className="p-2.5 bg-rose-100 text-rose-700 rounded-2xl shrink-0">
-                <AlertTriangle className="w-5 h-5 text-rose-600" />
+              <div className="p-2.5 bg-terracotta/15 text-terracotta rounded-2xl shrink-0">
+                <AlertTriangle className="w-5 h-5 text-terracotta" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 text-base">
+                <h3 className="font-bold text-ink text-base">
                   Entitatea ezabatu?
                 </h3>
-                <p className="text-xs text-slate-600 mt-1">
+                <p className="text-xs text-ink-muted mt-1">
                   Ziur zaude <strong>{eragileToDelete.izena}</strong> eta hari lotutako esperimentu zein neurketa guztiak ezabatu nahi dituzula?
                 </p>
               </div>
             </div>
 
             {deleteError && (
-              <p className="text-xs font-semibold text-rose-600 mb-3 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2">
+              <p className="text-xs font-semibold text-terracotta mb-3 bg-terracotta/10 border border-terracotta/25 rounded-xl px-3 py-2">
                 {deleteError}
               </p>
             )}
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-line">
               <button
                 type="button"
                 onClick={() => {
                   setDeleteError(null);
                   setEragileToDelete(null);
                 }}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold text-ink-muted hover:bg-sand rounded-xl transition cursor-pointer"
               >
                 Utzi
               </button>
@@ -2164,7 +2181,7 @@ export default function AdminKoadroa() {
                 type="button"
                 disabled={isDeletingEragile}
                 onClick={handleConfirmDeleteEragilea}
-                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                className="px-5 py-2.5 bg-terracotta hover:opacity-95 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>{isDeletingEragile ? "Ezabatzen..." : "Bai, ezabatu"}</span>
@@ -2177,38 +2194,38 @@ export default function AdminKoadroa() {
       {/* DELETE SINGLE HYPOTHESIS / EXPERIMENT CONFIRMATION MODAL */}
       {expToDelete && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-200">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-lg border border-line">
             <div className="flex items-start gap-3 mb-4">
-              <div className="p-2.5 bg-rose-100 text-rose-700 rounded-2xl shrink-0">
-                <AlertTriangle className="w-5 h-5 text-rose-600" />
+              <div className="p-2.5 bg-terracotta/15 text-terracotta rounded-2xl shrink-0">
+                <AlertTriangle className="w-5 h-5 text-terracotta" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 text-base">
+                <h3 className="font-bold text-ink text-base">
                   Hipotesia ezabatu?
                 </h3>
-                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                <p className="text-xs text-ink-muted mt-1 leading-relaxed">
                   Ziur zaude <strong>{expToDelete.eragileIzena}</strong> entitatearen hipotesi hau eta hari lotutako neurketak ezabatu nahi dituzula? Entitatea zerrendan mantenduko da.
                 </p>
-                <p className="text-xs italic text-slate-500 mt-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200 line-clamp-3">
+                <p className="text-xs italic text-ink-muted mt-2 bg-paper p-2.5 rounded-xl border border-line line-clamp-3">
                   &ldquo;{expToDelete.exp.hipotesia}&rdquo;
                 </p>
               </div>
             </div>
 
             {deleteError && (
-              <p className="text-xs font-semibold text-rose-600 mb-3 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2">
+              <p className="text-xs font-semibold text-terracotta mb-3 bg-terracotta/10 border border-terracotta/25 rounded-xl px-3 py-2">
                 {deleteError}
               </p>
             )}
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-line">
               <button
                 type="button"
                 onClick={() => {
                   setDeleteError(null);
                   setExpToDelete(null);
                 }}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold text-ink-muted hover:bg-sand rounded-xl transition cursor-pointer"
               >
                 Utzi
               </button>
@@ -2216,7 +2233,7 @@ export default function AdminKoadroa() {
                 type="button"
                 disabled={isDeletingExp}
                 onClick={handleConfirmDeleteExp}
-                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                className="px-5 py-2.5 bg-terracotta hover:opacity-95 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>{isDeletingExp ? "Ezabatzen..." : "Bai, ezabatu hipotesia"}</span>
@@ -2229,26 +2246,26 @@ export default function AdminKoadroa() {
       {/* RESET ALL TEST DATA CONFIRMATION MODAL */}
       {showResetConfirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-200">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-lg border border-line">
             <div className="flex items-start gap-3 mb-4">
-              <div className="p-2.5 bg-rose-100 text-rose-700 rounded-2xl shrink-0">
-                <RotateCcw className="w-5 h-5 text-rose-600" />
+              <div className="p-2.5 bg-terracotta/15 text-terracotta rounded-2xl shrink-0">
+                <RotateCcw className="w-5 h-5 text-terracotta" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 text-base">
+                <h3 className="font-bold text-ink text-base">
                   Aurretik egindako proba guztiak garbitu?
                 </h3>
-                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                <p className="text-xs text-ink-muted mt-1 leading-relaxed">
                   Ekintza honek orain arte sortutako <strong>entitate, esperimentu eta proba-neurketa guztiak</strong> ezabatuko ditu, panela hutsik eta garbi utziz benetako neurketak zerotik hasteko.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-line">
               <button
                 type="button"
                 onClick={() => setShowResetConfirmModal(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold text-ink-muted hover:bg-sand rounded-xl transition cursor-pointer"
               >
                 Utzi
               </button>
@@ -2256,7 +2273,7 @@ export default function AdminKoadroa() {
                 type="button"
                 disabled={isResettingAll}
                 onClick={handleConfirmResetAll}
-                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                className="px-5 py-2.5 bg-terracotta hover:opacity-95 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>{isResettingAll ? "Garbitzen..." : "Bai, garbitu dena"}</span>
@@ -2269,42 +2286,42 @@ export default function AdminKoadroa() {
       {/* SEND CUSTOM BULTZADA MODAL */}
       {selectedEragileForNudge && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-lg border border-line animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-2xl bg-sea/15 text-sea flex items-center justify-center">
                 <Send className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-900">
+                <h3 className="text-lg font-bold text-ink">
                   Bidali bultzada entitateari
                 </h3>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-ink-muted">
                   Hartzailea: <strong>{selectedEragileForNudge.izena}</strong>
                 </p>
               </div>
             </div>
 
             {sendSuccess ? (
-              <div className="bg-emerald-50 rounded-2xl p-6 text-center border border-emerald-200 my-4">
-                <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto mb-2" />
-                <h4 className="font-bold text-emerald-900 text-sm">Bultzada arrakastaz bidali da!</h4>
-                <p className="text-xs text-emerald-700 mt-1">Entitateak bere jakinarazpenetan ikusiko du.</p>
+              <div className="bg-euskara/10 rounded-2xl p-6 text-center border border-euskara/25 my-4">
+                <CheckCircle2 className="w-10 h-10 text-euskara mx-auto mb-2" />
+                <h4 className="font-bold text-euskara text-sm">Bultzada arrakastaz bidali da!</h4>
+                <p className="text-xs text-euskara mt-1">Entitateak bere jakinarazpenetan ikusiko du.</p>
               </div>
             ) : (
               <form onSubmit={handleSendNudge} className="space-y-4">
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-bold text-slate-700">
+                    <label className="block text-xs font-bold text-ink">
                       Bultzada-mota:
                     </label>
                     <button
                       type="button"
                       onClick={handleGenerateNudgeWithLatxa}
                       disabled={isGeneratingNudgeLatxa}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-[11px] font-bold transition cursor-pointer disabled:opacity-50"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-sea/10 hover:bg-sea/15 text-sea border border-sea/25 text-[11px] font-bold transition cursor-pointer disabled:opacity-50"
                       title="Latxak entitatearen T0/T1/T2 datuak irakurri eta mezu pertsonalizatua idatziko du"
                     >
-                      <Bot className="w-3.5 h-3.5 text-indigo-600" />
+                      <Bot className="w-3.5 h-3.5 text-sea" />
                       <span>
                         {isGeneratingNudgeLatxa ? "Latxa idazten..." : "Sortu mezua Latxarekin"}
                       </span>
@@ -2312,9 +2329,9 @@ export default function AdminKoadroa() {
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     {[
-                      { id: "bultzada", label: "Bultzada ⚡" },
-                      { id: "abisua", label: "Abisua ⏰" },
-                      { id: "zoriontzea", label: "Zoriontzea 🎉" },
+                      { id: "bultzada", label: "Bultzada " },
+                      { id: "abisua", label: "Abisua " },
+                      { id: "zoriontzea", label: "Zoriontzea " },
                     ].map((m) => (
                       <button
                         key={m.id}
@@ -2322,8 +2339,8 @@ export default function AdminKoadroa() {
                         onClick={() => setNudgeType(m.id as typeof nudgeType)}
                         className={`p-2 rounded-xl text-xs font-semibold border transition cursor-pointer ${
                           nudgeType === m.id
-                            ? "bg-indigo-50 border-indigo-600 text-indigo-900 shadow-2xs"
-                            : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                            ? "bg-sea/10 border-sea text-sea shadow-2xs"
+                            : "bg-paper border-line text-ink-muted hover:bg-sand"
                         }`}
                       >
                         {m.label}
@@ -2333,7 +2350,7 @@ export default function AdminKoadroa() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-ink mb-1">
                     Izenburua:
                   </label>
                   <input
@@ -2342,12 +2359,12 @@ export default function AdminKoadroa() {
                     value={nudgeTitle}
                     onChange={(e) => setNudgeTitle(e.target.value)}
                     placeholder="Adib. T2 neurketa egiteko garaia da!"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                    className="w-full px-3 py-2 rounded-xl border border-line text-xs text-ink focus:ring-2 focus:ring-sea/40 focus:outline-hidden"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-ink mb-1">
                     Mezua (portaera-ekonomia tonu atseginean):
                   </label>
                   <textarea
@@ -2356,7 +2373,7 @@ export default function AdminKoadroa() {
                     value={nudgeMessage}
                     onChange={(e) => setNudgeMessage(e.target.value)}
                     placeholder="Idatzi entitateari laguntzeko mezua..."
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                    className="w-full px-3 py-2 rounded-xl border border-line text-xs text-ink focus:ring-2 focus:ring-sea/40 focus:outline-hidden"
                   />
                 </div>
 
@@ -2364,7 +2381,7 @@ export default function AdminKoadroa() {
                   <button
                     type="button"
                     onClick={() => setSelectedEragileForNudge(null)}
-                    className="px-4 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 cursor-pointer"
+                    className="px-4 py-2 text-xs font-semibold text-ink-muted hover:text-ink cursor-pointer"
                   >
                     Utzi
                   </button>
@@ -2372,7 +2389,7 @@ export default function AdminKoadroa() {
                   <button
                     type="submit"
                     disabled={isSending || !nudgeTitle.trim() || !nudgeMessage.trim()}
-                    className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/30 flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+                    className="px-5 py-2.5 rounded-xl bg-sea hover:opacity-95 text-white font-bold text-xs shadow-md shadow-xs flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
                   >
                     <Send className="w-3.5 h-3.5" />
                     <span>{isSending ? "Bidaltzen..." : "Bidali bultzada"}</span>
@@ -2387,17 +2404,17 @@ export default function AdminKoadroa() {
       {/* New Entity Modal */}
       {showNewPostModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-slate-200 my-8 max-h-[92vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-lg border border-line my-8 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2.5">
-                <div className="p-2.5 bg-emerald-100 text-emerald-800 rounded-2xl">
-                  <Store className="w-5 h-5 text-emerald-600" />
+                <div className="p-2.5 bg-euskara/15 text-euskara rounded-2xl">
+                  <Store className="w-5 h-5 text-euskara" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900 text-base">
+                  <h3 className="font-bold text-ink text-base">
                     Entitate berria gehitu
                   </h3>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-ink-muted">
                     Zehaztu entitatea eta hasierako hipotesia (aukerakoa)
                   </p>
                 </div>
@@ -2405,7 +2422,7 @@ export default function AdminKoadroa() {
               <button
                 type="button"
                 onClick={() => setShowNewPostModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+                className="text-ink-muted hover:text-ink-muted p-1.5 rounded-lg hover:bg-sand transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -2414,7 +2431,7 @@ export default function AdminKoadroa() {
             <form onSubmit={handleCreatePostSubmit} className="space-y-3.5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-ink mb-1">
                     Entitatearen izena *
                   </label>
                   <input
@@ -2423,13 +2440,13 @@ export default function AdminKoadroa() {
                     placeholder="Adib.: Parte Zaharreko elkartea"
                     value={postName}
                     onChange={(e) => setPostName(e.target.value)}
-                    className="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                    className="w-full border border-line rounded-xl px-3.5 py-2 text-xs font-medium text-ink focus:ring-2 focus:ring-euskara/40 focus:outline-hidden"
                     autoFocus
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-ink mb-1">
                     Arduradunaren izena (aukerakoa)
                   </label>
                   <input
@@ -2437,49 +2454,49 @@ export default function AdminKoadroa() {
                     placeholder="Adib.: Miren / Koldo"
                     value={postManager}
                     onChange={(e) => setPostManager(e.target.value)}
-                    className="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                    className="w-full border border-line rounded-xl px-3.5 py-2 text-xs font-medium text-ink focus:ring-2 focus:ring-euskara/40 focus:outline-hidden"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  <label className="block text-[11px] font-bold text-ink mb-1">
                     Nork (taldea)
                   </label>
                   <input
                     type="text"
                     value={postTaldea}
                     onChange={(e) => setPostTaldea(e.target.value)}
-                    className="w-full border border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-900"
+                    className="w-full border border-line rounded-xl px-3 py-1.5 text-xs text-ink"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  <label className="block text-[11px] font-bold text-ink mb-1">
                     Norekin (pertsonak)
                   </label>
                   <input
                     type="text"
                     value={postPertsonak}
                     onChange={(e) => setPostPertsonak(e.target.value)}
-                    className="w-full border border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-900"
+                    className="w-full border border-line rounded-xl px-3 py-1.5 text-xs text-ink"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  <label className="block text-[11px] font-bold text-ink mb-1">
                     Non (gunea)
                   </label>
                   <input
                     type="text"
                     value={postGunea}
                     onChange={(e) => setPostGunea(e.target.value)}
-                    className="w-full border border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-900"
+                    className="w-full border border-line rounded-xl px-3 py-1.5 text-xs text-ink"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-ink mb-1">
                   Euskararen xede-igoera (%):
                 </label>
                 <div className="flex items-center gap-3">
@@ -2492,7 +2509,7 @@ export default function AdminKoadroa() {
                     onChange={(e) => setPostTargetPct(Number(e.target.value))}
                     className="flex-1 accent-emerald-600"
                   />
-                  <span className="font-extrabold text-sm text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                  <span className="font-extrabold text-sm text-euskara bg-euskara/10 px-2.5 py-1 rounded-lg border border-euskara/25">
                     +%{postTargetPct}
                   </span>
                 </div>
@@ -2500,7 +2517,7 @@ export default function AdminKoadroa() {
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-bold text-slate-800">
+                  <label className="block text-xs font-bold text-ink">
                     Hipotesia (nahi duzun bezala idatzi edo moldatu)
                   </label>
                   <button
@@ -2510,16 +2527,16 @@ export default function AdminKoadroa() {
                         `Gure ustez, ${postTaldea || "entitateko kideek"} ${postPertsonak || "herritarrekin eta bezeroekin"}, ${postGunea || "harrera edo gune nagusian"} esku-hartze pilotua aktibatuta, euskararen erabilera %${postTargetPct} igoko da.`
                       )
                     }
-                    className="text-[10px] font-bold text-emerald-700 hover:underline cursor-pointer"
+                    className="text-[10px] font-bold text-euskara hover:underline cursor-pointer"
                   >
-                    ✨ Eguneratu txantiloiarekin
+                    Eguneratu txantiloiarekin
                   </button>
                 </div>
                 <textarea
                   rows={3}
                   value={postHipotesia}
                   onChange={(e) => setPostHipotesia(e.target.value)}
-                  className="w-full border border-emerald-300 bg-emerald-50/30 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  className="w-full border border-euskara/40 bg-euskara/10/30 rounded-xl px-3.5 py-2 text-xs font-semibold text-ink focus:ring-2 focus:ring-euskara/40 focus:outline-hidden"
                 />
               </div>
 
@@ -2527,14 +2544,14 @@ export default function AdminKoadroa() {
                 <button
                   type="button"
                   onClick={() => setShowNewPostModal(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                  className="px-4 py-2 text-xs font-semibold text-ink-muted hover:bg-sand rounded-xl transition cursor-pointer"
                 >
                   Utzi
                 </button>
                 <button
                   type="submit"
                   disabled={isCreatingPost || !postName.trim()}
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2.5 bg-euskara hover:opacity-95 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   {isCreatingPost ? "Sortzen..." : "Sortu entitatea →"}
                 </button>
@@ -2547,17 +2564,17 @@ export default function AdminKoadroa() {
       {/* App UI Texts Editor Modal */}
       {showTextEditorModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 my-8 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+          <div className="bg-white rounded-2xl max-w-3xl w-full p-6 sm:p-8 shadow-lg border border-line my-8 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-line">
               <div className="flex items-center gap-2.5">
                 <div className="p-2.5 rounded-2xl bg-sky-100 text-sky-700">
                   <FileText className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-extrabold text-slate-900">
+                  <h3 className="text-lg font-extrabold text-ink">
                     Aplikazioko testuak eta hizkuntza moldatu
                   </h3>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-ink-muted">
                     Zuzendu edo egokitu aplikazioko izenburuak, botoiak eta azalpenak kodea ukitu gabe.
                   </p>
                 </div>
@@ -2565,14 +2582,14 @@ export default function AdminKoadroa() {
               <button
                 type="button"
                 onClick={() => setShowTextEditorModal(false)}
-                className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition cursor-pointer"
+                className="p-2 text-ink-muted hover:text-ink-muted rounded-xl hover:bg-sand transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {textEditorSuccess && (
-              <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold flex items-center gap-2">
+              <div className="mb-4 p-3 rounded-xl bg-euskara/10 border border-euskara/25 text-euskara text-xs font-bold flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
                 <span>{textEditorSuccess}</span>
               </div>
@@ -2582,7 +2599,7 @@ export default function AdminKoadroa() {
               {UI_TEXT_FIELDS.map((group) => (
                 <div
                   key={group.section}
-                  className="bg-slate-50 rounded-2xl p-4 sm:p-5 border border-slate-200/80 space-y-3"
+                  className="bg-paper rounded-2xl p-4 sm:p-5 border border-line space-y-3"
                 >
                   <h4 className="text-xs font-extrabold uppercase tracking-wider text-sky-900">
                     {group.section}
@@ -2594,7 +2611,7 @@ export default function AdminKoadroa() {
                         key={item.key}
                         className={item.multiline ? "sm:col-span-2" : ""}
                       >
-                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        <label className="block text-[11px] font-bold text-ink mb-1">
                           {item.label}
                         </label>
                         {item.multiline ? (
@@ -2607,7 +2624,7 @@ export default function AdminKoadroa() {
                                 [item.key]: e.target.value,
                               }))
                             }
-                            className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-sky-500 focus:outline-hidden"
+                            className="w-full border border-line bg-white rounded-xl px-3 py-2 text-xs font-medium text-ink focus:ring-2 focus:ring-sky-500 focus:outline-hidden"
                           />
                         ) : (
                           <input
@@ -2619,7 +2636,7 @@ export default function AdminKoadroa() {
                                 [item.key]: e.target.value,
                               }))
                             }
-                            className="w-full border border-slate-300 bg-white rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-sky-500 focus:outline-hidden"
+                            className="w-full border border-line bg-white rounded-xl px-3 py-2 text-xs font-medium text-ink focus:ring-2 focus:ring-sky-500 focus:outline-hidden"
                           />
                         )}
                       </div>
@@ -2628,12 +2645,12 @@ export default function AdminKoadroa() {
                 </div>
               ))}
 
-              <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100">
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-line">
                 <button
                   type="button"
                   onClick={handleResetDefaultTexts}
                   disabled={isSavingTexts}
-                  className="px-3.5 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 rounded-xl border border-rose-200 transition cursor-pointer inline-flex items-center gap-1.5"
+                  className="px-3.5 py-2 text-xs font-bold text-terracotta hover:bg-terracotta/10 rounded-xl border border-terracotta/25 transition cursor-pointer inline-flex items-center gap-1.5"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Leheneratu jatorrizko testuak</span>
@@ -2643,7 +2660,7 @@ export default function AdminKoadroa() {
                   <button
                     type="button"
                     onClick={() => setShowTextEditorModal(false)}
-                    className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                    className="px-4 py-2 text-xs font-semibold text-ink-muted hover:bg-sand rounded-xl transition cursor-pointer"
                   >
                     Utzi
                   </button>
@@ -2665,17 +2682,17 @@ export default function AdminKoadroa() {
       {/* Admin Account & Password Update Modal */}
       {showAdminAccountModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 sm:p-8 shadow-lg border border-line animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2.5">
                 <div className="p-2.5 rounded-2xl bg-amber-100 text-amber-700">
                   <Lock className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-extrabold text-slate-900">
+                  <h3 className="text-lg font-extrabold text-ink">
                     Bagera admin kontua
                   </h3>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-ink-muted">
                     Aldatu koordinazioaren helbide elektronikoa eta pasahitza
                   </p>
                 </div>
@@ -2683,20 +2700,20 @@ export default function AdminKoadroa() {
               <button
                 type="button"
                 onClick={() => setShowAdminAccountModal(false)}
-                className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition cursor-pointer"
+                className="p-2 text-ink-muted hover:text-ink-muted rounded-xl hover:bg-sand transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {adminAccountError && (
-              <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
+              <div className="mb-4 p-3 rounded-xl bg-terracotta/10 border border-terracotta/25 text-terracotta text-xs font-semibold">
                 {adminAccountError}
               </div>
             )}
 
             {adminAccountSuccess && (
-              <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold flex items-center gap-2">
+              <div className="mb-4 p-3 rounded-xl bg-euskara/10 border border-euskara/25 text-euskara text-xs font-bold flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
                 <span>{adminAccountSuccess}</span>
               </div>
@@ -2704,7 +2721,7 @@ export default function AdminKoadroa() {
 
             <form onSubmit={handleSaveAdminAccount} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-ink mb-1">
                   Administratzailearen izena
                 </label>
                 <input
@@ -2713,12 +2730,12 @@ export default function AdminKoadroa() {
                   value={adminNewName}
                   onChange={(e) => setAdminNewName(e.target.value)}
                   placeholder="Bagera Koordinazioa"
-                  className="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm font-medium text-slate-900 focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
+                  className="w-full border border-line rounded-xl px-3.5 py-2.5 text-sm font-medium text-ink focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-ink mb-1">
                   Sartzeko helbide elektronikoa (kontua) *
                 </label>
                 <input
@@ -2727,12 +2744,12 @@ export default function AdminKoadroa() {
                   value={adminNewEmail}
                   onChange={(e) => setAdminNewEmail(e.target.value)}
                   placeholder="admin@bagera.eus"
-                  className="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm font-medium text-slate-900 focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
+                  className="w-full border border-line rounded-xl px-3.5 py-2.5 text-sm font-medium text-ink focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
                 />
               </div>
 
-              <div className="pt-2 border-t border-slate-100">
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+              <div className="pt-2 border-t border-line">
+                <label className="block text-xs font-bold text-ink mb-1">
                   Uneko pasahitza (egiaztatzeko) *
                 </label>
                 <input
@@ -2741,12 +2758,12 @@ export default function AdminKoadroa() {
                   value={adminCurrentPassword}
                   onChange={(e) => setAdminCurrentPassword(e.target.value)}
                   placeholder="Sartu orain arteko pasahitza..."
-                  className="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm font-medium text-slate-900 focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
+                  className="w-full border border-line rounded-xl px-3.5 py-2.5 text-sm font-medium text-ink focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-ink mb-1">
                   Pasahitz berria (utzi hutsik berdina mantentzeko)
                 </label>
                 <input
@@ -2754,7 +2771,7 @@ export default function AdminKoadroa() {
                   value={adminNewPassword}
                   onChange={(e) => setAdminNewPassword(e.target.value)}
                   placeholder="Gutxienez 4 karaktere..."
-                  className="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm font-medium text-slate-900 focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
+                  className="w-full border border-line rounded-xl px-3.5 py-2.5 text-sm font-medium text-ink focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
                 />
               </div>
 
@@ -2762,7 +2779,7 @@ export default function AdminKoadroa() {
                 <button
                   type="button"
                   onClick={() => setShowAdminAccountModal(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                  className="px-4 py-2 text-xs font-semibold text-ink-muted hover:bg-sand rounded-xl transition cursor-pointer"
                 >
                   Utzi
                 </button>

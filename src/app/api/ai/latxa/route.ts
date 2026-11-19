@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import db, { Pilotua, saveUiTexts, syncDbFromCloud, syncDbToCloud } from "@/lib/db";
+import { requireAuth } from "@/lib/auth";
 
 interface LatxaRequestBody {
   ekintza:
@@ -89,6 +90,9 @@ function parseLatxaJsonSafely(rawContent: string): Record<string, any> | null {
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireAuth();
+    if (auth.error) return auth.error;
+
     const apiUrl = process.env.LATXA_API_URL?.replace(/\/+$/, "");
     const apiKey = process.env.LATXA_API_KEY;
     const model = process.env.LATXA_MODEL || "Latxa-Llama-3.1-70B-Instruct-exp_2_101_v2-FP8";

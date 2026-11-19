@@ -1,20 +1,32 @@
 import { NextResponse } from "next/server";
 import db, { Nudge, syncDbFromCloud, syncDbToCloud } from "@/lib/db";
+import { requireAdmin, requireAuth } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireAuth();
+    if (auth.error) return auth.error;
+
     await syncDbFromCloud();
 
     const body = await request.json();
     const { action, nudge_id, eragile_id, titulua, mezua, mota, epemuga, ekintza_esteka } = body;
 
     if (action === "mark_read" && nudge_id) {
+      if (auth.session.role !== "admin") {
+        const nudge = db.prepare("SELECT * FROM nudges WHERE id = ?").get(nudge_id) as Nudge | undefined;
+        if (nudge && nudge.eragile_id !== auth.session.eragile_id) {
+          return NextResponse.json({ success: false, error: "Baimenik gabe." }, { status: 403 });
+        }
+      }
       db.prepare("UPDATE nudges SET irakurria = 1 WHERE id = ?").run(nudge_id);
       await syncDbToCloud();
       return NextResponse.json({ success: true, message: "Irakurria gisa markatu da" });
     }
 
     if (action === "create") {
+      const adminAuth = await requireAdmin();
+      if (adminAuth.error) return adminAuth.error;
       if (!eragile_id || !titulua || !mezua) {
         return NextResponse.json(
           { success: false, error: "Eragile IDa, titulua eta mezua beharrezkoak dira" },

@@ -58,7 +58,6 @@ const ERRONKA_AUKERAK = [
 export default function AuthPortal() {
   const { login, register, uiTexts } = useApp();
 
-  const [portalRole, setPortalRole] = useState<"admin" | "eragilea">("eragilea");
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -165,281 +164,124 @@ export default function AuthPortal() {
           {uiTexts.app_subtitle || "Portaera-ekonomia eta esperimentazio arina • Bagera"}
         </p>
         <p className="mt-1.5 text-xs sm:text-sm text-ink-muted">
-          {uiTexts.auth_intro || "Euskararen erabilera aktibatzeko tresna praktikoa. Jarraitu zure entitatearen aurrerapena 3 urrats errazetan:"}
+          {uiTexts.auth_intro || "Euskararen erabilera aktibatzeko tresna praktikoa."}
         </p>
-
-        {/* 3-Step Visual Journey Guide */}
-        <div className="mt-5 grid grid-cols-3 gap-2.5 text-left">
-          <div className="bg-white border border-line rounded-xl p-3">
-            <span className="inline-flex items-center justify-center w-5 h-5 rounded-md bg-euskara/10 text-euskara font-bold text-[10px] mb-1.5 tabular-nums">
-              01
-            </span>
-            <p className="text-[11px] font-bold text-ink leading-tight">
-              {uiTexts.auth_step1_title || "Hipotesia definitu"}
-            </p>
-            <p className="text-[10px] text-ink-muted mt-0.5 leading-snug">
-              {uiTexts.auth_step1_desc || "Zure entitateko erronka eta helburua zehaztu."}
-            </p>
-          </div>
-          <div className="bg-white border border-line rounded-xl p-3">
-            <span className="inline-flex items-center justify-center w-5 h-5 rounded-md bg-sea/10 text-sea font-bold text-[10px] mb-1.5 tabular-nums">
-              02
-            </span>
-            <p className="text-[11px] font-bold text-ink leading-tight">
-              {uiTexts.auth_step2_title || "T0 / T1 / T2 neurtu"}
-            </p>
-            <p className="text-[10px] text-ink-muted mt-0.5 leading-snug">
-              {uiTexts.auth_step2_desc || "10 minutuko neurketa erraza mugikorrarekin."}
-            </p>
-          </div>
-          <div className="bg-white border border-line rounded-xl p-3">
-            <span className="inline-flex items-center justify-center w-5 h-5 rounded-md bg-sand text-ink font-bold text-[10px] mb-1.5 tabular-nums border border-line">
-              03
-            </span>
-            <p className="text-[11px] font-bold text-ink leading-tight">
-              {uiTexts.auth_step3_title || "Eragina ikusi"}
-            </p>
-            <p className="text-[10px] text-ink-muted mt-0.5 leading-snug">
-              {uiTexts.auth_step3_desc || "Emaitza errealak modu pribatuan aztertu."}
-            </p>
-          </div>
-        </div>
       </div>
 
-      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-lg px-4">
-        <div className="bg-white py-7 px-6 sm:px-10 rounded-2xl border border-line">
-          
-          {/* Main Role Selector: Entitateak vs Bagera Admin */}
+      <div className="mt-5 sm:mx-auto sm:w-full sm:max-w-lg px-4">
+        <div className="bg-white py-7 px-6 sm:px-9 rounded-2xl border border-line">
+          {/* Unified Tabs Switcher: Saioa hasi vs Kontua sortu */}
           <div className="grid grid-cols-2 gap-1.5 bg-sand p-1.5 rounded-xl mb-6 border border-line">
             <button
               type="button"
               onClick={() => {
-                setPortalRole("eragilea");
-                setLoginEmail("");
-                setLoginPassword("");
                 setActiveTab("login");
                 setErrorMessage("");
               }}
-              className={`py-2.5 px-3 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer ${
-                portalRole === "eragilea"
+              className={`py-2.5 px-3 text-xs font-bold rounded-lg transition cursor-pointer ${
+                activeTab === "login"
                   ? "bg-white text-ink border border-line shadow-2xs"
                   : "text-ink-muted hover:text-ink"
               }`}
             >
-              <Building2 className="w-4 h-4 text-euskara" />
-              <span>Entitateak / Eragileak</span>
+              Saioa hasi
             </button>
-
             <button
               type="button"
               onClick={() => {
-                setPortalRole("admin");
-                setActiveTab("login");
-                setLoginEmail("admin@bagera.eus");
-                setLoginPassword("");
+                setActiveTab("register");
                 setErrorMessage("");
+                setRegStep(1);
               }}
-              className={`py-2.5 px-3 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer ${
-                portalRole === "admin"
-                  ? "bg-sea text-white"
+              className={`py-2.5 px-3 text-xs font-bold rounded-lg transition cursor-pointer ${
+                activeTab === "register"
+                  ? "bg-euskara text-white"
                   : "text-ink-muted hover:text-ink"
               }`}
             >
-              <ShieldCheck className="w-4 h-4" />
-              <span>Bagera (koordinazioa)</span>
+              Kontua sortu
             </button>
           </div>
 
           {/* Error Banner */}
           {errorMessage && (
-            <div className="mb-6 p-3.5 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-2.5 text-xs sm:text-sm text-rose-700 animate-in fade-in">
+            <div className="mb-5 p-3.5 rounded-xl bg-terracotta/10 border border-terracotta/30 flex items-start gap-2.5 text-xs sm:text-sm text-terracotta animate-in fade-in">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <p>{errorMessage}</p>
             </div>
           )}
 
-          {/* ===================== MODE 1: BAGERA ADMIN ===================== */}
-          {portalRole === "admin" && (
-            <div>
-              <div className="bg-indigo-50/70 border border-indigo-100 rounded-2xl p-4 mb-5 text-xs text-indigo-900">
-                <div className="font-bold text-indigo-950 flex items-center gap-1.5 mb-1">
-                  <ShieldCheck className="w-4 h-4 text-indigo-600" />
-                  <span>Bagera koordinazio-gunea</span>
+          {/* ===================== TAB 1: UNIFIED LOGIN (ENTITATEAK + KOORDINAZIOA) ===================== */}
+          {activeTab === "login" && (
+            <form onSubmit={handleLoginSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
+                  Helbide elektronikoa
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-ink-muted">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="email"
+                    required
+                    autoComplete="email"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    placeholder="adib. kaixo@entitatea.eus"
+                    className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-line bg-paper/40 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-sea/40 focus:border-sea text-sm text-ink transition"
+                  />
                 </div>
-                <p className="text-indigo-800 leading-relaxed">
-                  Bagerako lantaldeak entitate guztiak gainbegiratu, entitate berriak gehitu eta neurketak zuzenean egiteko sarbidea.
-                </p>
               </div>
 
-              <form onSubmit={handleLoginSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Admin helbidea
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                      <Mail className="w-4 h-4" />
-                    </div>
-                    <input
-                      type="email"
-                      required
-                      value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
-                      placeholder="admin@bagera.eus"
-                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 text-sm transition"
-                    />
+              <div>
+                <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
+                  Pasahitza
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-ink-muted">
+                    <Lock className="w-4 h-4" />
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Pasahitza
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                      <Lock className="w-4 h-4" />
-                    </div>
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      required
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 text-sm transition"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="pt-2">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    autoComplete="current-password"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-line bg-paper/40 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-sea/40 focus:border-sea text-sm text-ink transition"
+                  />
                   <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-600/25 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                    type="button"
+                    aria-label={showPassword ? "Ezkutatu pasahitza" : "Erakutsi pasahitza"}
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-ink-muted hover:text-ink cursor-pointer"
                   >
-                    {isSubmitting ? (
-                      <span>Saioa hasten...</span>
-                    ) : (
-                      <>
-                        <ShieldCheck className="w-4 h-4" />
-                        <span>Sartu Bagera koordinaziora</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </>
-                    )}
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
-              </form>
-            </div>
-          )}
-
-          {/* ===================== MODE 2: ENTITATEAK ===================== */}
-          {portalRole === "eragilea" && (
-            <div>
-              {/* Tabs Switcher: Saioa hasi vs Kontua sortu */}
-              <div className="flex bg-slate-100 p-1.5 rounded-2xl mb-6">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab("login");
-                    setErrorMessage("");
-                  }}
-                  className={`flex-1 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
-                    activeTab === "login"
-                      ? "bg-white text-slate-900 shadow-sm"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  Saioa hasi (entitatea)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab("register");
-                    setErrorMessage("");
-                    setRegStep(1);
-                  }}
-                  className={`flex-1 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
-                    activeTab === "register"
-                      ? "bg-emerald-600 text-white shadow-sm"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  Kontua sortu (entitate berria)
-                </button>
               </div>
 
-              {activeTab === "login" && (
-                <form onSubmit={handleLoginSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Entitatearen helbide elektronikoa
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                        <Mail className="w-4 h-4" />
-                      </div>
-                      <input
-                        type="email"
-                        required
-                        value={loginEmail}
-                        onChange={(e) => setLoginEmail(e.target.value)}
-                        placeholder="adib. kaixo@entitatea.eus"
-                        className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 text-sm transition"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                      Pasahitza
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                        <Lock className="w-4 h-4" />
-                      </div>
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        required
-                        value={loginPassword}
-                        onChange={(e) => setLoginPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 text-sm transition"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="pt-2">
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-sm shadow-md shadow-emerald-600/25 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                    >
-                      {isSubmitting ? (
-                        <span>Saioa hasten...</span>
-                      ) : (
-                        <>
-                          <span>Sartu zure entitatean</span>
-                          <ArrowRight className="w-4 h-4" />
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full py-3 px-4 rounded-xl bg-sea hover:opacity-95 text-white font-bold text-sm transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <span>Saioa hasten...</span>
+                  ) : (
+                    <>
+                      <span>Sartu</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </div>
+              <p className="text-[11px] text-ink-muted text-center pt-1">
+                Entitateak zein Bagera koordinazioa kontu beretik sartzen dira.
+              </p>
+            </form>
           )}
 
           {/* ===================== TAB 2: KONTUA SORTU ===================== */}
@@ -447,10 +289,10 @@ export default function AuthPortal() {
             <div>
               {/* Stepper info */}
               <div className="flex items-center justify-between mb-5">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                <span className="text-xs font-bold text-ink-muted uppercase tracking-wider">
                   {regStep === 1 ? "1/2 urratsa: entitatea eta kontua" : "2/2 urratsa: erronka eta pribatutasuna"}
                 </span>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-euskara/15 text-euskara">
                   {regStep === 1 ? "50%" : "100%"}
                 </span>
               </div>
@@ -459,11 +301,11 @@ export default function AuthPortal() {
               {regStep === 1 && (
                 <form onSubmit={handleRegStep1Submit} className="space-y-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
                       Entitatearen izena *
                     </label>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-ink-muted">
                         <Building2 className="w-4 h-4" />
                       </div>
                       <input
@@ -472,13 +314,13 @@ export default function AuthPortal() {
                         value={regIzena}
                         onChange={(e) => setRegIzena(e.target.value)}
                         placeholder="adib. Zurriola Ikastola, Kaxilda, Bretxako Harategia..."
-                        className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 text-sm transition"
+                        className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-line focus:outline-hidden focus:ring-2 focus:ring-euskara/40 text-sm transition"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                    <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-2">
                       Entitate mota *
                     </label>
                     <div className="grid grid-cols-2 gap-2">
@@ -501,11 +343,11 @@ export default function AuthPortal() {
                             }}
                             className={`flex items-center gap-2 p-2.5 rounded-xl border text-left text-xs font-semibold transition cursor-pointer ${
                               isSelected
-                                ? "bg-emerald-50 border-emerald-500 text-emerald-900 shadow-xs"
-                                : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                                ? "bg-euskara/10 border-emerald-500 text-euskara shadow-xs"
+                                : "bg-white border-line text-ink-muted hover:bg-paper"
                             }`}
                           >
-                            <Icon className={`w-4 h-4 shrink-0 ${isSelected ? "text-emerald-600" : "text-slate-400"}`} />
+                            <Icon className={`w-4 h-4 shrink-0 ${isSelected ? "text-euskara" : "text-ink-muted"}`} />
                             <span>{item.label}</span>
                           </button>
                         );
@@ -514,11 +356,11 @@ export default function AuthPortal() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
                       Arduradunaren izen-abizenak *
                     </label>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-ink-muted">
                         <User className="w-4 h-4" />
                       </div>
                       <input
@@ -527,17 +369,17 @@ export default function AuthPortal() {
                         value={regArduraduna}
                         onChange={(e) => setRegArduraduna(e.target.value)}
                         placeholder="adib. Ane Etxeberria"
-                        className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 text-sm transition"
+                        className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-line focus:outline-hidden focus:ring-2 focus:ring-euskara/40 text-sm transition"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
                       Helbide elektronikoa (saioa hasteko) *
                     </label>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-ink-muted">
                         <Mail className="w-4 h-4" />
                       </div>
                       <input
@@ -546,14 +388,14 @@ export default function AuthPortal() {
                         value={regEmail}
                         onChange={(e) => setRegEmail(e.target.value)}
                         placeholder="adib. kaixo@entitatea.eus"
-                        className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 text-sm transition"
+                        className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-line focus:outline-hidden focus:ring-2 focus:ring-euskara/40 text-sm transition"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
                         Pasahitza *
                       </label>
                       <input
@@ -563,11 +405,11 @@ export default function AuthPortal() {
                         value={regPassword}
                         onChange={(e) => setRegPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 text-sm transition"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-line focus:outline-hidden focus:ring-2 focus:ring-euskara/40 text-sm transition"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                      <label className="block text-xs font-bold text-ink uppercase tracking-wider mb-1.5">
                         Berretsi pasahitza *
                       </label>
                       <input
@@ -577,7 +419,7 @@ export default function AuthPortal() {
                         value={regPasswordConfirm}
                         onChange={(e) => setRegPasswordConfirm(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 text-sm transition"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-line focus:outline-hidden focus:ring-2 focus:ring-euskara/40 text-sm transition"
                       />
                     </div>
                   </div>
@@ -598,11 +440,11 @@ export default function AuthPortal() {
               {regStep === 2 && (
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900 mb-1 flex items-center gap-2">
-                      <HelpCircle className="w-4 h-4 text-emerald-600" />
+                    <h3 className="text-sm font-bold text-ink mb-1 flex items-center gap-2">
+                      <HelpCircle className="w-4 h-4 text-euskara" />
                       1. Zein da zuen erronka nagusia?
                     </h3>
-                    <p className="text-xs text-slate-500 mb-2.5">
+                    <p className="text-xs text-ink-muted mb-2.5">
                       Aukeratu zure entitateko egoerara hurbilen dagoen portaera:
                     </p>
 
@@ -618,18 +460,18 @@ export default function AuthPortal() {
                             }}
                             className={`p-2.5 rounded-xl border text-left cursor-pointer transition flex items-start gap-2.5 ${
                               isSelected
-                                ? "bg-emerald-50/70 border-emerald-500 shadow-xs ring-1 ring-emerald-500"
-                                : "bg-white border-slate-200 hover:bg-slate-50"
+                                ? "bg-euskara/10/70 border-emerald-500 shadow-xs ring-1 ring-emerald-500"
+                                : "bg-white border-line hover:bg-paper"
                             }`}
                           >
                             <div className="mt-0.5 shrink-0">
                               <CheckCircle2
-                                className={`w-4 h-4 ${isSelected ? "text-emerald-600" : "text-slate-300"}`}
+                                className={`w-4 h-4 ${isSelected ? "text-euskara" : "text-slate-300"}`}
                               />
                             </div>
                             <div>
-                              <p className="font-semibold text-xs text-slate-900">{erronka.titulua}</p>
-                              <p className="text-[11px] text-slate-500 mt-0.5">{erronka.azpititulua}</p>
+                              <p className="font-semibold text-xs text-ink">{erronka.titulua}</p>
+                              <p className="text-[11px] text-ink-muted mt-0.5">{erronka.azpititulua}</p>
                             </div>
                           </div>
                         );
@@ -638,7 +480,7 @@ export default function AuthPortal() {
 
                     {/* Custom challenge input */}
                     <div className="mt-2.5">
-                      <label className="block text-xs font-semibold text-slate-600 mb-1">
+                      <label className="block text-xs font-semibold text-ink-muted mb-1">
                         Edo idatzi zuen erronka pertsonalizatua:
                       </label>
                       <input
@@ -646,25 +488,25 @@ export default function AuthPortal() {
                         value={customErronka}
                         onChange={(e) => setCustomErronka(e.target.value)}
                         placeholder="Adib. Harreran lehen hitza gaztelaniaz egiten da..."
-                        className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 transition"
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-line focus:outline-hidden focus:ring-2 focus:ring-euskara/40 transition"
                       />
                     </div>
                   </div>
 
                   {/* Privacy Choice */}
-                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5">
+                  <div className="bg-paper border border-line rounded-2xl p-3.5">
                     <label className="flex items-start gap-3 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={regPublikoa}
                         onChange={(e) => setRegPublikoa(e.target.checked)}
-                        className="mt-0.5 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                        className="mt-0.5 w-4 h-4 rounded border-line text-euskara focus:ring-euskara/40"
                       />
                       <div>
-                        <span className="block text-xs font-bold text-slate-900">
+                        <span className="block text-xs font-bold text-ink">
                           2. Erakutsi nire entitatearen izena komunitateko beste eragileei
                         </span>
-                        <span className="block text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                        <span className="block text-[11px] text-ink-muted mt-0.5 leading-relaxed">
                           Markatu gabe uzten baduzu (lehenetsia), beste eragileek kode anonimo bat bakarrik ikusiko dute (adib. <strong>Entitatea #4821</strong>). Edonoiz alda dezakezu zure panelean.
                         </span>
                       </div>
@@ -675,7 +517,7 @@ export default function AuthPortal() {
                     <button
                       type="button"
                       onClick={() => setRegStep(1)}
-                      className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition flex items-center gap-1.5 cursor-pointer"
+                      className="px-4 py-2.5 rounded-xl border border-line text-xs font-bold text-ink hover:bg-paper transition flex items-center gap-1.5 cursor-pointer"
                     >
                       <ArrowLeft className="w-3.5 h-3.5" />
                       <span>Atzera</span>
@@ -685,7 +527,7 @@ export default function AuthPortal() {
                       type="button"
                       onClick={handleRegisterSubmit}
                       disabled={isSubmitting}
-                      className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-sm shadow-md shadow-emerald-600/30 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                      className="flex-1 py-3 px-4 rounded-xl bg-euskara hover:opacity-95 text-white font-bold text-sm shadow-md shadow-xs transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                     >
                       {isSubmitting ? (
                         <span>Kontua sortzen...</span>

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import db, { Neurketa, Esperimentua, syncDbFromCloud, syncDbToCloud } from "@/lib/db";
+import { requireAuth } from "@/lib/auth";
 
 const HILABETEAK = [
   "Urtarrilak", "Otsailak", "Martxoak", "Apirilak", "Maiatzak", "Ekainak",
@@ -14,6 +15,9 @@ function formatEuskalData(date: Date): string {
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireAuth();
+    if (auth.error) return auth.error;
+
     await syncDbFromCloud();
 
     const body = await request.json();
@@ -33,6 +37,16 @@ export async function POST(request: Request) {
         { success: false, error: "Esperimentuaren IDa eta unea beharrezkoak dira" },
         { status: 400 }
       );
+    }
+
+    if (auth.session.role !== "admin") {
+      const targetExp = db.prepare("SELECT * FROM esperimentuak WHERE id = ?").get(esperimentu_id) as Esperimentua | undefined;
+      if (targetExp && targetExp.eragile_id !== auth.session.eragile_id) {
+        return NextResponse.json(
+          { success: false, error: "Beste entitate baten neurketa ezin da gorde." },
+          { status: 403 }
+        );
+      }
     }
 
     const id = "neu-" + Date.now();
@@ -165,6 +179,9 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
+    const auth = await requireAuth();
+    if (auth.error) return auth.error;
+
     await syncDbFromCloud();
 
     const body = await request.json();
@@ -193,6 +210,16 @@ export async function PATCH(request: Request) {
         { success: false, error: "Neurketa ez da aurkitu" },
         { status: 404 }
       );
+    }
+
+    if (auth.session.role !== "admin") {
+      const expRow = db.prepare("SELECT * FROM esperimentuak WHERE id = ?").get(existing.esperimentu_id) as Esperimentua | undefined;
+      if (expRow && expRow.eragile_id !== auth.session.eragile_id) {
+        return NextResponse.json(
+          { success: false, error: "Beste entitate baten neurketa ezin da editatu." },
+          { status: 403 }
+        );
+      }
     }
 
     let updatedExpId = existing.esperimentu_id;
@@ -261,6 +288,9 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const auth = await requireAuth();
+    if (auth.error) return auth.error;
+
     await syncDbFromCloud();
 
     const { searchParams } = new URL(request.url);
@@ -271,6 +301,19 @@ export async function DELETE(request: Request) {
         { success: false, error: "Neurketa IDa beharrezkoa da" },
         { status: 400 }
       );
+    }
+
+    if (auth.session.role !== "admin") {
+      const existing = db.prepare("SELECT * FROM neurketak WHERE id = ?").get(id) as Neurketa | undefined;
+      if (existing) {
+        const expRow = db.prepare("SELECT * FROM esperimentuak WHERE id = ?").get(existing.esperimentu_id) as Esperimentua | undefined;
+        if (expRow && expRow.eragile_id !== auth.session.eragile_id) {
+          return NextResponse.json(
+            { success: false, error: "Beste entitate baten neurketa ezin da ezabatu." },
+            { status: 403 }
+          );
+        }
+      }
     }
 
     db.prepare("DELETE FROM neurketak WHERE id = ?").run(id);

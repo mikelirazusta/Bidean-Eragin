@@ -95,6 +95,14 @@ export function parsePilotuMaterialak(materialak_json?: string): PilotuMateriala
   }
 }
 
+export type AppTab = "panela" | "katalogoa" | "behaketa" | "admin";
+
+export interface ToastItem {
+  id: string;
+  message: string;
+  type: "success" | "error" | "info";
+}
+
 interface AppContextType {
   currentUser: User | null;
   isAuthenticated: boolean;
@@ -102,8 +110,11 @@ interface AppContextType {
   setUserRole: (role: "eragilea" | "admin") => void;
   currentEragileId: string;
   setCurrentEragileId: (id: string) => void;
-  activeTab: "panela" | "katalogoa" | "behaketa" | "onboarding" | "admin";
-  setActiveTab: (tab: "panela" | "katalogoa" | "behaketa" | "onboarding" | "admin") => void;
+  activeTab: AppTab;
+  setActiveTab: (tab: AppTab) => void;
+  toasts: ToastItem[];
+  showToast: (message: string, type?: "success" | "error" | "info") => void;
+  dismissToast: (id: string) => void;
   pilotuak: Pilotua[];
   eragileak: Eragilea[];
   esperimentuak: (Esperimentua & { eragile_izena?: string })[];
@@ -270,8 +281,37 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<"eragilea" | "admin">("eragilea");
   const [currentEragileId, setCurrentEragileIdState] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<"panela" | "katalogoa" | "behaketa" | "onboarding" | "admin">("panela");
+  const [activeTab, setActiveTabState] = useState<AppTab>("panela");
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(!initialData);
+
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  const showToast = useCallback(
+    (message: string, type: "success" | "error" | "info" = "success") => {
+      const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      setToasts((prev) => [...prev.slice(-3), { id, message, type }]);
+      setTimeout(() => {
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+      }, 4200);
+    },
+    []
+  );
+
+  const setActiveTab = useCallback((tab: AppTab) => {
+    setActiveTabState(tab);
+    if (typeof window !== "undefined") {
+      try {
+        const url = new URL(window.location.href);
+        if (url.searchParams.get("tab") !== tab) {
+          url.searchParams.set("tab", tab);
+          window.history.pushState({ tab }, "", url.toString());
+        }
+      } catch {}
+    }
+  }, []);
 
   const [pilotuak, setPilotuak] = useState<Pilotua[]>(initialData?.pilotuak || []);
   const [eragileak, setEragileak] = useState<Eragilea[]>(initialData?.eragileak || []);
@@ -305,30 +345,88 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
     [currentUser]
   );
 
-  // Restore authenticated session from localStorage on client mount
+  // Sync tab with URL query (?tab=...) and browser Back/Forward
   useEffect(() => {
-    try {
-      const savedUserStr = localStorage.getItem("bidean_eragin_session");
-      if (savedUserStr) {
-        const parsed = JSON.parse(savedUserStr) as User;
-        // Never restore yesterday's test account
-        if (parsed && parsed.id === "user-1792052519787") {
-          localStorage.removeItem("bidean_eragin_session");
-          return;
+    if (typeof window === "undefined") return;
+    const validTabs: AppTab[] = ["panela", "katalogoa", "behaketa", "admin"];
+    const applyFromUrl = () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const tabParam = params.get("tab") as AppTab | null;
+        if (tabParam && validTabs.includes(tabParam)) {
+          setActiveTabState(tabParam);
         }
-        if (parsed && parsed.id) {
-          setCurrentUser(parsed);
-          setUserRole(parsed.role);
-          if (parsed.role === "eragilea" && parsed.eragile_id) {
-            setCurrentEragileIdState(parsed.eragile_id);
-          } else if (parsed.role === "admin") {
-            setActiveTab("admin");
+      } catch {}
+    };
+    applyFromUrl();
+    window.addEventListener("popstate", applyFromUrl);
+    return () => window.removeEventListener("popstate", applyFromUrl);
+  }, []);
+
+  // Verify authenticated session via HttpOnly cookie (/api/auth/me), falling back to localStorage only if offline
+  useEffect(() => {
+    let cancelled = false;
+    const hydrateSession = async () => {
+      const readUrlTab = (): AppTab | null => {
+        try {
+          const t = new URLSearchParams(window.location.search).get("tab") as AppTab | null;
+          return t && ["panela", "katalogoa", "behaketa", "admin"].includes(t) ? t : null;
+        } catch {
+          return null;
+        }
+      };
+
+      try {
+        const res = await fetch("/api/auth/me", { cache: "no-store" });
+        if (cancelled) return;
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.user) {
+            const serverUser = json.user as User;
+            setCurrentUser(serverUser);
+            setUserRole(serverUser.role);
+            try {
+              localStorage.setItem("bidean_eragin_session", JSON.stringify(serverUser));
+            } catch {}
+            if (serverUser.role === "eragilea" && serverUser.eragile_id) {
+              setCurrentEragileIdState(serverUser.eragile_id);
+              const urlTab = readUrlTab();
+              if (urlTab === "admin") setActiveTabState("panela");
+            } else if (serverUser.role === "admin") {
+              if (!readUrlTab()) setActiveTabState("admin");
+            }
+            return;
           }
         }
+        // Server explicitly rejected cookie (401/403) -> clear stale client session
+        setCurrentUser(null);
+        setCurrentEragileIdState("");
+        try {
+          localStorage.removeItem("bidean_eragin_session");
+        } catch {}
+      } catch {
+        // Offline fallback: restore cached session
+        try {
+          const savedUserStr = localStorage.getItem("bidean_eragin_session");
+          if (savedUserStr && !cancelled) {
+            const parsed = JSON.parse(savedUserStr) as User;
+            if (parsed && parsed.id) {
+              setCurrentUser(parsed);
+              setUserRole(parsed.role);
+              if (parsed.role === "eragilea" && parsed.eragile_id) {
+                setCurrentEragileIdState(parsed.eragile_id);
+              } else if (parsed.role === "admin" && !readUrlTab()) {
+                setActiveTabState("admin");
+              }
+            }
+          }
+        } catch {}
       }
-    } catch (e) {
-      console.error("Errorea gordetako saioa kargatzean:", e);
-    }
+    };
+    hydrateSession();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Monitor network status & auto-sync pending measurements when coming online
@@ -495,7 +593,7 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
         } else {
           setActiveTab("admin");
         }
-        triggerConfetti();
+        showToast("Saioa hasi da.", "success");
         return { success: true };
       }
       return { success: false, error: json.error || "Posta elektronikoa edo pasahitza ez dira zuzenak." };
@@ -541,7 +639,7 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
           setObservationConfig({ expId: json.esperimentua.id, phase: "T0" });
         }
         setActiveTab("panela");
-        triggerConfetti();
+        showToast("Kontua ondo sortu da.", "success");
         return { success: true };
       }
       return { success: false, error: json.error || "Errorea kontua sortzean." };
@@ -553,13 +651,24 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
 
   // Auth: Logout
   const logout = () => {
+    fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
     setCurrentUser(null);
     setCurrentEragileIdState("");
     setUserRole("eragilea");
-    setActiveTab("panela");
+    setActiveTabState("panela");
+    setEragileak([]);
+    setEsperimentuak([]);
+    setNeurketak([]);
+    setNudges([]);
+    setPilotuak([]);
+    clearCachedBootstrapData();
     try {
       localStorage.removeItem("bidean_eragin_session");
+      const url = new URL(window.location.href);
+      url.searchParams.delete("tab");
+      window.history.replaceState({}, "", url.toString());
     } catch {}
+    showToast("Saioa itxi da.", "info");
   };
 
   // Target eragile ID is strictly the agent's center if logged in as eragilea (never fall back to another center)
@@ -600,7 +709,7 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
         await refreshData();
         setCurrentEragileId(json.data.id);
         setActiveTab("katalogoa");
-        triggerConfetti();
+        showToast("Entitatea sortu da.", "success");
         return json.data;
       }
     } catch (e) {
@@ -632,7 +741,7 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
       const json = await res.json();
       if (json.success && json.data) {
         await refreshData();
-        triggerConfetti();
+        showToast("Pilotu berria gorde da.", "success");
         return json.data as Pilotua;
       }
     } catch (e) {
@@ -825,6 +934,7 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
         setEsperimentuak((prev) =>
           prev.map((e) => (e.pilotu_id === id ? { ...e, pilotu_id: "barra-barra-txapak" } : e))
         );
+        showToast("Pilotua ezabatu da.", "success");
         await refreshData();
         return true;
       }
@@ -977,6 +1087,7 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
       const json = await res.json();
       if (json.success) {
         setNeurketak((prev) => prev.filter((n) => n.id !== id));
+        showToast("Neurketa-saioa ezabatu da.", "success");
         await refreshData();
         return true;
       }
@@ -996,6 +1107,7 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
         setEsperimentuak((prev) => prev.filter((e) => e.id !== id));
         setNeurketak((prev) => prev.filter((n) => n.esperimentu_id !== id));
         setObservationConfig((prev) => (prev?.expId === id ? { phase: "T0" } : prev));
+        showToast("Hipotesia ezabatu da.", "success");
         await refreshData();
         return true;
       }
@@ -1022,6 +1134,7 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
         if (currentEragileId === id) {
           setCurrentEragileId("");
         }
+        showToast("Entitatea ezabatu da.", "success");
         await refreshData();
         return true;
       }
@@ -1059,6 +1172,7 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
       });
       const json = await res.json();
       if (json.success) {
+        showToast("Bultzada bidali da.", "success");
         await refreshData();
         return true;
       }
@@ -1105,7 +1219,7 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
         try {
           localStorage.setItem("bidean_eragin_session", JSON.stringify(json.user));
         } catch {}
-        triggerConfetti();
+        showToast("Admin kontua eguneratu da.", "success");
         return { success: true };
       }
       return { success: false, error: json.error || "Errorea gertatu da pasahitza aldatzean." };
@@ -1144,6 +1258,9 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
         setCurrentEragileId,
         activeTab,
         setActiveTab,
+        toasts,
+        showToast,
+        dismissToast,
         pilotuak,
         eragileak,
         esperimentuak,

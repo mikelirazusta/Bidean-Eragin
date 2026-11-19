@@ -4,12 +4,16 @@ import {
   getMaterialMetaFromStore,
   getMaterialChunkFromStore,
 } from "@/lib/db";
+import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireAuth();
+    if (auth.error) return auth.error;
+
     const body = await request.json();
     const {
       id,

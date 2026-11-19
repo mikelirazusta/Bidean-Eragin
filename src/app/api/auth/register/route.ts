@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import db, { Eragilea, Esperimentua, User, syncDbFromCloud, syncDbToCloud } from "@/lib/db";
+import { hashPassword, setSessionCookie } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
@@ -83,7 +84,7 @@ export async function POST(request: Request) {
       insertUser.run(
         userId,
         cleanEmail,
-        cleanPassword,
+        hashPassword(cleanPassword),
         arduraduna.trim(),
         "eragilea",
         zentroId,
@@ -119,8 +120,8 @@ export async function POST(request: Request) {
         insertNudge.run(
           "nudge-" + Date.now(),
           zentroId,
-          "1. urratsa: egin T0 hasierako neurketa 📊",
-          "Zure hipotesia prest dago! Esku-hartzea hasi aurretik, egin lehen behaketa (T0) gaur egungo abiapuntua ezagutzeko.",
+          "1. urratsa: egin T0 hasierako neurketa",
+          "Zure hipotesia prest dago. Esku-hartzea hasi aurretik, egin lehen behaketa (T0) gaur egungo abiapuntua ezagutzeko.",
           "neurketa_t0",
           new Date(Date.now() + 86400000 * 3).toISOString(),
           0,
@@ -131,7 +132,7 @@ export async function POST(request: Request) {
         insertNudge.run(
           "nudge-" + Date.now(),
           zentroId,
-          "Ongi etorri Bidean Eragin gunera! 🚀",
+          "Ongi etorri Bidean Eragin gunera",
           "Arakatu esku-hartze pilotuen katalogoa eta aukeratu zure entitatearentzat egokiena dena zure erronkari erantzuteko.",
           "hipotesia_sortu",
           new Date(Date.now() + 86400000 * 5).toISOString(),
@@ -158,12 +159,13 @@ export async function POST(request: Request) {
 
     await syncDbToCloud();
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       user: newUser,
       eragilea: newEragilea,
       esperimentua: newEsperimentua,
     });
+    return setSessionCookie(response, newUser);
   } catch (error) {
     console.error("Errorea kontua sortzean:", error);
     return NextResponse.json(

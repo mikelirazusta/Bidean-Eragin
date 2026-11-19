@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import db, { Esperimentua, syncDbFromCloud, syncDbToCloud } from "@/lib/db";
+import { requireAuth } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireAuth();
+    if (auth.error) return auth.error;
+
     await syncDbFromCloud();
 
     const body = await request.json();
@@ -15,6 +19,13 @@ export async function POST(request: Request) {
       gunea,
       xede_portzentajea,
     } = body;
+
+    if (auth.session.role !== "admin" && eragile_id && eragile_id !== auth.session.eragile_id) {
+      return NextResponse.json(
+        { success: false, error: "Beste entitate baten hipotesirik ezin da sortu." },
+        { status: 403 }
+      );
+    }
 
     if (!eragile_id || !pilotu_id || !hipotesia) {
       return NextResponse.json(
@@ -87,6 +98,9 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
+    const auth = await requireAuth();
+    if (auth.error) return auth.error;
+
     await syncDbFromCloud();
 
     const body = await request.json();
@@ -113,6 +127,13 @@ export async function PATCH(request: Request) {
       return NextResponse.json(
         { success: false, error: "Esperimentua ez da aurkitu" },
         { status: 404 }
+      );
+    }
+
+    if (auth.session.role !== "admin" && existing.eragile_id !== auth.session.eragile_id) {
+      return NextResponse.json(
+        { success: false, error: "Beste entitate baten hipotesia ezin da editatu." },
+        { status: 403 }
       );
     }
 
@@ -161,6 +182,9 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const auth = await requireAuth();
+    if (auth.error) return auth.error;
+
     await syncDbFromCloud();
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
@@ -170,6 +194,16 @@ export async function DELETE(request: Request) {
         { success: false, error: "Hipotesiaren IDa falta da" },
         { status: 400 }
       );
+    }
+
+    if (auth.session.role !== "admin") {
+      const existing = db.prepare("SELECT * FROM esperimentuak WHERE id = ?").get(id) as Esperimentua | undefined;
+      if (existing && existing.eragile_id !== auth.session.eragile_id) {
+        return NextResponse.json(
+          { success: false, error: "Beste entitate baten hipotesia ezin da ezabatu." },
+          { status: 403 }
+        );
+      }
     }
 
     db.prepare("DELETE FROM neurketak WHERE esperimentu_id = ?").run(id);

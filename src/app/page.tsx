@@ -1,11 +1,13 @@
-import { getInitialData, syncDbFromCloud } from "@/lib/db";
+import { syncDbFromCloud } from "@/lib/db";
+import { getSessionFromCookies } from "@/lib/auth";
+import { getScopedBootstrapData, type ScopedBootstrapData } from "@/lib/scopedData";
 import MainClientApp from "@/components/MainClientApp";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function Home() {
-  let initialData: ReturnType<typeof getInitialData> = {
+  let initialData: ScopedBootstrapData = {
     pilotuak: [],
     eragileak: [],
     esperimentuak: [],
@@ -16,12 +18,10 @@ export default async function Home() {
 
   try {
     await syncDbFromCloud();
-    const data = getInitialData();
-    if (data) {
-      initialData = data;
-    }
+    const session = await getSessionFromCookies();
+    initialData = getScopedBootstrapData(session);
   } catch (err) {
-    console.error("Errorea getInitialData deitzean:", err);
+    console.error("Errorea hasierako datuak kargatzean:", err);
   }
 
   return <MainClientApp initialData={initialData} />;

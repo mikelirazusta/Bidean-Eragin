@@ -495,7 +495,7 @@ export default function BehatzaileKontagailua() {
     <div className="max-w-xl mx-auto px-4 py-6 sm:py-8">
       
       {/* Stand & Observer Selector Card */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white rounded-3xl p-5 shadow-lg mb-4 border border-slate-700/80">
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white rounded-2xl p-5 shadow-lg mb-4 border border-slate-700/80">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3 pb-2 border-b border-slate-700/60">
           <div className="flex items-center gap-2">
             <Store className="w-4 h-4 text-emerald-400" />
@@ -531,7 +531,7 @@ export default function BehatzaileKontagailua() {
               title="Modu diskretua: pantaila ilundu eta kolore deigarriak ezkutatu inork ez nabaritzeko"
             >
               {stealthMode ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-              <span>{stealthMode ? "Modu diskretua ON" : "🕵️ Modu diskretua"}</span>
+              <span>{stealthMode ? "Modu diskretua ON" : " �️ Modu diskretua"}</span>
             </button>
 
             {isAdmin && (
@@ -567,7 +567,7 @@ export default function BehatzaileKontagailua() {
             <button
               type="button"
               onClick={() => (isAdmin ? setShowNewStandModal(true) : setActiveTab("katalogoa"))}
-              className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs rounded-xl transition shadow-md flex items-center gap-2 mx-auto cursor-pointer"
+              className="px-4 py-2 bg-emerald-500 hover:bg-euskara text-slate-950 font-bold text-xs rounded-xl transition shadow-md flex items-center gap-2 mx-auto cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>{isAdmin ? "+ Sortu 1. entitatea orain" : "Aukeratu pilotua eta hipotesia"}</span>
@@ -577,7 +577,7 @@ export default function BehatzaileKontagailua() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                📍 {isAdmin ? "Zein entitatetan zaude?" : "Zure entitatea eta behaketa-gunea:"}
+                � {isAdmin ? "Zein entitatetan zaude?" : "Zure entitatea eta behaketa-gunea:"}
               </label>
               {isAdmin ? (
                 <select
@@ -590,7 +590,7 @@ export default function BehatzaileKontagailua() {
                       if (exp.eragile_id) setCurrentEragileId(exp.eragile_id);
                     }
                   }}
-                  className="w-full bg-slate-800 border border-slate-600 text-white rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-hidden cursor-pointer disabled:opacity-50"
+                  className="w-full bg-slate-800 border border-slate-600 text-white rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-euskara/40 focus:outline-hidden cursor-pointer disabled:opacity-50"
                 >
                   {availableEsperimentuak.map((exp) => (
                     <option key={exp.id} value={exp.id}>
@@ -607,7 +607,7 @@ export default function BehatzaileKontagailua() {
 
             <div>
               <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                👤 Behatzailearen izena (nor ari da neurtzen?):
+                � Behatzailearen izena (nor ari da neurtzen?):
               </label>
               <input
                 type="text"
@@ -615,7 +615,7 @@ export default function BehatzaileKontagailua() {
                 disabled={sessionActive}
                 onChange={(e) => handleBehatzaileaChange(e.target.value)}
                 placeholder="Adibidez: Ane / Jon..."
-                className="w-full bg-slate-800 border border-slate-600 text-white rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-hidden disabled:opacity-50 placeholder:text-slate-500"
+                className="w-full bg-slate-800 border border-slate-600 text-white rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-euskara/40 focus:outline-hidden disabled:opacity-50 placeholder:text-ink-muted"
               />
             </div>
           </div>
@@ -813,7 +813,7 @@ export default function BehatzaileKontagailua() {
             <Timer className={`w-6 h-6 text-emerald-400 ${sessionActive && !isPaused ? "animate-pulse" : ""}`} />
           </div>
           <div>
-            <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+            <div className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider flex items-center gap-2">
               <span>
                 {sessionActive
                   ? isPaused
@@ -827,7 +827,7 @@ export default function BehatzaileKontagailua() {
               </span>
               {wakeLockActive && (
                 <span className="px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[9px] font-bold">
-                  📱 Pantaila esna
+                  � Pantaila esna
                 </span>
               )}
             </div>
@@ -842,7 +842,7 @@ export default function BehatzaileKontagailua() {
           {!sessionActive ? (
             <button
               onClick={handleStartSession}
-              className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/30 transition cursor-pointer"
+              className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-euskara text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/30 transition cursor-pointer"
             >
               <Play className="w-4 h-4 fill-current" />
               <span>Hasi saioa</span>
@@ -869,7 +869,7 @@ export default function BehatzaileKontagailua() {
 
               <button
                 onClick={handleStopAndSave}
-                className="px-3.5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs flex items-center gap-1 shadow-md shadow-emerald-500/30 transition cursor-pointer"
+                className="px-3.5 py-2.5 rounded-xl bg-emerald-500 hover:bg-euskara text-slate-950 font-bold text-xs flex items-center gap-1 shadow-md shadow-emerald-500/30 transition cursor-pointer"
                 title="Amaitu eta gorde neurketa"
               >
                 <Save className="w-4 h-4" />
@@ -881,23 +881,23 @@ export default function BehatzaileKontagailua() {
       </div>
 
       {/* Real-time Counter Stats Bar */}
-      <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200 mb-5 flex items-center justify-between">
+      <div className="bg-white rounded-2xl p-4 shadow-xs border border-line mb-5 flex items-center justify-between">
         <div>
-          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+          <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider block">
             Jasotako elkarrizketak
           </span>
-          <span className="text-2xl font-black text-slate-900 tabular-nums">
+          <span className="text-2xl font-black text-ink tabular-nums">
             {totalInteractions}{" "}
-            <span className="text-xs font-semibold text-slate-500">elkarrizketa</span>
+            <span className="text-xs font-semibold text-ink-muted">elkarrizketa</span>
           </span>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <span className="text-[11px] font-semibold text-emerald-700 uppercase tracking-wider block">
+            <span className="text-[11px] font-semibold text-euskara uppercase tracking-wider block">
               Euskara %
             </span>
-            <span className="text-2xl font-black text-emerald-700 tabular-nums">
+            <span className="text-2xl font-black text-euskara tabular-nums">
               %{euskaraPct}
             </span>
           </div>
@@ -906,7 +906,7 @@ export default function BehatzaileKontagailua() {
           <button
             onClick={handleUndo}
             disabled={history.length === 0}
-            className="p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+            className="p-2.5 rounded-xl border border-line bg-paper hover:bg-sand text-ink-muted disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
             title="Desegin azken klikatzea"
           >
             <Undo2 className="w-5 h-5" />
@@ -916,7 +916,7 @@ export default function BehatzaileKontagailua() {
           <button
             onClick={handleResetSession}
             disabled={totalInteractions === 0 && !sessionActive}
-            className="p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-slate-500 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+            className="p-2.5 rounded-xl border border-line bg-paper hover:bg-terracotta/10 hover:text-terracotta hover:border-terracotta/25 text-ink-muted disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
             title="Kontagailua 0ra berrabiarazi"
           >
             <RotateCcw className="w-5 h-5" />
@@ -926,20 +926,20 @@ export default function BehatzaileKontagailua() {
 
       {/* STEALTH CAMOUFLAGE MODE vs STANDARD 3 GIANT BUTTONS */}
       {stealthMode ? (
-        <div className="bg-slate-950 text-slate-400 rounded-3xl p-5 border border-slate-800 shadow-2xl space-y-3 select-none">
+        <div className="bg-slate-950 text-ink-muted rounded-2xl p-5 border border-slate-800 shadow-lg space-y-3 select-none">
           <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
             <div className="flex items-center gap-2">
-              <EyeOff className="w-4 h-4 text-slate-500" />
-              <span className="text-xs font-bold text-slate-400">
+              <EyeOff className="w-4 h-4 text-ink-muted" />
+              <span className="text-xs font-bold text-ink-muted">
                 Ohar-bloka / zerrenda (modu ezkutua)
               </span>
             </div>
-            <span className="text-[11px] font-mono text-slate-500">
+            <span className="text-[11px] font-mono text-ink-muted">
               #{totalInteractions} ({euskarazCount}·{erdarazCount}·{elebiCount})
             </span>
           </div>
 
-          <p className="text-[11px] text-slate-500 leading-relaxed">
+          <p className="text-[11px] text-ink-muted leading-relaxed">
             Pantaila ilunduta dago ingurukoek ez nabaritzeko. Sakatu eremu bakoitza begiratu gabe (bibrazio ezberdina du bakoitzak) edo erabili bolumen/gezi teklak:
           </p>
 
@@ -954,7 +954,7 @@ export default function BehatzaileKontagailua() {
               <span className="text-sm font-bold text-slate-300 block">
                 1. eremua — A aukera
               </span>
-              <span className="text-[11px] text-slate-500">
+              <span className="text-[11px] text-ink-muted">
                 Bibrazio 1 (sendoa) • Bolumena + / ↑
               </span>
             </div>
@@ -963,12 +963,12 @@ export default function BehatzaileKontagailua() {
                 <button
                   type="button"
                   onClick={(e) => handleDecrement(e, "euskaraz")}
-                  className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 text-xs font-bold border border-slate-700 cursor-pointer"
+                  className="px-2.5 py-1 rounded-lg bg-slate-800 text-ink-muted text-xs font-bold border border-slate-700 cursor-pointer"
                 >
                   -1
                 </button>
               )}
-              <span className="text-2xl font-mono font-bold text-slate-400">
+              <span className="text-2xl font-mono font-bold text-ink-muted">
                 {euskarazCount}
               </span>
             </div>
@@ -985,7 +985,7 @@ export default function BehatzaileKontagailua() {
               <span className="text-sm font-bold text-slate-300 block">
                 2. eremua — B aukera
               </span>
-              <span className="text-[11px] text-slate-500">
+              <span className="text-[11px] text-ink-muted">
                 2 bibrazio labur • Bolumena - / ↓
               </span>
             </div>
@@ -994,12 +994,12 @@ export default function BehatzaileKontagailua() {
                 <button
                   type="button"
                   onClick={(e) => handleDecrement(e, "erdaraz")}
-                  className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 text-xs font-bold border border-slate-700 cursor-pointer"
+                  className="px-2.5 py-1 rounded-lg bg-slate-800 text-ink-muted text-xs font-bold border border-slate-700 cursor-pointer"
                 >
                   -1
                 </button>
               )}
-              <span className="text-2xl font-mono font-bold text-slate-400">
+              <span className="text-2xl font-mono font-bold text-ink-muted">
                 {erdarazCount}
               </span>
             </div>
@@ -1016,7 +1016,7 @@ export default function BehatzaileKontagailua() {
               <span className="text-sm font-bold text-slate-300 block">
                 3. eremua — C aukera
               </span>
-              <span className="text-[11px] text-slate-500">
+              <span className="text-[11px] text-ink-muted">
                 3 bibrazio labur • → tekla
               </span>
             </div>
@@ -1025,12 +1025,12 @@ export default function BehatzaileKontagailua() {
                 <button
                   type="button"
                   onClick={(e) => handleDecrement(e, "elebi")}
-                  className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 text-xs font-bold border border-slate-700 cursor-pointer"
+                  className="px-2.5 py-1 rounded-lg bg-slate-800 text-ink-muted text-xs font-bold border border-slate-700 cursor-pointer"
                 >
                   -1
                 </button>
               )}
-              <span className="text-2xl font-mono font-bold text-slate-400">
+              <span className="text-2xl font-mono font-bold text-ink-muted">
                 {elebiCount}
               </span>
             </div>
@@ -1184,29 +1184,29 @@ export default function BehatzaileKontagailua() {
         className={`mt-6 rounded-2xl p-4 border transition ${
           stealthMode
             ? "bg-slate-900 border-slate-800 text-slate-300"
-            : "bg-white border-slate-200 shadow-xs text-slate-800"
+            : "bg-white border-line shadow-xs text-ink"
         }`}
       >
         <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
           <div className="flex items-center gap-1.5">
-            <Sparkles className={`w-4 h-4 ${stealthMode ? "text-indigo-400" : "text-indigo-600"}`} />
-            <h4 className={`text-xs font-extrabold ${stealthMode ? "text-slate-200" : "text-slate-900"}`}>
+            <Sparkles className={`w-4 h-4 ${stealthMode ? "text-indigo-400" : "text-sea"}`} />
+            <h4 className={`text-xs font-extrabold ${stealthMode ? "text-slate-200" : "text-ink"}`}>
               Behaketa bitarteko ohar kualitatiboak (Latxaren analisirako)
             </h4>
           </div>
-          <span className="text-[10px] font-semibold text-slate-400">
+          <span className="text-[10px] font-semibold text-ink-muted">
             Sakatu etiketak edo idatzi unean bertan ikusitakoa
           </span>
         </div>
 
         <div className="flex flex-wrap gap-1.5 mb-2.5">
           {[
-            "💬 Lehen hitza euskaraz",
-            "🔄 Euskaratik erdarara pasa dira",
-            "🙋 Herritarrak euskaraz jarraitu du",
-            "😊 Harrera ona dinamikari",
+            " � Lehen hitza euskaraz",
+            " � Euskaratik erdarara pasa dira",
+            " � Herritarrak euskaraz jarraitu du",
+            " � Harrera ona dinamikari",
             "⏳ Jende ilara / presa",
-            "👥 Taldeko elkarrizketa",
+            " � Taldeko elkarrizketa",
           ].map((tag) => {
             const isAdded = notes.includes(tag);
             return (
@@ -1226,10 +1226,10 @@ export default function BehatzaileKontagailua() {
                   isAdded
                     ? stealthMode
                       ? "bg-indigo-950 border-indigo-700 text-indigo-300"
-                      : "bg-indigo-50 border-indigo-300 text-indigo-800"
+                      : "bg-sea/10 border-sea/40 text-sea"
                     : stealthMode
                     ? "bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300"
-                    : "bg-slate-50 hover:bg-indigo-50/70 border-slate-200 text-slate-700"
+                    : "bg-paper hover:bg-sea/5 border-line text-ink"
                 }`}
               >
                 {isAdded ? `✓ ${tag}` : `+ ${tag}`}
@@ -1243,22 +1243,22 @@ export default function BehatzaileKontagailua() {
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Idatzi hemen saioan ikusitako edozein pasadizo, jarrera edo ohar (automatikoki gordeko da)..."
-          className={`w-full rounded-xl px-3.5 py-2 text-xs border focus:outline-hidden focus:ring-2 focus:ring-indigo-500 ${
+          className={`w-full rounded-xl px-3.5 py-2 text-xs border focus:outline-hidden focus:ring-2 focus:ring-sea/40 ${
             stealthMode
-              ? "bg-slate-950 border-slate-800 text-slate-200 placeholder:text-slate-600"
-              : "bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400"
+              ? "bg-slate-950 border-slate-800 text-slate-200 placeholder:text-ink-muted"
+              : "bg-paper border-line text-ink placeholder:text-ink-muted"
           }`}
         />
       </div>
 
       {/* Observer Instructions Card */}
-      <div className="mt-8 bg-sky-50/70 rounded-2xl p-4 border border-sky-100 text-xs text-slate-600 leading-relaxed">
+      <div className="mt-8 bg-sky-50/70 rounded-2xl p-4 border border-sky-100 text-xs text-ink-muted leading-relaxed">
         <h4 className="font-bold text-sky-900 mb-1 flex items-center gap-1.5">
           <AlertCircle className="w-4 h-4 text-sky-600" />
           Behatzailearen gida praktikoa (modu diskretua):
         </h4>
-        <ul className="list-disc pl-4 space-y-1 mt-1 text-slate-700">
-          <li>Sakatu goiko <strong>&ldquo;🕵️ Modu diskretua&rdquo;</strong> botoia pantaila iluntzeko eta kolore deigarriak ezkutatzeko.</li>
+        <ul className="list-disc pl-4 space-y-1 mt-1 text-ink">
+          <li>Sakatu goiko <strong>&ldquo; �️ Modu diskretua&rdquo;</strong> botoia pantaila iluntzeko eta kolore deigarriak ezkutatzeko.</li>
           <li>Soinua lehenetsita <strong>isilik</strong> dago, eta aukera bakoitzak <strong>bibrazio-eredu ezberdina</strong> du pantailari begiratu gabe zenbatu ahal izateko.</li>
           <li>Nahastu bazara, erabili <strong>-1</strong> botoia edo desegin botoia edozein unetan.</li>
           <li>Amaitutakoan, sakatu <strong>&ldquo;Gorde&rdquo;</strong> emaitzak erregistratzeko.</li>
@@ -1268,43 +1268,43 @@ export default function BehatzaileKontagailua() {
       {/* SAVE MEASUREMENT MODAL */}
       {showSaveModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150 max-h-[92vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-lg border border-line animate-in fade-in zoom-in-95 duration-150 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
-                <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+              <div className="w-10 h-10 rounded-2xl bg-euskara/15 text-euskara flex items-center justify-center">
+                <CheckCircle2 className="w-6 h-6 text-euskara" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-900">
+                <h3 className="text-lg font-bold text-ink">
                   Gorde {phase} neurketa ({existingPhaseCount + 1}. saioa)
                 </h3>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-ink-muted">
                   {currentExp?.gunea || "Espazioa"} • {activeEragilea?.izena}
                 </p>
               </div>
             </div>
 
             {/* Results Recap */}
-            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 mb-4 grid grid-cols-3 gap-2 text-center">
+            <div className="bg-paper rounded-2xl p-4 border border-line mb-4 grid grid-cols-3 gap-2 text-center">
               <div>
-                <span className="text-[10px] font-bold text-slate-400 block">🟢 Euskaraz</span>
-                <span className="text-xl font-black text-emerald-600">{euskarazCount}</span>
+                <span className="text-[10px] font-bold text-ink-muted block"> � Euskaraz</span>
+                <span className="text-xl font-black text-euskara">{euskarazCount}</span>
               </div>
               <div>
-                <span className="text-[10px] font-bold text-slate-400 block">🔴 Erdaraz</span>
-                <span className="text-xl font-black text-rose-600">{erdarazCount}</span>
+                <span className="text-[10px] font-bold text-ink-muted block"> � Erdaraz</span>
+                <span className="text-xl font-black text-terracotta">{erdarazCount}</span>
               </div>
               <div>
-                <span className="text-[10px] font-bold text-slate-400 block">🟡 Elebi</span>
+                <span className="text-[10px] font-bold text-ink-muted block"> � Elebi</span>
                 <span className="text-xl font-black text-amber-600">{elebiCount}</span>
               </div>
             </div>
 
-            <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-200 mb-4 text-center">
-              <span className="text-xs font-semibold text-emerald-800 block">
+            <div className="bg-euskara/10 rounded-xl p-3 border border-euskara/25 mb-4 text-center">
+              <span className="text-xs font-semibold text-euskara block">
                 Saio honetako euskara erabilera: <strong>%{euskaraPct}</strong> ({totalInteractions} elkarrizketatatik)
               </span>
               {existingPhaseCount > 0 && (
-                <span className="text-[11px] text-emerald-700 mt-1 block">
+                <span className="text-[11px] text-euskara mt-1 block">
                   Aurreko {existingPhaseCount} saioekin batera kalkulatuko da {phase} faseko batez besteko orokorra.
                 </span>
               )}
@@ -1312,19 +1312,19 @@ export default function BehatzaileKontagailua() {
 
             <div className="space-y-3 mb-5">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-ink mb-1">
                   Behatzailearen izena / kodea:
                 </label>
                 <input
                   type="text"
                   value={behatzailea}
                   onChange={(e) => handleBehatzaileaChange(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  className="w-full px-3 py-2 rounded-xl border border-line text-xs text-ink focus:ring-2 focus:ring-euskara/40 focus:outline-hidden"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-ink mb-1">
                   Ohar azkarrak (sakatu gehitzeko):
                 </label>
                 <div className="flex flex-wrap gap-1.5 mb-2">
@@ -1348,7 +1348,7 @@ export default function BehatzaileKontagailua() {
                             : tag
                         )
                       }
-                      className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-200 border border-slate-200 text-[11px] font-semibold text-slate-700 transition cursor-pointer"
+                      className="px-2.5 py-1 rounded-lg bg-sand hover:bg-euskara/10 hover:text-euskara hover:border-euskara/25 border border-line text-[11px] font-semibold text-ink transition cursor-pointer"
                     >
                       + {tag}
                     </button>
@@ -1359,14 +1359,14 @@ export default function BehatzaileKontagailua() {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Adib. Atsedenaldian, jende asko zegoen elkartuta..."
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  className="w-full px-3 py-2 rounded-xl border border-line text-xs text-ink focus:ring-2 focus:ring-euskara/40 focus:outline-hidden"
                 />
               </div>
             </div>
 
             {!isOnline && (
               <div className="bg-amber-50 text-amber-900 border border-amber-200 rounded-2xl p-3 mb-4 text-xs flex items-center gap-2">
-                <span className="text-base">📴</span>
+                <span className="text-base"> �</span>
                 <span className="leading-snug">
                   Lineaz kanpo zaude. Neurketa gailuan gordeko da seguru, eta internetera konektatzean automatikoki sinkronizatuko da.
                 </span>
@@ -1377,7 +1377,7 @@ export default function BehatzaileKontagailua() {
               <button
                 type="button"
                 onClick={() => setShowSaveModal(false)}
-                className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                className="px-4 py-2.5 rounded-xl text-xs font-semibold text-ink-muted hover:bg-sand transition cursor-pointer"
               >
                 Jarraitu neurtzen
               </button>
@@ -1386,7 +1386,7 @@ export default function BehatzaileKontagailua() {
                 type="button"
                 onClick={handleConfirmSave}
                 disabled={isSaving}
-                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/30 flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+                className="px-5 py-2.5 rounded-xl bg-euskara hover:opacity-95 text-white font-bold text-xs shadow-md shadow-xs flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
               >
                 <Save className="w-4 h-4" />
                 <span>
@@ -1405,17 +1405,17 @@ export default function BehatzaileKontagailua() {
       {/* Quick Stand Modal */}
       {showNewStandModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-200 my-8 max-h-[92vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-lg border border-line my-8 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2.5">
-                <div className="p-2.5 bg-emerald-100 text-emerald-800 rounded-2xl">
-                  <Store className="w-5 h-5 text-emerald-600" />
+                <div className="p-2.5 bg-euskara/15 text-euskara rounded-2xl">
+                  <Store className="w-5 h-5 text-euskara" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900 text-base">
+                  <h3 className="font-bold text-ink text-base">
                     Gehitu entitatea
                   </h3>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-ink-muted">
                     Zehaztu entitatea eta zuen hipotesi erreala
                   </p>
                 </div>
@@ -1423,7 +1423,7 @@ export default function BehatzaileKontagailua() {
               <button
                 type="button"
                 onClick={() => setShowNewStandModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+                className="text-ink-muted hover:text-ink-muted p-1.5 rounded-lg hover:bg-sand transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1431,7 +1431,7 @@ export default function BehatzaileKontagailua() {
 
             <form onSubmit={handleCreateStandSubmit} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-ink mb-1">
                   Entitatearen izena *
                 </label>
                 <input
@@ -1440,14 +1440,14 @@ export default function BehatzaileKontagailua() {
                   placeholder="Adib: Zurriola Ikastola, Kaxilda, Bretxako Harategia..."
                   value={newStandName}
                   onChange={(e) => setNewStandName(e.target.value)}
-                  className="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  className="w-full border border-line rounded-xl px-3.5 py-2 text-xs font-medium text-ink focus:ring-2 focus:ring-euskara/40 focus:outline-hidden"
                   autoFocus
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-ink mb-1">
                     Arduraduna (hautazkoa)
                   </label>
                   <input
@@ -1455,24 +1455,24 @@ export default function BehatzaileKontagailua() {
                     placeholder="Adib: Miren / Koldo"
                     value={newStandManager}
                     onChange={(e) => setNewStandManager(e.target.value)}
-                    className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                    className="w-full border border-line rounded-xl px-3 py-2 text-xs font-medium text-ink focus:ring-2 focus:ring-euskara/40 focus:outline-hidden"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label className="block text-xs font-bold text-ink mb-1">
                     Gunea (non)
                   </label>
                   <input
                     type="text"
                     value={newStandGunea}
                     onChange={(e) => setNewStandGunea(e.target.value)}
-                    className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                    className="w-full border border-line rounded-xl px-3 py-2 text-xs font-medium text-ink focus:ring-2 focus:ring-euskara/40 focus:outline-hidden"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-ink mb-1">
                   Xede-igoera (+%):
                 </label>
                 <div className="flex items-center gap-3">
@@ -1485,14 +1485,14 @@ export default function BehatzaileKontagailua() {
                     onChange={(e) => setNewStandTargetPct(Number(e.target.value))}
                     className="flex-1 accent-emerald-600"
                   />
-                  <span className="font-extrabold text-xs text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200">
+                  <span className="font-extrabold text-xs text-euskara bg-euskara/10 px-2 py-1 rounded-lg border border-euskara/25">
                     +%{newStandTargetPct}
                   </span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-800 mb-1">
+                <label className="block text-xs font-bold text-ink mb-1">
                   Hipotesi erreala (nahi duzun bezala idatzi edo aldatu) *
                 </label>
                 <textarea
@@ -1500,7 +1500,7 @@ export default function BehatzaileKontagailua() {
                   required
                   value={newStandHipotesia}
                   onChange={(e) => setNewStandHipotesia(e.target.value)}
-                  className="w-full border border-emerald-300 bg-emerald-50/30 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                  className="w-full border border-euskara/40 bg-euskara/10/30 rounded-xl px-3 py-2 text-xs font-semibold text-ink focus:ring-2 focus:ring-euskara/40 focus:outline-hidden"
                 />
               </div>
 
@@ -1508,14 +1508,14 @@ export default function BehatzaileKontagailua() {
                 <button
                   type="button"
                   onClick={() => setShowNewStandModal(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                  className="px-4 py-2 text-xs font-semibold text-ink-muted hover:bg-sand rounded-xl transition cursor-pointer"
                 >
                   Utzi
                 </button>
                 <button
                   type="submit"
                   disabled={isCreatingStand || !newStandName.trim() || !newStandHipotesia.trim()}
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2 bg-euskara hover:opacity-95 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   {isCreatingStand ? "Sortzen..." : "Sortu eta hasi T0 neurtzen →"}
                 </button>

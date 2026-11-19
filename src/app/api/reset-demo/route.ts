@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import db, { syncDbFromCloud, syncDbToCloud } from "@/lib/db";
+import { requireAdmin } from "@/lib/auth";
 
 export async function POST() {
   try {
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
+
     await syncDbFromCloud();
 
     // Clear all dynamic data so user can start completely from scratch

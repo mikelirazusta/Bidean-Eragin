@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server";
 import db, { Eragilea, User, syncDbFromCloud, syncDbToCloud } from "@/lib/db";
+import {
+  hashPassword,
+  isHashedPassword,
+  requireAdmin,
+  setSessionCookie,
+  verifyPassword,
+} from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
@@ -27,11 +34,20 @@ export async function POST(request: Request) {
       );
     }
 
-    if (user.password !== cleanPassword) {
+    if (!verifyPassword(cleanPassword, user.password)) {
       return NextResponse.json(
         { success: false, error: "Pasahitza ez da zuzena." },
         { status: 401 }
       );
+    }
+
+    let dbModified = false;
+    if (!isHashedPassword(user.password)) {
+      db.prepare("UPDATE users SET password = ? WHERE id = ?").run(
+        hashPassword(cleanPassword),
+        user.id
+      );
+      dbModified = true;
     }
 
     let eragilea: Eragilea | null = null;
@@ -51,7 +67,7 @@ export async function POST(request: Request) {
           // Create a dedicated center for this eragilea user so they never see another center
           const newCenterId = "zentro-" + Date.now();
           const nowIso = new Date().toISOString();
-          const centerName = (user.name || cleanEmail.split("@")[0] || "Saltokia").trim();
+          const centerName = (user.name || cleanEmail.split("@")[0] || "Entitatea").trim();
           db.prepare(`
             INSERT INTO eragileak (id, izena, mota, arduraduna, email, erronka_nagusia, sortze_data, publikoa)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -61,7 +77,7 @@ export async function POST(request: Request) {
             "merkataritza",
             centerName,
             cleanEmail,
-            "Dendan lehen hitza eta elkarrizketak euskaraz sustatzea",
+            "Entitatean lehen hitza eta elkarrizketak euskaraz sustatzea",
             nowIso,
             0
           );
@@ -71,9 +87,13 @@ export async function POST(request: Request) {
         if (eragilea) {
           resolvedEragileId = eragilea.id;
           db.prepare("UPDATE users SET eragile_id = ? WHERE id = ?").run(resolvedEragileId, user.id);
-          await syncDbToCloud();
+          dbModified = true;
         }
       }
+    }
+
+    if (dbModified) {
+      await syncDbToCloud();
     }
 
     // Do not return password to client
@@ -86,11 +106,12 @@ export async function POST(request: Request) {
       created_at: user.created_at,
     };
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       user: safeUser,
       eragilea,
     });
+    return setSessionCookie(response, safeUser);
   } catch (error) {
     console.error("Errorea saioa hastean:", error);
     return NextResponse.json(
@@ -102,6 +123,9 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
+
     await syncDbFromCloud();
 
     const body = await request.json();
@@ -122,7 +146,7 @@ export async function PATCH(request: Request) {
       );
     }
 
-    if (adminUser.password !== String(currentPassword).trim()) {
+    if (!verifyPassword(String(currentPassword).trim(), adminUser.password)) {
       return NextResponse.json(
         { success: false, error: "Uneko pasahitza ez da zuzena." },
         { status: 401 }
@@ -130,7 +154,7 @@ export async function PATCH(request: Request) {
     }
 
     const updatedEmail = newEmail ? String(newEmail).trim().toLowerCase() : adminUser.email;
-    const updatedPassword = newPassword ? String(newPassword).trim() : adminUser.password || "bagera2026";
+    const rawNewPassword = newPassword ? String(newPassword).trim() : "";
     const updatedName = newName ? String(newName).trim() : adminUser.name;
 
     if (!updatedEmail.includes("@")) {
@@ -140,12 +164,18 @@ export async function PATCH(request: Request) {
       );
     }
 
-    if (updatedPassword.length < 4) {
+    if (rawNewPassword && rawNewPassword.length < 4) {
       return NextResponse.json(
         { success: false, error: "Pasahitz berriak gutxienez 4 karaktere izan behar ditu." },
         { status: 400 }
       );
     }
+
+    const storedPassword = rawNewPassword
+      ? hashPassword(rawNewPassword)
+      : isHashedPassword(adminUser.password)
+      ? adminUser.password
+      : hashPassword(String(currentPassword).trim());
 
     const existingByEmail = db
       .prepare("SELECT * FROM users WHERE LOWER(email) = ?")
@@ -160,7 +190,7 @@ export async function PATCH(request: Request) {
 
     db.prepare("UPDATE users SET email = ?, password = ?, name = ? WHERE id = ?").run(
       updatedEmail,
-      updatedPassword,
+      storedPassword,
       updatedName,
       adminUser.id
     );
@@ -176,10 +206,11 @@ export async function PATCH(request: Request) {
       created_at: adminUser.created_at,
     };
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       user: safeUser,
     });
+    return setSessionCookie(response, safeUser);
   } catch (error) {
     console.error("Errorea admin kredentzialak eguneratzean:", error);
     return NextResponse.json(

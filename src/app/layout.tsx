@@ -60,13 +60,6 @@ export default function RootLayout({
       lang="eu"
       className={`h-full antialiased font-sans ${plusJakarta.variable} ${newsreader.variable} ${jetbrainsMono.variable}`}
     >
-      <head>
-        <link rel="manifest" href="/manifest.json" />
-        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Bidean Eragin" />
-      </head>
       <body className="min-h-full flex flex-col bg-paper text-ink selection:bg-euskara selection:text-white">
         {children}
       </body>

@@ -5,12 +5,16 @@ import db, {
   syncDbToCloud,
   offloadInlineMaterialsToStore,
 } from "@/lib/db";
+import { requireAdmin, requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function GET() {
   try {
+    const auth = await requireAuth();
+    if (auth.error) return auth.error;
+
     await syncDbFromCloud();
     const pilotuak = db.prepare("SELECT * FROM pilotuak ORDER BY id = 'barra-barra-txapak' DESC").all() as Pilotua[];
     return NextResponse.json({ success: true, data: pilotuak });
@@ -22,6 +26,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireAuth();
+    if (auth.error) return auth.error;
+
     await syncDbFromCloud();
 
     const body = await request.json();
@@ -98,6 +105,9 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
+    const auth = await requireAuth();
+    if (auth.error) return auth.error;
+
     await syncDbFromCloud();
 
     const body = await request.json();
@@ -179,6 +189,9 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
+
     await syncDbFromCloud();
 
     const { searchParams } = new URL(request.url);

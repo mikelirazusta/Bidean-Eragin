@@ -6,10 +6,10 @@ import Navbar from "@/components/Navbar";
 import ZentroDashboard from "@/components/ZentroDashboard";
 import PilotuenKatalogoa from "@/components/PilotuenKatalogoa";
 import BehatzaileKontagailua from "@/components/BehatzaileKontagailua";
-import OnboardingView from "@/components/OnboardingView";
 import AdminKoadroa from "@/components/AdminKoadroa";
 import AuthPortal from "@/components/AuthPortal";
 import PWAInitializer from "@/components/PWAInitializer";
+import ToastContainer from "@/components/ToastContainer";
 import { LogOut } from "lucide-react";
 import type { Pilotua, Eragilea, Esperimentua, Neurketa, Nudge } from "@/lib/db";
 
@@ -40,21 +40,20 @@ function MainContent() {
         {activeTab === "panela" && <ZentroDashboard />}
         {activeTab === "katalogoa" && <PilotuenKatalogoa />}
         {activeTab === "behaketa" && <BehatzaileKontagailua />}
-        {activeTab === "onboarding" && <OnboardingView />}
         {activeTab === "admin" && <AdminKoadroa />}
       </main>
 
       {/* Footer */}
       <footer className="border-t border-line bg-white py-6 mt-auto print:hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-ink-muted">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-bold text-slate-800">{uiTexts.app_title || "Bidean Eragin"}</span>
+            <span className="font-bold text-ink">{uiTexts.app_title || "Bidean Eragin"}</span>
             <span>•</span>
             <span>{uiTexts.footer_text || "Bagera Euskaltzaleen Elkartea • Euskararen erabilera neurgarria eta praktikoa"}</span>
             {activeEragilea && (
               <>
                 <span className="hidden sm:inline">•</span>
-                <span className="hidden sm:inline font-semibold text-sky-800">
+                <span className="hidden sm:inline font-semibold text-sea">
                   {activeEragilea.izena}
                 </span>
               </>
@@ -64,7 +63,7 @@ function MainContent() {
           <div className="flex items-center gap-4">
             <button
               onClick={logout}
-              className="text-rose-600 hover:text-rose-800 font-semibold flex items-center gap-1 cursor-pointer"
+              className="text-terracotta hover:opacity-80 font-semibold flex items-center gap-1 cursor-pointer"
               title="Itxi saioa uneko kontutik"
             >
               <LogOut className="w-3.5 h-3.5" />
@@ -72,7 +71,7 @@ function MainContent() {
             </button>
 
             <span>•</span>
-            <span className="text-slate-400">
+            <span className="text-ink-muted">
               Bagera Euskaltzaleen Elkartea
             </span>
           </div>
@@ -87,6 +86,7 @@ export default function MainClientApp({ initialData }: MainClientAppProps) {
     <AppProvider initialData={initialData}>
       <PWAInitializer />
       <MainContent />
+      <ToastContainer />
     </AppProvider>
   );
 }

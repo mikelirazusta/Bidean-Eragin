@@ -94,7 +94,7 @@ export default function PWAInitializer() {
 
       {/* 2. PENDING OFFLINE SYNC FLOATING BAR */}
       {isOnline && pendingSyncCount > 0 && (
-        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 z-50 bg-slate-900 text-white rounded-2xl p-3.5 shadow-2xl border border-slate-700 flex items-center gap-3 animate-in slide-in-from-bottom">
+        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 z-50 bg-slate-900 text-white rounded-2xl p-3.5 shadow-lg border border-slate-700 flex items-center gap-3 animate-in slide-in-from-bottom">
           <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
             <Wifi className="w-4 h-4 text-amber-400" />
           </div>
@@ -102,14 +102,14 @@ export default function PWAInitializer() {
             <span className="font-bold block">
               {pendingSyncCount} neurketa sinkronizatzeko zain
             </span>
-            <span className="text-slate-400 text-[11px]">
+            <span className="text-ink-muted text-[11px]">
               Gailuan gordeta daude
             </span>
           </div>
           <button
             onClick={handleManualSync}
             disabled={isSyncing}
-            className="ml-auto px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+            className="ml-auto px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-euskara text-slate-950 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} />
             <span>{isSyncing ? "Igotzen..." : "Sinkronizatu"}</span>
@@ -119,7 +119,7 @@ export default function PWAInitializer() {
 
       {/* 3. SYNC TOAST NOTIFICATION */}
       {syncToast && (
-        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-emerald-600 text-white px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 text-xs font-bold animate-in fade-in zoom-in-95">
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-euskara text-white px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 text-xs font-bold animate-in fade-in zoom-in-95">
           <CheckCircle2 className="w-4 h-4" />
           <span>{syncToast}</span>
         </div>
@@ -127,29 +127,29 @@ export default function PWAInitializer() {
 
       {/* 4. INSTALL APP PWA BANNER */}
       {showInstallBanner && (
-        <div className="fixed bottom-4 left-4 right-4 sm:left-6 sm:max-w-md z-50 bg-white rounded-2xl p-4 shadow-2xl border border-slate-200 flex items-center gap-3 animate-in slide-in-from-bottom">
-          <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
+        <div className="fixed bottom-4 left-4 right-4 sm:left-6 sm:max-w-md z-50 bg-white rounded-2xl p-4 shadow-lg border border-line flex items-center gap-3 animate-in slide-in-from-bottom">
+          <div className="w-10 h-10 rounded-xl bg-euskara/15 flex items-center justify-center shrink-0">
             <img src="/icons/icon-192x192.png" alt="Icon" className="w-8 h-8 rounded-lg" />
           </div>
           <div className="flex-1 min-w-0 text-xs">
-            <h5 className="font-bold text-slate-900 leading-tight">
+            <h5 className="font-bold text-ink leading-tight">
               Instalatu Bidean Eragin
             </h5>
-            <p className="text-slate-500 text-[11px] truncate">
+            <p className="text-ink-muted text-[11px] truncate">
               Mugikorreko aplikazio gisa erabili, baita konexiorik gabe ere!
             </p>
           </div>
           <div className="flex items-center gap-1.5">
             <button
               onClick={handleInstallClick}
-              className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 transition cursor-pointer"
+              className="px-3 py-1.5 rounded-xl bg-euskara hover:opacity-95 text-white font-bold text-xs flex items-center gap-1 transition cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Instalatu</span>
             </button>
             <button
               onClick={handleDismissInstall}
-              className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg"
+              className="p-1.5 text-ink-muted hover:text-ink-muted rounded-lg"
               title="Itxi"
             >
               <X className="w-4 h-4" />

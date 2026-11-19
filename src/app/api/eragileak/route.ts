@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import db, { Eragilea, syncDbFromCloud, syncDbToCloud } from "@/lib/db";
+import { hashPassword, requireAdmin, requireAuth } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
+
     await syncDbFromCloud();
 
     const body = await request.json();
@@ -45,7 +49,7 @@ export async function POST(request: Request) {
         `).run(
           "user-" + Date.now(),
           cleanEmail,
-          body.password ? body.password.trim() : "bidean123",
+          hashPassword(body.password ? body.password.trim() : "bidean123"),
           (arduraduna || "Arduraduna").trim(),
           "eragilea",
           id,
@@ -63,8 +67,8 @@ export async function POST(request: Request) {
     insertNudge.run(
       "nudge-" + Date.now(),
       id,
-      "Ongi etorri Bidean Eragin komunitatera! 🌟",
-      `Zure erronka (${erronka_nagusia}) gainditzeko lehen urratsa prest dago: aukeratu pilotu bat katalogoan eta sortu zure lehen hipotesia!`,
+      "Ongi etorri Bidean Eragin komunitatera",
+      `Zure erronka (${erronka_nagusia}) lantzeko lehen urratsa prest dago: aukeratu pilotu bat katalogoan eta sortu zure lehen hipotesia.`,
       "bultzada",
       new Date(Date.now() + 86400000 * 3).toISOString(),
       0,
@@ -91,6 +95,9 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
+    const auth = await requireAuth();
+    if (auth.error) return auth.error;
+
     await syncDbFromCloud();
 
     const body = await request.json();
@@ -98,15 +105,22 @@ export async function PATCH(request: Request) {
 
     if (!id) {
       return NextResponse.json(
-        { success: false, error: "Saltokiaren IDa beharrezkoa da" },
+        { success: false, error: "Entitatearen IDa beharrezkoa da" },
         { status: 400 }
+      );
+    }
+
+    if (auth.session.role !== "admin" && auth.session.eragile_id !== id) {
+      return NextResponse.json(
+        { success: false, error: "Beste entitate baten datuak ezin dira aldatu." },
+        { status: 403 }
       );
     }
 
     const existing = db.prepare("SELECT * FROM eragileak WHERE id = ?").get(id) as Eragilea | undefined;
     if (!existing) {
       return NextResponse.json(
-        { success: false, error: "Saltokia ez da aurkitu" },
+        { success: false, error: "Entitatea ez da aurkitu" },
         { status: 404 }
       );
     }
@@ -133,7 +147,7 @@ export async function PATCH(request: Request) {
         if (password && String(password).trim().length > 0) {
           db.prepare(
             "UPDATE users SET email = ?, password = ?, name = ? WHERE eragile_id = ?"
-          ).run(cleanEmail, String(password).trim(), updatedArduraduna || updatedIzena, id);
+          ).run(cleanEmail, hashPassword(String(password).trim()), updatedArduraduna || updatedIzena, id);
         } else {
           db.prepare(
             "UPDATE users SET email = ?, name = ? WHERE eragile_id = ?"
@@ -150,9 +164,11 @@ export async function PATCH(request: Request) {
           `).run(
             "user-" + Date.now(),
             cleanEmail,
-            password && String(password).trim().length > 0
-              ? String(password).trim()
-              : "bidean123",
+            hashPassword(
+              password && String(password).trim().length > 0
+                ? String(password).trim()
+                : "bidean123"
+            ),
             updatedArduraduna || updatedIzena,
             "eragilea",
             id,
@@ -173,7 +189,7 @@ export async function PATCH(request: Request) {
   } catch (error) {
     console.error("Errorea eragilea eguneratzean:", error);
     return NextResponse.json(
-      { success: false, error: "Ezin izan dira saltokiaren datuak eguneratu" },
+      { success: false, error: "Ezin izan dira entitatearen datuak eguneratu" },
       { status: 500 }
     );
   }
@@ -181,6 +197,9 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const auth = await requireAdmin();
+    if (auth.error) return auth.error;
+
     await syncDbFromCloud();
 
     const { searchParams } = new URL(request.url);
@@ -188,7 +207,7 @@ export async function DELETE(request: Request) {
 
     if (!id) {
       return NextResponse.json(
-        { success: false, error: "Zentroaren IDa beharrezkoa da" },
+        { success: false, error: "Entitatearen IDa beharrezkoa da" },
         { status: 400 }
       );
     }
@@ -208,12 +227,12 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: "Saltokia eta bere proba-datu guztiak ezabatu dira.",
+      message: "Entitatea eta bere proba-datu guztiak ezabatu dira.",
     });
   } catch (error) {
     console.error("Errorea eragilea ezabatzean:", error);
     return NextResponse.json(
-      { success: false, error: "Ezin izan da saltokia ezabatu" },
+      { success: false, error: "Ezin izan da entitatea ezabatu" },
       { status: 500 }
     );
   }
