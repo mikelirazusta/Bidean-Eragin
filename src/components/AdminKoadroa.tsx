@@ -39,7 +39,7 @@ import {
   Copy,
   Check,
 } from "lucide-react";
-import { useApp, getPublicEragileLabel, DEFAULT_UI_TEXTS } from "@/context/AppContext";
+import { useApp, getPublicEragileLabel, DEFAULT_UI_TEXTS, formatBehatzaileaDisplay } from "@/context/AppContext";
 import type { Eragilea, Esperimentua, Neurketa } from "@/lib/db";
 
 const UI_TEXT_FIELDS: Array<{
@@ -1775,7 +1775,7 @@ export default function AdminKoadroa() {
                         </span>
                       </td>
                       <td className="py-3 pr-3 text-ink-muted font-medium">
-                        {n.behatzailea || <span className="text-ink-muted italic">Izendatu gabe</span>}
+                        {formatBehatzaileaDisplay(n.behatzailea)}
                       </td>
                       <td className="py-3 pr-3">
                         <span className="font-bold text-euskara">{n.euskaraz_count} eusk</span>

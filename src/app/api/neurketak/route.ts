@@ -100,14 +100,28 @@ export async function POST(request: Request) {
       euskaraz_count,
       erdaraz_count,
       elebi_count,
+      aldaketa_count,
       iraupena_segundotan,
       oharrak,
       behatzailea,
+      hasiera_ordu,
+      amaiera_ordu,
+      data_ordu: clientDataOrdu,
+      lineaz_kanpo,
+      atzeratua,
     } = body;
 
     if (!esperimentu_id || !unea) {
       return NextResponse.json(
         { success: false, error: "Esperimentuaren IDa eta unea beharrezkoak dira" },
+        { status: 400 }
+      );
+    }
+
+    const cleanBehatzailea = String(behatzailea || "").trim();
+    if (!cleanBehatzailea || cleanBehatzailea === "Behatzailea" || cleanBehatzailea === "Behatzaile Itsua") {
+      return NextResponse.json(
+        { success: false, error: "Behatzailea aukeratu behar da neurketa gorde aurretik." },
         { status: 400 }
       );
     }
@@ -122,14 +136,70 @@ export async function POST(request: Request) {
       }
     }
 
-    const id = "neu-" + Date.now();
+    const id = "neu-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6);
     const now = new Date();
-    const data_ordu = now.toISOString();
+    const maxFutureMs = now.getTime() + 5 * 60 * 1000; // 5 min clock skew tolerance
+    const minPastMs = now.getTime() - 30 * 86400 * 1000; // 30 days
+
+    let resolvedHasiera: string | null = null;
+    if (hasiera_ordu) {
+      const parsedStart = new Date(String(hasiera_ordu));
+      if (isNaN(parsedStart.getTime())) {
+        return NextResponse.json(
+          { success: false, error: "Hasiera-ordua ez da data zuzena." },
+          { status: 400 }
+        );
+      }
+      if (parsedStart.getTime() > maxFutureMs) {
+        return NextResponse.json(
+          { success: false, error: "Neurketa ezin da etorkizuneko datarekin gorde." },
+          { status: 400 }
+        );
+      }
+      if (parsedStart.getTime() < minPastMs) {
+        return NextResponse.json(
+          { success: false, error: "Neurketa ezin da 30 egun baino lehenagoko datarekin gorde." },
+          { status: 400 }
+        );
+      }
+      resolvedHasiera = parsedStart.toISOString();
+    }
+
+    let resolvedAmaiera: string | null = null;
+    if (amaiera_ordu) {
+      const parsedEnd = new Date(String(amaiera_ordu));
+      if (isNaN(parsedEnd.getTime())) {
+        return NextResponse.json(
+          { success: false, error: "Amaiera-ordua ez da data zuzena." },
+          { status: 400 }
+        );
+      }
+      if (parsedEnd.getTime() > maxFutureMs) {
+        return NextResponse.json(
+          { success: false, error: "Amaiera-ordua ezin da etorkizunean egon." },
+          { status: 400 }
+        );
+      }
+      resolvedAmaiera = parsedEnd.toISOString();
+    }
+
+    let data_ordu = resolvedHasiera || now.toISOString();
+    if (!resolvedHasiera && clientDataOrdu) {
+      const parsedClientDate = new Date(String(clientDataOrdu));
+      if (
+        !isNaN(parsedClientDate.getTime()) &&
+        parsedClientDate.getTime() <= maxFutureMs &&
+        parsedClientDate.getTime() >= minPastMs
+      ) {
+        data_ordu = parsedClientDate.toISOString();
+      }
+    }
 
     const insertNeurketa = db.prepare(`
       INSERT INTO neurketak (
-        id, esperimentu_id, unea, euskaraz_count, erdaraz_count, elebi_count, iraupena_segundotan, data_ordu, oharrak, behatzailea
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        id, esperimentu_id, unea, euskaraz_count, erdaraz_count, elebi_count, iraupena_segundotan, data_ordu, oharrak, behatzailea,
+        hasiera_ordu, amaiera_ordu, aldaketa_count, lineaz_kanpo, atzeratua
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     insertNeurketa.run(
@@ -142,7 +212,12 @@ export async function POST(request: Request) {
       Number(iraupena_segundotan) || 600,
       data_ordu,
       oharrak || "",
-      behatzailea || "Behatzailea"
+      cleanBehatzailea,
+      resolvedHasiera,
+      resolvedAmaiera,
+      Number(aldaketa_count) || 0,
+      lineaz_kanpo ? 1 : 0,
+      atzeratua ? 1 : 0
     );
 
     // Get experiment and Eragile details

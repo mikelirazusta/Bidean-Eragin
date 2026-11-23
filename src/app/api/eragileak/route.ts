@@ -101,7 +101,7 @@ export async function PATCH(request: Request) {
     await syncDbFromCloud();
 
     const body = await request.json();
-    const { id, izena, mota, arduraduna, email, erronka_nagusia, password, publikoa } = body;
+    const { id, izena, mota, arduraduna, email, erronka_nagusia, password, publikoa, behatzaileak_json, behatzaileak } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -131,10 +131,23 @@ export async function PATCH(request: Request) {
     const updatedEmail = email !== undefined ? String(email).trim() : existing.email;
     const updatedErronka = erronka_nagusia !== undefined ? String(erronka_nagusia).trim() : existing.erronka_nagusia;
     const updatedPublikoa = publikoa !== undefined ? Number(publikoa ? 1 : 0) : Number(existing.publikoa || 0);
+    let updatedBehatzaileakJson = existing.behatzaileak_json || "[]";
+    if (Array.isArray(behatzaileak)) {
+      const cleaned = Array.from(
+        new Set(
+          behatzaileak
+            .map((s: unknown) => String(s || "").trim())
+            .filter((s: string) => s.length > 0 && s !== "Behatzailea" && s !== "Behatzaile Itsua")
+        )
+      );
+      updatedBehatzaileakJson = JSON.stringify(cleaned);
+    } else if (typeof behatzaileak_json === "string") {
+      updatedBehatzaileakJson = behatzaileak_json;
+    }
 
     db.prepare(
-      "UPDATE eragileak SET izena = ?, mota = ?, arduraduna = ?, email = ?, erronka_nagusia = ?, publikoa = ? WHERE id = ?"
-    ).run(updatedIzena, updatedMota, updatedArduraduna, updatedEmail, updatedErronka, updatedPublikoa, id);
+      "UPDATE eragileak SET izena = ?, mota = ?, arduraduna = ?, email = ?, erronka_nagusia = ?, publikoa = ?, behatzaileak_json = ? WHERE id = ?"
+    ).run(updatedIzena, updatedMota, updatedArduraduna, updatedEmail, updatedErronka, updatedPublikoa, updatedBehatzaileakJson, id);
 
     // Sync or create shop user account if email is set
     if (updatedEmail) {

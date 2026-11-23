@@ -20,6 +20,28 @@ export interface Eragilea {
   erronka_nagusia: string;
   sortze_data: string;
   publikoa?: number; // 0 = Pribatua / Kode anonimoa (#ID), 1 = Izena publikoki ikusgai komunitatean
+  behatzaileak_json?: string;
+}
+
+export function parseBehatzaileak(behatzaileak_json?: string | null): string[] {
+  if (!behatzaileak_json) return [];
+  try {
+    const parsed = JSON.parse(behatzaileak_json);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((s) => String(s || "").trim())
+      .filter((s) => s.length > 0 && s !== "Behatzailea" && s !== "Behatzaile Itsua");
+  } catch {
+    return [];
+  }
+}
+
+export function formatBehatzaileaDisplay(name?: string | null): string {
+  const trimmed = String(name || "").trim();
+  if (!trimmed || trimmed === "Behatzailea" || trimmed === "Behatzaile Itsua") {
+    return "Ezezaguna";
+  }
+  return trimmed;
 }
 
 export function getPublicEragileLabel(
@@ -117,6 +139,11 @@ export interface Neurketa {
   data_ordu: string;
   oharrak: string;
   behatzailea?: string;
+  hasiera_ordu?: string | null;
+  amaiera_ordu?: string | null;
+  aldaketa_count?: number;
+  lineaz_kanpo?: number;
+  atzeratua?: number;
 }
 
 export interface Nudge {
@@ -480,15 +507,44 @@ function createFallbackStore() {
             return { changes: 1 };
           }
           if (q.startsWith("INSERT INTO eragileak")) {
-            if (params.length >= 8) {
+            if (params.length >= 9) {
+              const [id, izena, mota, arduraduna, email, erronka_nagusia, sortze_data, publikoa, behatzaileak_json] = params;
+              store.eragileak.push({
+                id,
+                izena,
+                mota,
+                arduraduna,
+                email,
+                erronka_nagusia,
+                sortze_data,
+                publikoa: Number(publikoa || 0),
+                behatzaileak_json: behatzaileak_json || "[]",
+              });
+            } else if (params.length >= 8) {
               const [id, izena, mota, arduraduna, email, erronka_nagusia, sortze_data, publikoa] = params;
-              store.eragileak.push({ id, izena, mota, arduraduna, email, erronka_nagusia, sortze_data, publikoa: Number(publikoa || 0) });
+              store.eragileak.push({ id, izena, mota, arduraduna, email, erronka_nagusia, sortze_data, publikoa: Number(publikoa || 0), behatzaileak_json: "[]" });
             } else {
               const [id, izena, mota, arduraduna, email, erronka_nagusia, sortze_data] = params;
-              store.eragileak.push({ id, izena, mota, arduraduna, email, erronka_nagusia, sortze_data, publikoa: 0 });
+              store.eragileak.push({ id, izena, mota, arduraduna, email, erronka_nagusia, sortze_data, publikoa: 0, behatzaileak_json: "[]" });
             }
             save();
             return { changes: 1 };
+          }
+          if (q.startsWith("UPDATE eragileak SET izena = ?, mota = ?, arduraduna = ?, email = ?, erronka_nagusia = ?, publikoa = ?, behatzaileak_json = ? WHERE id = ?")) {
+            const [izena, mota, arduraduna, email, erronka_nagusia, publikoa, behatzaileak_json, id] = params;
+            const er = store.eragileak.find((e) => e.id === id);
+            if (er) {
+              er.izena = izena;
+              er.mota = mota;
+              er.arduraduna = arduraduna;
+              er.email = email;
+              er.erronka_nagusia = erronka_nagusia;
+              er.publikoa = Number(publikoa || 0);
+              er.behatzaileak_json = behatzaileak_json || "[]";
+              save();
+              return { changes: 1 };
+            }
+            return { changes: 0 };
           }
           if (q.startsWith("UPDATE eragileak SET izena = ?, mota = ?, arduraduna = ?, email = ?, erronka_nagusia = ?, publikoa = ? WHERE id = ?")) {
             const [izena, mota, arduraduna, email, erronka_nagusia, publikoa, id] = params;
@@ -698,8 +754,40 @@ function createFallbackStore() {
             return { changes: 1 };
           }
           if (q.startsWith("INSERT INTO neurketak")) {
-            const [id, esperimentu_id, unea, euskaraz_count, erdaraz_count, elebi_count, iraupena_segundotan, data_ordu, oharrak, behatzailea] = params;
-            store.neurketak.push({ id, esperimentu_id, unea, euskaraz_count, erdaraz_count, elebi_count, iraupena_segundotan, data_ordu, oharrak, behatzailea });
+            const [
+              id,
+              esperimentu_id,
+              unea,
+              euskaraz_count,
+              erdaraz_count,
+              elebi_count,
+              iraupena_segundotan,
+              data_ordu,
+              oharrak,
+              behatzailea,
+              hasiera_ordu,
+              amaiera_ordu,
+              aldaketa_count,
+              lineaz_kanpo,
+              atzeratua,
+            ] = params;
+            store.neurketak.push({
+              id,
+              esperimentu_id,
+              unea,
+              euskaraz_count,
+              erdaraz_count,
+              elebi_count,
+              iraupena_segundotan,
+              data_ordu,
+              oharrak,
+              behatzailea,
+              hasiera_ordu: hasiera_ordu ?? null,
+              amaiera_ordu: amaiera_ordu ?? null,
+              aldaketa_count: Number(aldaketa_count || 0),
+              lineaz_kanpo: Number(lineaz_kanpo || 0),
+              atzeratua: Number(atzeratua || 0),
+            });
             save();
             return { changes: 1 };
           }
@@ -905,6 +993,24 @@ function initSqliteTables(db: any) {
   } catch {}
   try {
     db.exec("ALTER TABLE eragileak ADD COLUMN publikoa INTEGER NOT NULL DEFAULT 0;");
+  } catch {}
+  try {
+    db.exec("ALTER TABLE eragileak ADD COLUMN behatzaileak_json TEXT DEFAULT '[]';");
+  } catch {}
+  try {
+    db.exec("ALTER TABLE neurketak ADD COLUMN hasiera_ordu TEXT;");
+  } catch {}
+  try {
+    db.exec("ALTER TABLE neurketak ADD COLUMN amaiera_ordu TEXT;");
+  } catch {}
+  try {
+    db.exec("ALTER TABLE neurketak ADD COLUMN aldaketa_count INTEGER DEFAULT 0;");
+  } catch {}
+  try {
+    db.exec("ALTER TABLE neurketak ADD COLUMN lineaz_kanpo INTEGER DEFAULT 0;");
+  } catch {}
+  try {
+    db.exec("ALTER TABLE neurketak ADD COLUMN atzeratua INTEGER DEFAULT 0;");
   } catch {}
   try {
     db.exec("ALTER TABLE users ADD COLUMN password TEXT DEFAULT 'bagera2026';");
@@ -1542,8 +1648,8 @@ export function importDbSnapshot(snapshot: MemoryStoreData) {
     for (const er of eragileakToInsert) {
       database
         .prepare(
-          `INSERT INTO eragileak (id, izena, mota, arduraduna, email, erronka_nagusia, sortze_data, publikoa)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+          `INSERT INTO eragileak (id, izena, mota, arduraduna, email, erronka_nagusia, sortze_data, publikoa, behatzaileak_json)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
         )
         .run(
           er.id,
@@ -1553,7 +1659,8 @@ export function importDbSnapshot(snapshot: MemoryStoreData) {
           er.email || "",
           er.erronka_nagusia,
           er.sortze_data,
-          Number(er.publikoa || 0)
+          Number(er.publikoa || 0),
+          er.behatzaileak_json || "[]"
         );
     }
 
@@ -1635,8 +1742,10 @@ export function importDbSnapshot(snapshot: MemoryStoreData) {
           : n.behatzailea;
       database
         .prepare(
-          `INSERT INTO neurketak (id, esperimentu_id, unea, euskaraz_count, erdaraz_count, elebi_count, iraupena_segundotan, data_ordu, oharrak, behatzailea)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          `INSERT INTO neurketak (
+             id, esperimentu_id, unea, euskaraz_count, erdaraz_count, elebi_count, iraupena_segundotan, data_ordu, oharrak, behatzailea,
+             hasiera_ordu, amaiera_ordu, aldaketa_count, lineaz_kanpo, atzeratua
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         )
         .run(
           n.id,
@@ -1648,7 +1757,12 @@ export function importDbSnapshot(snapshot: MemoryStoreData) {
           n.iraupena_segundotan || 600,
           n.data_ordu,
           n.oharrak || "",
-          cleanedObserver
+          cleanedObserver,
+          n.hasiera_ordu ?? null,
+          n.amaiera_ordu ?? null,
+          Number(n.aldaketa_count || 0),
+          Number(n.lineaz_kanpo || 0),
+          Number(n.atzeratua || 0)
         );
     }
 

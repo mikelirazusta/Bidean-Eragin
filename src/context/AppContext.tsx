@@ -95,6 +95,27 @@ export function parsePilotuMaterialak(materialak_json?: string): PilotuMateriala
   }
 }
 
+export function parseBehatzaileak(behatzaileak_json?: string | null): string[] {
+  if (!behatzaileak_json) return [];
+  try {
+    const parsed = JSON.parse(behatzaileak_json);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((s) => String(s || "").trim())
+      .filter((s) => s.length > 0 && s !== "Behatzailea" && s !== "Behatzaile Itsua");
+  } catch {
+    return [];
+  }
+}
+
+export function formatBehatzaileaDisplay(name?: string | null): string {
+  const trimmed = String(name || "").trim();
+  if (!trimmed || trimmed === "Behatzailea" || trimmed === "Behatzaile Itsua") {
+    return "Ezezaguna";
+  }
+  return trimmed;
+}
+
 export type AppTab = "panela" | "katalogoa" | "behaketa" | "admin";
 
 export interface ToastItem {
@@ -194,6 +215,8 @@ interface AppContextType {
     erronka_nagusia?: string;
     password?: string;
     publikoa?: number;
+    behatzaileak?: string[];
+    behatzaileak_json?: string;
   }) => Promise<Eragilea | null>;
   updatePilotua: (data: {
     id: string;
@@ -237,9 +260,14 @@ interface AppContextType {
     euskaraz_count: number;
     erdaraz_count: number;
     elebi_count: number;
+    aldaketa_count?: number;
     iraupena_segundotan: number;
     oharrak: string;
     behatzailea: string;
+    hasiera_ordu?: string;
+    amaiera_ordu?: string;
+    lineaz_kanpo?: number;
+    atzeratua?: number;
   }) => Promise<boolean>;
   deleteNeurketa: (id: string) => Promise<boolean>;
   deleteEragilea: (id: string) => Promise<boolean>;
@@ -877,6 +905,8 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
     erronka_nagusia?: string;
     password?: string;
     publikoa?: number;
+    behatzaileak?: string[];
+    behatzaileak_json?: string;
   }) => {
     try {
       const res = await fetch("/api/eragileak", {
@@ -1048,9 +1078,14 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
     euskaraz_count: number;
     erdaraz_count: number;
     elebi_count: number;
+    aldaketa_count?: number;
     iraupena_segundotan: number;
     oharrak: string;
     behatzailea: string;
+    hasiera_ordu?: string;
+    amaiera_ordu?: string;
+    lineaz_kanpo?: number;
+    atzeratua?: number;
   }) => {
     // 1. If explicitly offline, save to local offline queue directly
     if (typeof window !== "undefined" && !navigator.onLine) {
@@ -1062,10 +1097,15 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
         euskaraz_count: data.euskaraz_count,
         erdaraz_count: data.erdaraz_count,
         elebi_count: data.elebi_count,
+        aldaketa_count: data.aldaketa_count || 0,
         iraupena_segundotan: data.iraupena_segundotan,
         oharrak: data.oharrak,
         behatzailea: data.behatzailea,
         data_ordu: savedOffline.data_ordu,
+        hasiera_ordu: savedOffline.hasiera_ordu,
+        amaiera_ordu: savedOffline.amaiera_ordu,
+        lineaz_kanpo: 1,
+        atzeratua: data.atzeratua || 0,
       };
       setNeurketak((prev) => [optimisticNeurketa, ...prev]);
       setPendingSyncCount(getPendingNeurketak().length);
@@ -1087,6 +1127,9 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
         triggerConfetti();
         setActiveTab("panela");
         return true;
+      } else if (json.error) {
+        showToast(json.error, "error");
+        return false;
       }
     } catch (e) {
       console.warn("Sare-errorea; neurketa tokian gordeko da lineaz kanpo:", e);
@@ -1099,10 +1142,15 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
         euskaraz_count: data.euskaraz_count,
         erdaraz_count: data.erdaraz_count,
         elebi_count: data.elebi_count,
+        aldaketa_count: data.aldaketa_count || 0,
         iraupena_segundotan: data.iraupena_segundotan,
         oharrak: data.oharrak,
         behatzailea: data.behatzailea,
         data_ordu: savedOffline.data_ordu,
+        hasiera_ordu: savedOffline.hasiera_ordu,
+        amaiera_ordu: savedOffline.amaiera_ordu,
+        lineaz_kanpo: 1,
+        atzeratua: data.atzeratua || 0,
       };
       setNeurketak((prev) => [optimisticNeurketa, ...prev]);
       setPendingSyncCount(getPendingNeurketak().length);

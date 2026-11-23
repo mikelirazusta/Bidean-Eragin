@@ -34,7 +34,7 @@ import {
   Check,
   RotateCcw,
 } from "lucide-react";
-import { useApp, getPublicEragileLabel } from "@/context/AppContext";
+import { useApp, getPublicEragileLabel, formatBehatzaileaDisplay } from "@/context/AppContext";
 import type { Esperimentua, Neurketa } from "@/lib/db";
 import {
   wilson,
@@ -362,6 +362,30 @@ export default function ZentroDashboard() {
     primaryDiff && currentExp
       ? ondorioa(primaryDiff, currentExp.xede_portzentajea || 20)
       : null;
+
+  // Check if observer changed between phases (ignoring "Ezezaguna")
+  const observerChangedAcrossPhases = React.useMemo(() => {
+    const phasesPresent = (["T0", "T1", "T2"] as const)
+      .map((p) => {
+        const obs = new Set(
+          expNeurketak
+            .filter((n) => n.unea === p)
+            .map((n) => formatBehatzaileaDisplay(n.behatzailea))
+            .filter((name) => name !== "Ezezaguna")
+        );
+        return obs;
+      })
+      .filter((s) => s.size > 0);
+    if (phasesPresent.length < 2) return false;
+    const base = phasesPresent[0];
+    for (let i = 1; i < phasesPresent.length; i++) {
+      const other = phasesPresent[i];
+      if (base.size !== other.size || [...base].some((x) => !other.has(x))) {
+        return true;
+      }
+    }
+    return false;
+  }, [expNeurketak]);
 
   const handleRunLatxaAnalysis = async () => {
     if (!currentExp) return;
@@ -1436,6 +1460,11 @@ export default function ZentroDashboard() {
                     >
                       {primaryOndorioa.testua}
                     </p>
+                    {observerChangedAcrossPhases && (
+                      <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                        Behatzailea aldatu da faseen artean; aldearen zati bat horregatik izan daiteke.
+                      </p>
+                    )}
                   </>
                 ) : t0Stats ? (
                   <p className="text-xs text-ink-muted leading-relaxed">
@@ -1812,8 +1841,8 @@ export default function ZentroDashboard() {
                               <td className="py-2.5 text-ink-muted font-medium">
                                 {minutes} min
                               </td>
-                              <td className="py-2.5 text-ink-muted max-w-[120px] truncate" title={neu.behatzailea}>
-                                {neu.behatzailea || "Behatzailea"}
+                              <td className="py-2.5 text-ink-muted max-w-[120px] truncate" title={formatBehatzaileaDisplay(neu.behatzailea)}>
+                                {formatBehatzaileaDisplay(neu.behatzailea)}
                               </td>
                               <td className="py-2.5 text-ink-muted">
                                 {new Date(neu.data_ordu).toLocaleDateString("eu-ES")}

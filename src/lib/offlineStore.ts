@@ -8,10 +8,14 @@ export interface PendingNeurketa {
   euskaraz_count: number;
   erdaraz_count: number;
   elebi_count: number;
+  aldaketa_count?: number;
   iraupena_segundotan: number;
   oharrak: string;
   behatzailea: string;
   data_ordu: string;
+  hasiera_ordu?: string;
+  amaiera_ordu?: string;
+  atzeratua?: number;
   is_offline: boolean;
 }
 
@@ -43,12 +47,15 @@ export function getPendingNeurketak(): PendingNeurketa[] {
   }
 }
 
-export function savePendingNeurketa(data: Omit<PendingNeurketa, "id" | "is_offline" | "data_ordu">): PendingNeurketa {
+export function savePendingNeurketa(data: Omit<PendingNeurketa, "id" | "is_offline" | "data_ordu"> & { data_ordu?: string }): PendingNeurketa {
   const pending = getPendingNeurketak();
+  const resolvedStart = data.hasiera_ordu || data.data_ordu || new Date().toISOString();
   const newPending: PendingNeurketa = {
     ...data,
     id: "offline-" + Date.now() + "-" + Math.random().toString(36).substr(2, 5),
-    data_ordu: new Date().toISOString(),
+    data_ordu: resolvedStart,
+    hasiera_ordu: data.hasiera_ordu || resolvedStart,
+    amaiera_ordu: data.amaiera_ordu || new Date().toISOString(),
     is_offline: true,
   };
 
@@ -151,9 +158,15 @@ export async function syncPendingNeurketak(): Promise<{
           euskaraz_count: item.euskaraz_count,
           erdaraz_count: item.erdaraz_count,
           elebi_count: item.elebi_count,
+          aldaketa_count: item.aldaketa_count || 0,
           iraupena_segundotan: item.iraupena_segundotan,
-          oharrak: item.oharrak ? `${item.oharrak} [Lineaz kanpo jasota]` : "[Lineaz kanpo jasota]",
+          oharrak: item.oharrak || "",
           behatzailea: item.behatzailea,
+          hasiera_ordu: item.hasiera_ordu || item.data_ordu,
+          amaiera_ordu: item.amaiera_ordu || item.data_ordu,
+          data_ordu: item.data_ordu,
+          lineaz_kanpo: 1,
+          atzeratua: item.atzeratua || 0,
         }),
       });
 

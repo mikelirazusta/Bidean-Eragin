@@ -23,24 +23,27 @@ import {
   X,
   BadgeCheck,
 } from "lucide-react";
-import { useApp } from "@/context/AppContext";
+import { useApp, parseBehatzaileak } from "@/context/AppContext";
 import { playCounterClick } from "@/lib/audio";
 
 export default function BehatzaileKontagailua() {
   const {
     activeEragilea,
+    eragileak,
     esperimentuak,
     neurketak,
     observationConfig,
     setObservationConfig,
     saveNeurketa,
     createQuickPostua,
+    updateEragilea,
     refreshData,
     currentUser,
     setCurrentEragileId,
     setActiveTab,
     isOnline,
     uiTexts,
+    showToast,
   } = useApp();
 
   const isAdmin = currentUser?.role === "admin";
@@ -112,8 +115,51 @@ export default function BehatzaileKontagailua() {
   // Modal for saving
   const [showSaveModal, setShowSaveModal] = useState<boolean>(false);
   const [notes, setNotes] = useState<string>("");
-  const [behatzailea, setBehatzailea] = useState<string>("Behatzailea");
+  const [behatzailea, setBehatzailea] = useState<string>("");
+  const [hasieraOrdu, setHasieraOrdu] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [showAddObserver, setShowAddObserver] = useState<boolean>(false);
+  const [newObserverName, setNewObserverName] = useState<string>("");
+  const [isAddingObserver, setIsAddingObserver] = useState<boolean>(false);
+
+  // Manual (paper / delayed) entry modal state
+  const [showPaperModal, setShowPaperModal] = useState<boolean>(false);
+  const [paperDate, setPaperDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [paperStartTime, setPaperStartTime] = useState<string>("11:00");
+  const [paperEndTime, setPaperEndTime] = useState<string>("11:30");
+  const [paperEuskaraz, setPaperEuskaraz] = useState<number>(0);
+  const [paperErdaraz, setPaperErdaraz] = useState<number>(0);
+  const [paperElebi, setPaperElebi] = useState<number>(0);
+  const [paperNotes, setPaperNotes] = useState<string>("");
+  const [isSavingPaper, setIsSavingPaper] = useState<boolean>(false);
+
+  const currentEragileForExp =
+    eragileak.find((e) => e.id === currentExp?.eragile_id) || activeEragilea;
+
+  const behatzaileZerrenda = React.useMemo(() => {
+    const fromEntity = parseBehatzaileak(currentEragileForExp?.behatzaileak_json);
+    const fromHistory = expNeurketak
+      .map((n) => String(n.behatzailea || "").trim())
+      .filter((s) => s.length > 0 && s !== "Behatzailea" && s !== "Behatzaile Itsua");
+    return Array.from(new Set([...fromEntity, ...fromHistory]));
+  }, [currentEragileForExp?.behatzaileak_json, expNeurketak]);
+
+  const handleAddObserver = async () => {
+    const trimmed = newObserverName.trim();
+    if (!trimmed || trimmed === "Behatzailea" || trimmed === "Behatzaile Itsua") return;
+    setIsAddingObserver(true);
+    const nextList = Array.from(new Set([...behatzaileZerrenda, trimmed]));
+    if (currentEragileForExp) {
+      await updateEragilea({
+        id: currentEragileForExp.id,
+        behatzaileak: nextList,
+      });
+    }
+    handleBehatzaileaChange(trimmed);
+    setNewObserverName("");
+    setShowAddObserver(false);
+    setIsAddingObserver(false);
+  };
 
   // Quick Stand Modal state
   const [showNewStandModal, setShowNewStandModal] = useState<boolean>(false);
@@ -126,16 +172,14 @@ export default function BehatzaileKontagailua() {
   );
   const [isCreatingStand, setIsCreatingStand] = useState<boolean>(false);
 
-  // Restore and persist observer name
+  // Restore and persist observer name (never default to "Behatzailea")
   useEffect(() => {
     try {
       const saved = localStorage.getItem("bidean_behatzaile_izena");
-      if (saved && saved !== "Behatzaile Itsua") {
+      if (saved && saved !== "Behatzaile Itsua" && saved !== "Behatzailea") {
         setBehatzailea(saved);
-      } else if (currentUser?.name && !currentUser.name.includes("Admin") && !currentUser.name.includes("Koordinazioa")) {
-        setBehatzailea(currentUser.name);
       } else {
-        setBehatzailea("Behatzailea");
+        setBehatzailea("");
       }
     } catch {}
   }, [currentUser]);
@@ -200,6 +244,8 @@ export default function BehatzaileKontagailua() {
             setSessionElapsed(parsed.sessionElapsed);
           if (typeof parsed.notes === "string" && parsed.notes)
             setNotes(parsed.notes);
+          if (typeof parsed.hasieraOrdu === "string" && parsed.hasieraOrdu)
+            setHasieraOrdu(parsed.hasieraOrdu);
           if (parsed.sessionActive) {
             setSessionActive(true);
             setIsPaused(true); // Pause on restore so observer can resume consciously
@@ -229,6 +275,7 @@ export default function BehatzaileKontagailua() {
             sessionElapsed,
             sessionActive,
             notes,
+            hasieraOrdu,
             updatedAt: Date.now(),
           })
         );
@@ -249,6 +296,7 @@ export default function BehatzaileKontagailua() {
     sessionElapsed,
     sessionActive,
     notes,
+    hasieraOrdu,
   ]);
 
   // Screen Wake Lock (prevent mobile screen from sleeping during active observation)
@@ -327,7 +375,12 @@ export default function BehatzaileKontagailua() {
 
   // Click handlers
   const handleCount = (type: "euskaraz" | "erdaraz" | "elebi") => {
+    if (!behatzailea.trim()) {
+      showToast("Aukeratu edo gehitu behatzaile bat saioa hasi aurretik.", "error");
+      return;
+    }
     if (!sessionActive) {
+      setHasieraOrdu(new Date().toISOString());
       setSessionActive(true);
       setIsPaused(false);
     } else if (isPaused) {
@@ -403,12 +456,17 @@ export default function BehatzaileKontagailua() {
     setSessionElapsed(0);
     setIsPaused(false);
     setSessionActive(false);
+    setHasieraOrdu(null);
     try {
       localStorage.removeItem(ACTIVE_SESSION_STORAGE_KEY);
     } catch {}
   };
 
   const handleStartSession = () => {
+    if (!behatzailea.trim()) {
+      showToast("Aukeratu edo gehitu behatzaile bat saioa hasi aurretik.", "error");
+      return;
+    }
     setEuskarazCount(0);
     setErdarazCount(0);
     setElebiCount(0);
@@ -416,6 +474,7 @@ export default function BehatzaileKontagailua() {
     setSecondsRemaining(selectedMinutes * 60);
     setSessionElapsed(0);
     setIsPaused(false);
+    setHasieraOrdu(new Date().toISOString());
     setSessionActive(true);
   };
 
@@ -440,11 +499,14 @@ export default function BehatzaileKontagailua() {
       return;
     }
 
+    if (!behatzailea.trim()) {
+      showToast("Behatzailea aukeratu behar da neurketa gordetzeko.", "error");
+      return;
+    }
+
     setIsSaving(true);
-    const durationToSave =
-      timerMode === "countdown"
-        ? Math.max(sessionElapsed, 1)
-        : Math.max(sessionElapsed, 1);
+    const amaieraOrduNow = new Date().toISOString();
+    const durationToSave = Math.max(sessionElapsed, 1);
 
     const success = await saveNeurketa({
       esperimentu_id: expId,
@@ -454,7 +516,10 @@ export default function BehatzaileKontagailua() {
       elebi_count: elebiCount,
       iraupena_segundotan: durationToSave,
       oharrak: notes,
-      behatzailea: behatzailea.trim() || "Behatzailea",
+      behatzailea: behatzailea.trim(),
+      hasiera_ordu: hasieraOrdu || amaieraOrduNow,
+      amaiera_ordu: amaieraOrduNow,
+      atzeratua: 0,
     });
 
     setIsSaving(false);
@@ -467,8 +532,56 @@ export default function BehatzaileKontagailua() {
       setElebiCount(0);
       setHistory([]);
       setNotes("");
+      setHasieraOrdu(null);
       setShowSaveModal(false);
       setSessionActive(false);
+    }
+  };
+
+  const handleSavePaperEntry = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const expId = currentExp?.id;
+    if (!expId) {
+      showToast("Lehenik sortu esperimentu bat.", "error");
+      return;
+    }
+    if (!behatzailea.trim()) {
+      showToast("Aukeratu edo gehitu behatzaile bat lehenik.", "error");
+      return;
+    }
+    if (paperEuskaraz + paperErdaraz + paperElebi <= 0) {
+      showToast("Sartu gutxienez elkarrizketa bat.", "error");
+      return;
+    }
+    const startDt = new Date(`${paperDate}T${paperStartTime}:00`);
+    const endDt = new Date(`${paperDate}T${paperEndTime}:00`);
+    if (isNaN(startDt.getTime()) || isNaN(endDt.getTime())) {
+      showToast("Data eta orduak zuzenak izan behar dira.", "error");
+      return;
+    }
+    const durationSec = Math.max(60, Math.round((endDt.getTime() - startDt.getTime()) / 1000));
+
+    setIsSavingPaper(true);
+    const success = await saveNeurketa({
+      esperimentu_id: expId,
+      unea: phase,
+      euskaraz_count: paperEuskaraz,
+      erdaraz_count: paperErdaraz,
+      elebi_count: paperElebi,
+      iraupena_segundotan: durationSec,
+      oharrak: paperNotes.trim(),
+      behatzailea: behatzailea.trim(),
+      hasiera_ordu: startDt.toISOString(),
+      amaiera_ordu: endDt.toISOString(),
+      atzeratua: 1,
+    });
+    setIsSavingPaper(false);
+    if (success) {
+      setPaperEuskaraz(0);
+      setPaperErdaraz(0);
+      setPaperElebi(0);
+      setPaperNotes("");
+      setShowPaperModal(false);
     }
   };
 
@@ -607,16 +720,86 @@ export default function BehatzaileKontagailua() {
 
             <div>
               <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                 Behatzailearen izena (nor ari da neurtzen?):
+                Behatzailea (nor ari da neurtzen?) *:
               </label>
-              <input
-                type="text"
-                value={behatzailea}
-                disabled={sessionActive}
-                onChange={(e) => handleBehatzaileaChange(e.target.value)}
-                placeholder="Adibidez: Ane / Jon..."
-                className="w-full bg-slate-800 border border-slate-600 text-white rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-euskara/40 focus:outline-hidden disabled:opacity-50 placeholder:text-ink-muted"
-              />
+              {!showAddObserver ? (
+                <div className="flex items-center gap-1.5">
+                  <select
+                    value={behatzailea}
+                    disabled={sessionActive}
+                    onChange={(e) => {
+                      if (e.target.value === "__ADD__") {
+                        setShowAddObserver(true);
+                      } else {
+                        handleBehatzaileaChange(e.target.value);
+                      }
+                    }}
+                    className={`w-full bg-slate-800 border text-white rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-euskara/40 focus:outline-hidden cursor-pointer disabled:opacity-50 ${
+                      !behatzailea.trim() ? "border-amber-400" : "border-slate-600"
+                    }`}
+                  >
+                    <option value="">— Aukeratu behatzailea —</option>
+                    {behatzaileZerrenda.map((name) => (
+                      <option key={name} value={name}>
+                        {name}
+                      </option>
+                    ))}
+                    {behatzailea && !behatzaileZerrenda.includes(behatzailea) && (
+                      <option value={behatzailea}>{behatzailea}</option>
+                    )}
+                    <option value="__ADD__">+ Gehitu behatzailea</option>
+                  </select>
+                  <button
+                    type="button"
+                    disabled={sessionActive}
+                    onClick={() => setShowAddObserver(true)}
+                    className="px-2.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold shrink-0 cursor-pointer disabled:opacity-50"
+                    title="Gehitu behatzaile berria"
+                  >
+                    +
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    value={newObserverName}
+                    onChange={(e) => setNewObserverName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddObserver();
+                      }
+                    }}
+                    placeholder="Izena (adib. Ane)"
+                    autoFocus
+                    className="w-full bg-slate-800 border border-emerald-400 text-white rounded-xl px-3 py-2 text-xs font-bold focus:outline-hidden placeholder:text-slate-400"
+                  />
+                  <button
+                    type="button"
+                    disabled={isAddingObserver || !newObserverName.trim()}
+                    onClick={handleAddObserver}
+                    className="px-2.5 py-2 rounded-xl bg-emerald-500 text-slate-950 text-xs font-bold shrink-0 cursor-pointer disabled:opacity-50"
+                  >
+                    Gorde
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddObserver(false);
+                      setNewObserverName("");
+                    }}
+                    className="p-2 rounded-xl bg-slate-700 text-slate-300 text-xs cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+              {!behatzailea.trim() && (
+                <p className="text-[10px] text-amber-300 mt-1">
+                  Aukeratu edo gehitu behatzailea saioa hasi aurretik.
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -840,13 +1023,24 @@ export default function BehatzaileKontagailua() {
         {/* Timer Control Buttons */}
         <div className="flex items-center gap-2">
           {!sessionActive ? (
-            <button
-              onClick={handleStartSession}
-              className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-euskara text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/30 transition cursor-pointer"
-            >
-              <Play className="w-4 h-4 fill-current" />
-              <span>Hasi saioa</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowPaperModal(true)}
+                className="px-3 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs transition cursor-pointer"
+                title="Sartu paperean jasotako neurketa eskuz"
+              >
+                Paperean neurtu dut
+              </button>
+              <button
+                onClick={handleStartSession}
+                disabled={!behatzailea.trim()}
+                className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-euskara text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/30 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Play className="w-4 h-4 fill-current" />
+                <span>Hasi saioa</span>
+              </button>
+            </div>
           ) : (
             <>
               {timerMode === "countdown" && (
@@ -1473,7 +1667,7 @@ export default function BehatzaileKontagailua() {
 
               <div>
                 <label className="block text-xs font-bold text-ink mb-1">
-                  Xede-igoera (+%):
+                  Xede-igoera (puntu):
                 </label>
                 <div className="flex items-center gap-3">
                   <input
@@ -1486,7 +1680,7 @@ export default function BehatzaileKontagailua() {
                     className="flex-1 accent-emerald-600"
                   />
                   <span className="font-extrabold text-xs text-euskara bg-euskara/10 px-2 py-1 rounded-lg border border-euskara/25">
-                    +%{newStandTargetPct}
+                    +{newStandTargetPct} puntu
                   </span>
                 </div>
               </div>
@@ -1518,6 +1712,136 @@ export default function BehatzaileKontagailua() {
                   className="px-5 py-2 bg-euskara hover:opacity-95 text-white font-bold text-xs rounded-xl transition shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   {isCreatingStand ? "Sortzen..." : "Sortu eta hasi T0 neurtzen →"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Paper / Manual Entry Modal (atzeratua = 1) */}
+      {showPaperModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-line my-8">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="font-bold text-ink text-base">
+                  Paperean neurtutako saioa ({phase})
+                </h3>
+                <p className="text-[11px] text-ink-muted">
+                  Sartu eskuz kontaketak, data eta ordu-tartea (azken 30 egunetakoak).
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPaperModal(false)}
+                className="p-1.5 rounded-lg text-ink-muted hover:bg-sand cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSavePaperEntry} className="space-y-3.5">
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-[11px] font-bold text-ink mb-1">Data *</label>
+                  <input
+                    type="date"
+                    required
+                    value={paperDate}
+                    onChange={(e) => setPaperDate(e.target.value)}
+                    className="w-full border border-line rounded-xl px-2.5 py-2 text-xs font-medium text-ink"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-ink mb-1">Hasiera *</label>
+                  <input
+                    type="time"
+                    required
+                    value={paperStartTime}
+                    onChange={(e) => setPaperStartTime(e.target.value)}
+                    className="w-full border border-line rounded-xl px-2.5 py-2 text-xs font-medium text-ink"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-ink mb-1">Amaiera *</label>
+                  <input
+                    type="time"
+                    required
+                    value={paperEndTime}
+                    onChange={(e) => setPaperEndTime(e.target.value)}
+                    className="w-full border border-line rounded-xl px-2.5 py-2 text-xs font-medium text-ink"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="block text-[11px] font-bold text-euskara mb-1">Euskaraz *</label>
+                  <input
+                    type="number"
+                    min={0}
+                    required
+                    value={paperEuskaraz}
+                    onChange={(e) => setPaperEuskaraz(Math.max(0, Number(e.target.value)))}
+                    className="w-full border border-line rounded-xl px-3 py-2 text-sm font-bold text-euskara tabular-nums"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-terracotta mb-1">Erdaraz *</label>
+                  <input
+                    type="number"
+                    min={0}
+                    required
+                    value={paperErdaraz}
+                    onChange={(e) => setPaperErdaraz(Math.max(0, Number(e.target.value)))}
+                    className="w-full border border-line rounded-xl px-3 py-2 text-sm font-bold text-terracotta tabular-nums"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-amber-700 mb-1">Elebi</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={paperElebi}
+                    onChange={(e) => setPaperElebi(Math.max(0, Number(e.target.value)))}
+                    className="w-full border border-line rounded-xl px-3 py-2 text-sm font-bold text-amber-700 tabular-nums"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-ink mb-1">Behatzailea</label>
+                <div className="text-xs font-semibold text-ink bg-paper border border-line rounded-xl px-3 py-2">
+                  {behatzailea.trim() || "Aukeratu behatzailea goiko menuan lehenik"}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-ink mb-1">Oharrak (hautazkoa)</label>
+                <textarea
+                  rows={2}
+                  value={paperNotes}
+                  onChange={(e) => setPaperNotes(e.target.value)}
+                  placeholder="Behaketan ikusitako oharrak..."
+                  className="w-full border border-line rounded-xl px-3 py-2 text-xs text-ink"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowPaperModal(false)}
+                  className="px-4 py-2 text-xs font-semibold text-ink-muted hover:bg-sand rounded-xl cursor-pointer"
+                >
+                  Utzi
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingPaper || !behatzailea.trim()}
+                  className="px-5 py-2 rounded-xl bg-euskara hover:opacity-95 text-white font-bold text-xs cursor-pointer disabled:opacity-50"
+                >
+                  {isSavingPaper ? "Gordetzen..." : "Gorde neurketa"}
                 </button>
               </div>
             </form>
