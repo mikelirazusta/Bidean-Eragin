@@ -194,6 +194,11 @@ interface AppContextType {
     xede_portzentajea: number;
     eragile_id?: string;
     skipNavigation?: boolean;
+    protokoloa_json?: string | null;
+    n_gutxienekoa?: number;
+    saio_gutxienekoa?: number;
+    t2_mota?: "jarraipena" | "kentzea";
+    kontagailu_txantiloia?: "oinarrizkoa" | "aldaketa";
   }) => Promise<Esperimentua | null>;
   createQuickPostua: (data: {
     izena: string;
@@ -240,6 +245,12 @@ interface AppContextType {
     gunea?: string;
     xede_portzentajea?: number;
     estatusa?: string;
+    protokoloa_json?: string | null;
+    n_gutxienekoa?: number;
+    saio_gutxienekoa?: number;
+    t2_mota?: "jarraipena" | "kentzea";
+    kontagailu_txantiloia?: "oinarrizkoa" | "aldaketa";
+    aldaketa_arrazoia?: string;
   }) => Promise<Esperimentua | null>;
   startPhase: (id: string, fasea: "T0" | "T1" | "T2" | "Amaituta", egonkortu_gabe?: boolean) => Promise<Esperimentua | null>;
   deleteEsperimentua: (id: string) => Promise<boolean>;
@@ -788,6 +799,11 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
     xede_portzentajea: number;
     eragile_id?: string;
     skipNavigation?: boolean;
+    protokoloa_json?: string | null;
+    n_gutxienekoa?: number;
+    saio_gutxienekoa?: number;
+    t2_mota?: "jarraipena" | "kentzea";
+    kontagailu_txantiloia?: "oinarrizkoa" | "aldaketa";
   }) => {
     try {
       const targetId =
@@ -807,6 +823,11 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
           gunea: data.gunea,
           xede_portzentajea: data.xede_portzentajea,
           eragile_id: targetId,
+          protokoloa_json: data.protokoloa_json ?? null,
+          n_gutxienekoa: data.n_gutxienekoa,
+          saio_gutxienekoa: data.saio_gutxienekoa,
+          t2_mota: data.t2_mota,
+          kontagailu_txantiloia: data.kontagailu_txantiloia,
         }),
       });
       const json = await res.json();
@@ -1017,6 +1038,12 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
     gunea?: string;
     xede_portzentajea?: number;
     estatusa?: string;
+    protokoloa_json?: string | null;
+    n_gutxienekoa?: number;
+    saio_gutxienekoa?: number;
+    t2_mota?: "jarraipena" | "kentzea";
+    kontagailu_txantiloia?: "oinarrizkoa" | "aldaketa";
+    aldaketa_arrazoia?: string;
   }) => {
     try {
       const res = await fetch("/api/esperimentuak", {

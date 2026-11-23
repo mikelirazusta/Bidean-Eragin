@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useApp, parseBehatzaileak } from "@/context/AppContext";
 import { playCounterClick } from "@/lib/audio";
+import { wilsonMarjinaPuntu, parseProtokoloa, isDateInProtokoloa } from "@/lib/estatistika";
 
 export default function BehatzaileKontagailua() {
   const {
@@ -591,6 +592,13 @@ export default function BehatzaileKontagailua() {
     totalInteractions > 0
       ? Math.round((euskarazCount / totalInteractions) * 100)
       : 0;
+  const nGutxienekoa = currentExp?.n_gutxienekoa || 20;
+  const currentMarjinaPuntu =
+    totalInteractions > 0
+      ? Math.round(wilsonMarjinaPuntu(euskarazCount, totalInteractions))
+      : null;
+  const expProtokoloa = parseProtokoloa(currentExp?.protokoloa_json);
+  const isOutOfProtocolNow = expProtokoloa ? !isDateInProtokoloa(new Date(), expProtokoloa) : false;
 
   const displayMinutes =
     timerMode === "countdown"
@@ -1074,16 +1082,35 @@ export default function BehatzaileKontagailua() {
         </div>
       </div>
 
+      {/* Out-of-protocol notice */}
+      {isOutOfProtocolNow && (
+        <div className="mb-4 rounded-2xl bg-amber-50 border border-amber-300 px-4 py-3 text-xs text-amber-900 flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <span>
+            Gaur ez da protokoloko eguna/ordua. Saioa gordeko da, baina ez da semaforoan zenbatuko.
+          </span>
+        </div>
+      )}
+
       {/* Real-time Counter Stats Bar */}
-      <div className="bg-white rounded-2xl p-4 shadow-xs border border-line mb-5 flex items-center justify-between">
+      <div className="bg-white rounded-2xl p-4 shadow-xs border border-line mb-5 flex items-center justify-between gap-2">
         <div>
           <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider block">
             Jasotako elkarrizketak
           </span>
-          <span className="text-2xl font-black text-ink tabular-nums">
-            {totalInteractions}{" "}
-            <span className="text-xs font-semibold text-ink-muted">elkarrizketa</span>
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xl sm:text-2xl font-black text-ink tabular-nums">
+              {totalInteractions}{" "}
+              <span className="text-xs font-semibold text-ink-muted">
+                elkarrizketa{currentMarjinaPuntu !== null ? ` · ±${currentMarjinaPuntu} puntu` : ""}
+              </span>
+            </span>
+            {totalInteractions >= nGutxienekoa && (
+              <span className="px-2 py-0.5 rounded-full bg-euskara/15 text-euskara border border-euskara/30 text-[10px] font-bold">
+                Lagin nahikoa
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-3">

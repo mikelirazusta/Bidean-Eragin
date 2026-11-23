@@ -44,6 +44,9 @@ import {
   formatDecimalEu,
   formatSignedPuntu,
   formatAldeaTarteaEu,
+  parseProtokoloa,
+  neurketaEgoera,
+  faseSemaforoa,
   type WilsonTartea,
 } from "@/lib/estatistika";
 
@@ -172,6 +175,7 @@ export default function ZentroDashboard() {
   const [editPertsonakText, setEditPertsonakText] = useState("");
   const [editGuneaText, setEditGuneaText] = useState("");
   const [editXedeaNum, setEditXedeaNum] = useState<number>(25);
+  const [editAldaketaArrazoia, setEditAldaketaArrazoia] = useState("");
   const [isSavingHypothesis, setIsSavingHypothesis] = useState(false);
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
   const [expToDelete, setExpToDelete] = useState<Esperimentua | null>(null);
@@ -303,12 +307,21 @@ export default function ZentroDashboard() {
     setEditPertsonakText(currentExp.pertsonak);
     setEditGuneaText(currentExp.gunea);
     setEditXedeaNum(currentExp.xede_portzentajea || 25);
+    setEditAldaketaArrazoia("");
     setIsEditingHypothesis(true);
   };
 
   const handleSaveHypothesis = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentExp || !editHipotesiaText.trim()) return;
+    const isExpLocked = Number(currentExp.blokeatuta || 0) === 1;
+    const lockedChanged =
+      editHipotesiaText.trim() !== currentExp.hipotesia ||
+      editXedeaNum !== currentExp.xede_portzentajea;
+    if (isExpLocked && lockedChanged && !editAldaketaArrazoia.trim()) {
+      alert("Hipotesia edo xedea blokeatuta dago lehen T0 saioaren ondoren. Idatzi aldaketaren arrazoia.");
+      return;
+    }
     setIsSavingHypothesis(true);
     await updateEsperimentua({
       id: currentExp.id,
@@ -317,6 +330,7 @@ export default function ZentroDashboard() {
       pertsonak: editPertsonakText.trim() || currentExp.pertsonak,
       gunea: editGuneaText.trim() || currentExp.gunea,
       xede_portzentajea: editXedeaNum,
+      aldaketa_arrazoia: editAldaketaArrazoia.trim() || undefined,
     });
     setIsSavingHypothesis(false);
     setIsEditingHypothesis(false);
@@ -479,12 +493,35 @@ export default function ZentroDashboard() {
 
   // Hobekuntza urratsak (4 saio gomendatuta fase bakoitzean, fase-aldaketa esplizitua)
   const saioGutxienekoa = currentExp?.saio_gutxienekoa || 4;
+  const nGutxienekoa = currentExp?.n_gutxienekoa || 20;
+  const expProtokoloa = parseProtokoloa(currentExp?.protokoloa_json);
+
+  const t0Semaforoa = faseSemaforoa(
+    expNeurketak.filter((n) => n.unea === "T0"),
+    "T0",
+    { nGutxienekoa, saioGutxienekoa, protokoloa: expProtokoloa }
+  );
+  const t1Semaforoa = faseSemaforoa(
+    expNeurketak.filter((n) => n.unea === "T1"),
+    "T1",
+    { nGutxienekoa, saioGutxienekoa, protokoloa: expProtokoloa }
+  );
+  const t2Semaforoa = faseSemaforoa(
+    expNeurketak.filter((n) => n.unea === "T2"),
+    "T2",
+    { nGutxienekoa, saioGutxienekoa, protokoloa: expProtokoloa }
+  );
+
   const activePhase: "T0" | "T1" | "T2" =
     currentExp?.estatusa === "T1_zain"
       ? "T1"
       : currentExp?.estatusa === "T2_zain" || currentExp?.estatusa === "Amaituta"
       ? "T2"
       : "T0";
+
+  const activeSemaforoa =
+    activePhase === "T0" ? t0Semaforoa : activePhase === "T1" ? t1Semaforoa : t2Semaforoa;
+
   const isT1Started =
     currentExp?.estatusa === "T1_zain" ||
     currentExp?.estatusa === "T2_zain" ||
@@ -498,20 +535,30 @@ export default function ZentroDashboard() {
   const handleExplicitStartPhase = async (targetFasea: "T1" | "T2" | "Amaituta") => {
     if (!currentExp) return;
     let egonkortuGabe = false;
-    if (targetFasea === "T1" && (t0Stats?.count || 0) < saioGutxienekoa) {
+    if (targetFasea === "T1" && t0Semaforoa.kolorea !== "berdea") {
       const ok = window.confirm(
-        `T0 fasean ${t0Stats?.count || 0}/${saioGutxienekoa} saio baino ez daude oraindik. Oinarri-lerroa egonkortu gabe T1 hasi nahi duzu? Erregistroan gordeko da.`
+        `${t0Semaforoa.mezua}\n\nZiur zaude T1 hasi nahi duzula oinarri-lerroa egonkortu gabe? Erregistroan gordeko da.`
       );
       if (!ok) return;
       egonkortuGabe = true;
-    } else if (targetFasea === "T2" && (t1Stats?.count || 0) < saioGutxienekoa) {
+    } else if (targetFasea === "T2" && t1Semaforoa.kolorea !== "berdea") {
       const ok = window.confirm(
-        `T1 fasean ${t1Stats?.count || 0}/${saioGutxienekoa} saio baino ez daude oraindik. Hala ere T2 hasi nahi duzu?`
+        `${t1Semaforoa.mezua}\n\nHala ere T2 hasi nahi duzu?`
       );
       if (!ok) return;
     }
     await startPhase(currentExp.id, targetFasea, egonkortuGabe);
   };
+
+  const aldaketaErregistroa = React.useMemo(() => {
+    if (!currentExp?.aldaketa_erregistroa_json) return [];
+    try {
+      const parsed = JSON.parse(currentExp.aldaketa_erregistroa_json);
+      return Array.isArray(parsed) ? (parsed as Array<{ data: string; erabiltzailea: string; oharra: string }>) : [];
+    } catch {
+      return [];
+    }
+  }, [currentExp?.aldaketa_erregistroa_json]);
 
   const steps = [
     {
@@ -678,13 +725,33 @@ export default function ZentroDashboard() {
                 : currentExp.estatusa === "Amaituta"
                 ? "Nahi baduzue, saio gehiago gehitu ditzakezue edo PDF txostena inprimatu."
                 : activePhase === "T0"
-                ? (t0Stats?.count || 0) < saioGutxienekoa
-                  ? `T0: ${t0Stats?.count || 0}/${saioGutxienekoa} saio. Neurtu berriro egun eta ordu berean, esku-hartzea martxan jarri gabe.`
-                  : `T0 fasean ${t0Stats?.count} saio dituzue (%${t0Stats?.pct}, ${t0Stats?.totalInteractions} elkarrizketa). Oinarri-lerroa prest dagoenean, sakatu «Hasi T1» pilotua martxan jartzeko.`
+                ? t0Semaforoa.kolorea !== "berdea"
+                  ? `T0: ${t0Semaforoa.osoaKopurua}/${saioGutxienekoa} saio oso. Neurtu berriro egun eta ordu berean, esku-hartzea martxan jarri gabe.`
+                  : `Oinarri-lerroa egonkor dago (%${t0Stats ? formatDecimalEu(t0Stats.pct) : "0"}, ${t0Stats?.totalInteractions || 0} elkarrizketa). Orain jar dezakezue pilotua martxan («Hasi T1»).`
                 : activePhase === "T1"
-                ? `T1: ${t1Stats?.count || 0}/${saioGutxienekoa} saio${t1Stats ? ` (%${t1Stats.pct}, ${t1Stats.totalInteractions} elkarrizketa)` : ""}. Gutxienez ${saioGutxienekoa} saio gomendatzen dira egun eta ordu berean.`
-                : `T2: ${t2Stats?.count || 0}/${saioGutxienekoa} saio${t2Stats ? ` (%${t2Stats.pct}, ${t2Stats.totalInteractions} elkarrizketa)` : ""}. Gutxienez ${saioGutxienekoa} saio gomendatzen dira egun eta ordu berean.`}
+                ? `T1: ${t1Semaforoa.osoaKopurua}/${saioGutxienekoa} saio oso${t1Stats ? ` (%${formatDecimalEu(t1Stats.pct)}, ${t1Stats.totalInteractions} elkarrizketa)` : ""}. Gutxienez ${saioGutxienekoa} saio gomendatzen dira egun eta ordu berean.`
+                : `T2: ${t2Semaforoa.osoaKopurua}/${saioGutxienekoa} saio oso${t2Stats ? ` (%${formatDecimalEu(t2Stats.pct)}, ${t2Stats.totalInteractions} elkarrizketa)` : ""}. Gutxienez ${saioGutxienekoa} saio gomendatzen dira egun eta ordu berean.`}
             </p>
+            {currentExp && currentExp.estatusa !== "Amaituta" && (
+              <div
+                className={`mt-2.5 inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border ${
+                  activeSemaforoa.kolorea === "berdea"
+                    ? "bg-euskara/10 text-euskara border-euskara/30"
+                    : activeSemaforoa.kolorea === "horia"
+                    ? "bg-amber-50 text-amber-900 border-amber-300"
+                    : "bg-terracotta/10 text-terracotta border-terracotta/30"
+                }`}
+              >
+                <span>
+                  {activeSemaforoa.kolorea === "berdea"
+                    ? "🟢"
+                    : activeSemaforoa.kolorea === "horia"
+                    ? "🟡"
+                    : "🔴"}
+                </span>
+                <span>{activeSemaforoa.mezua}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -827,10 +894,19 @@ export default function ZentroDashboard() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5">
-                  <span className="px-2.5 py-1 text-xs font-bold rounded-md bg-euskara/10 text-euskara border border-euskara/20 tabular-nums">
-                    Xedea: +{currentExp.xede_portzentajea} puntu
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {Number(currentExp.blokeatuta || 0) === 1 && (
+                      <span
+                        className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200"
+                        title="Lehen T0 saioaren ondoren blokeatuta; aldatzeko arrazoia erregistratzen da"
+                      >
+                        <Lock className="w-3 h-3" />
+                        <span>Blokeatuta</span>
+                      </span>
+                    )}
+                    <span className="px-2.5 py-1 text-xs font-bold rounded-md bg-euskara/10 text-euskara border border-euskara/20 tabular-nums">
+                      Xedea: +{currentExp.xede_portzentajea} puntu
+                    </span>
                   {!isEditingHypothesis && (
                     <>
                       <button
@@ -946,6 +1022,21 @@ export default function ZentroDashboard() {
                     </div>
                   </div>
 
+                  {Number(currentExp.blokeatuta || 0) === 1 && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5">
+                      <label className="block text-[10px] font-bold uppercase text-amber-900 mb-1">
+                        Aldaketaren arrazoia (beharrezkoa hipotesia edo xedea aldatzean) *
+                      </label>
+                      <input
+                        type="text"
+                        value={editAldaketaArrazoia}
+                        onChange={(e) => setEditAldaketaArrazoia(e.target.value)}
+                        placeholder="Adib. Behaketa-gunea zehazteko egokitzapena..."
+                        className="w-full border border-amber-300 bg-white rounded-lg px-2.5 py-1.5 text-xs text-ink"
+                      />
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-end gap-2 pt-1">
                     <button
                       type="button"
@@ -983,6 +1074,22 @@ export default function ZentroDashboard() {
                       <span className="font-semibold text-ink">{currentExp.gunea}</span>
                     </div>
                   </div>
+
+                  {aldaketaErregistroa.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-line space-y-1">
+                      <span className="block text-[10px] font-bold uppercase text-ink-muted tracking-wider">
+                        Aldaketa-erregistroa
+                      </span>
+                      {aldaketaErregistroa.map((entry, idx) => (
+                        <p key={idx} className="text-[11px] text-ink-muted">
+                          <strong className="text-ink">
+                            {new Date(entry.data).toLocaleDateString("eu-ES")}
+                          </strong>{" "}
+                          ({entry.erabiltzailea}): {entry.oharra}
+                        </p>
+                      ))}
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -1465,6 +1572,11 @@ export default function ZentroDashboard() {
                         Behatzailea aldatu da faseen artean; aldearen zati bat horregatik izan daiteke.
                       </p>
                     )}
+                    {Number(currentExp.t1_egonkortu_gabe || 0) === 1 && (
+                      <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                        Kontuz: oinarri-lerroa igotzen ari zen. Igoeraren zati bat esku-hartzearen aurrekoa izan daiteke.
+                      </p>
+                    )}
                   </>
                 ) : t0Stats ? (
                   <p className="text-xs text-ink-muted leading-relaxed">
@@ -1782,6 +1894,7 @@ export default function ZentroDashboard() {
                         <th className="pb-2">Elebi</th>
                         <th className="pb-2">Euskara %</th>
                         <th className="pb-2">Zalantza (±)</th>
+                        <th className="pb-2">Egoera</th>
                         <th className="pb-2">Iraupena</th>
                         <th className="pb-2">Behatzailea</th>
                         <th className="pb-2">Data</th>
@@ -1795,6 +1908,7 @@ export default function ZentroDashboard() {
                           const total = neu.euskaraz_count + neu.erdaraz_count + neu.elebi_count;
                           const pct = total > 0 ? Math.round((neu.euskaraz_count / total) * 1000) / 10 : 0;
                           const zalantzaPuntu = Math.round(wilsonMarjinaPuntu(neu.euskaraz_count, total));
+                          const egoera = neurketaEgoera(neu, { nGutxienekoa, protokoloa: expProtokoloa });
                           const minutes = Math.max(1, Math.round((neu.iraupena_segundotan || 600) / 60));
 
                           // Determine session number in its phase
@@ -1837,6 +1951,28 @@ export default function ZentroDashboard() {
                               </td>
                               <td className="py-2.5 text-ink-muted font-medium tabular-nums">
                                 {total > 0 ? `±${zalantzaPuntu} puntu` : "—"}
+                              </td>
+                              <td className="py-2.5">
+                                <div className="flex flex-wrap gap-1">
+                                  {egoera.osoa ? (
+                                    <span className="px-1.5 py-0.5 rounded-md bg-euskara/10 text-euskara text-[10px] font-bold">
+                                      Osoa
+                                    </span>
+                                  ) : (
+                                    <>
+                                      {egoera.laginTxikia && (
+                                        <span className="px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-800 text-[10px] font-bold">
+                                          Lagin txikia
+                                        </span>
+                                      )}
+                                      {egoera.protokolotikKanpo && (
+                                        <span className="px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[10px] font-bold">
+                                          Protokolotik kanpo
+                                        </span>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
                               </td>
                               <td className="py-2.5 text-ink-muted font-medium">
                                 {minutes} min

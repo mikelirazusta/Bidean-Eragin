@@ -67,6 +67,18 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
   const [isCustomMode, setIsCustomMode] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Protokoloa: Noiz neurtuko duzue?
+  const [protokoloEgunak, setProtokoloEgunak] = useState<number[]>([5]); // 5 = ostirala
+  const [protokoloOrduHasiera, setProtokoloOrduHasiera] = useState<string>("11:00");
+  const [protokoloOrduAmaiera, setProtokoloOrduAmaiera] = useState<string>("12:30");
+  const [protokoloIraupena, setProtokoloIraupena] = useState<number>(30);
+
+  const toggleProtokoloEguna = (dayIdx: number) => {
+    setProtokoloEgunak((prev) =>
+      prev.includes(dayIdx) ? prev.filter((d) => d !== dayIdx) : [...prev, dayIdx].sort((a, b) => a - b)
+    );
+  };
+
   // Latxa integration state
   const [isLatxaLoading, setIsLatxaLoading] = useState(false);
   const [isImprovingHypo, setIsImprovingHypo] = useState(false);
@@ -168,6 +180,17 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
     e.preventDefault();
     setIsSubmitting(true);
 
+    const protokoloaJson =
+      protokoloEgunak.length > 0 && protokoloOrduHasiera && protokoloOrduAmaiera
+        ? JSON.stringify({
+            asteko_egunak: protokoloEgunak,
+            ordu_hasiera: protokoloOrduHasiera,
+            ordu_amaiera: protokoloOrduAmaiera,
+            iraupena_min: protokoloIraupena || 30,
+            tolerantzia_min: 60,
+          })
+        : null;
+
     await createEsperimentua({
       pilotu_id: pilotu.id,
       hipotesia: fullHypothesis,
@@ -175,6 +198,7 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
       pertsonak: pertsonak.trim(),
       gunea: gunea.trim(),
       xede_portzentajea: metrika,
+      protokoloa_json: protokoloaJson,
     });
 
     setIsSubmitting(false);
@@ -380,6 +404,82 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
                   {chip.label}
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Protokoloa: Noiz neurtuko duzue? */}
+          <div className="p-4 rounded-2xl bg-paper border border-line space-y-3">
+            <div>
+              <h4 className="text-xs font-bold text-ink uppercase tracking-wider">
+                Noiz neurtuko duzue? (Behaketa-protokoloa)
+              </h4>
+              <p className="text-xs text-ink-muted mt-0.5">
+                Neurtu beti egun eta ordu berean: bestela, bezero desberdinak neurtuko dituzue.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-ink mb-1.5">Asteko eguna(k):</label>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { id: 1, label: "Astelehena" },
+                  { id: 2, label: "Asteartea" },
+                  { id: 3, label: "Asteazkena" },
+                  { id: 4, label: "Osteguna" },
+                  { id: 5, label: "Ostirala" },
+                  { id: 6, label: "Larunbata" },
+                  { id: 0, label: "Igandea" },
+                ].map((d) => {
+                  const active = protokoloEgunak.includes(d.id);
+                  return (
+                    <button
+                      key={d.id}
+                      type="button"
+                      onClick={() => toggleProtokoloEguna(d.id)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition cursor-pointer ${
+                        active
+                          ? "bg-sea text-white border-sea"
+                          : "bg-white text-ink-muted border-line hover:bg-sand"
+                      }`}
+                    >
+                      {d.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2.5">
+              <div>
+                <label className="block text-[11px] font-bold text-ink mb-1">Ordu-hasiera</label>
+                <input
+                  type="time"
+                  value={protokoloOrduHasiera}
+                  onChange={(e) => setProtokoloOrduHasiera(e.target.value)}
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-line text-xs font-semibold text-ink"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-ink mb-1">Ordu-amaiera</label>
+                <input
+                  type="time"
+                  value={protokoloOrduAmaiera}
+                  onChange={(e) => setProtokoloOrduAmaiera(e.target.value)}
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-line text-xs font-semibold text-ink"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-ink mb-1">Iraupena (min)</label>
+                <input
+                  type="number"
+                  min={5}
+                  max={120}
+                  step={5}
+                  value={protokoloIraupena}
+                  onChange={(e) => setProtokoloIraupena(Math.max(5, Number(e.target.value) || 30))}
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-line text-xs font-semibold text-ink tabular-nums"
+                />
+              </div>
             </div>
           </div>
 

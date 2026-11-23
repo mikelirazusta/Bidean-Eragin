@@ -232,9 +232,73 @@ export async function PATCH(request: Request) {
     const updatedGunea = gunea !== undefined ? String(gunea).trim() : existing.gunea;
     const updatedXedea = xede_portzentajea !== undefined ? Number(xede_portzentajea) : existing.xede_portzentajea;
     const updatedEstatusa = estatusa !== undefined ? String(estatusa).trim() : existing.estatusa;
+    const updatedProtokoloa =
+      body.protokoloa_json !== undefined
+        ? body.protokoloa_json
+        : existing.protokoloa_json ?? null;
+    const updatedNGutxienekoa =
+      body.n_gutxienekoa !== undefined ? Number(body.n_gutxienekoa) : existing.n_gutxienekoa ?? 20;
+    const updatedSaioGutxienekoa =
+      body.saio_gutxienekoa !== undefined ? Number(body.saio_gutxienekoa) : existing.saio_gutxienekoa ?? 4;
+    const updatedT2Mota =
+      body.t2_mota !== undefined
+        ? body.t2_mota === "kentzea"
+          ? "kentzea"
+          : "jarraipena"
+        : existing.t2_mota || "jarraipena";
+    const updatedKontagailuTxantiloia =
+      body.kontagailu_txantiloia !== undefined
+        ? body.kontagailu_txantiloia === "aldaketa"
+          ? "aldaketa"
+          : "oinarrizkoa"
+        : existing.kontagailu_txantiloia || "oinarrizkoa";
+
+    // Blokeoa: lehen T0 saioaren ondoren hipotesia, xedea edo kontagailuak aldatzeko arrazoia behar da
+    const isLocked = Number(existing.blokeatuta || 0) === 1;
+    const lockedFieldChanged =
+      updatedHipotesia !== existing.hipotesia ||
+      updatedXedea !== existing.xede_portzentajea ||
+      updatedKontagailuTxantiloia !== (existing.kontagailu_txantiloia || "oinarrizkoa");
+
+    let erregistroa: Array<{ data: string; erabiltzailea: string; oharra: string }> = [];
+    try {
+      if (existing.aldaketa_erregistroa_json) {
+        const parsed = JSON.parse(existing.aldaketa_erregistroa_json);
+        if (Array.isArray(parsed)) erregistroa = parsed;
+      }
+    } catch {}
+
+    if (isLocked && lockedFieldChanged) {
+      const arrazoia = String(body.aldaketa_arrazoia || "").trim();
+      if (!arrazoia) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Hipotesia, xedea edo kontagailuak blokeatuta daude lehen T0 saioaren ondoren. Aldatzeko, idatzi arrazoia.",
+          },
+          { status: 400 }
+        );
+      }
+      const aldaketak: string[] = [];
+      if (updatedHipotesia !== existing.hipotesia) aldaketak.push("hipotesia");
+      if (updatedXedea !== existing.xede_portzentajea) {
+        aldaketak.push(`xedea (${existing.xede_portzentajea} → ${updatedXedea} puntu)`);
+      }
+      if (updatedKontagailuTxantiloia !== (existing.kontagailu_txantiloia || "oinarrizkoa")) {
+        aldaketak.push(`kontagailua (${updatedKontagailuTxantiloia})`);
+      }
+      erregistroa.push({
+        data: new Date().toISOString(),
+        erabiltzailea: auth.session.name || auth.session.email,
+        oharra: `Aldatuta (${aldaketak.join(", ")}): ${arrazoia}`,
+      });
+    }
 
     db.prepare(
-      "UPDATE esperimentuak SET pilotu_id = ?, hipotesia = ?, taldea = ?, pertsonak = ?, gunea = ?, xede_portzentajea = ?, estatusa = ? WHERE id = ?"
+      `UPDATE esperimentuak SET
+         pilotu_id = ?, hipotesia = ?, taldea = ?, pertsonak = ?, gunea = ?, xede_portzentajea = ?, estatusa = ?,
+         protokoloa_json = ?, n_gutxienekoa = ?, saio_gutxienekoa = ?, t2_mota = ?, kontagailu_txantiloia = ?, aldaketa_erregistroa_json = ?
+       WHERE id = ?`
     ).run(
       updatedPilotuId,
       updatedHipotesia,
@@ -243,6 +307,12 @@ export async function PATCH(request: Request) {
       updatedGunea,
       updatedXedea,
       updatedEstatusa,
+      updatedProtokoloa,
+      updatedNGutxienekoa,
+      updatedSaioGutxienekoa,
+      updatedT2Mota,
+      updatedKontagailuTxantiloia,
+      JSON.stringify(erregistroa),
       id
     );
 

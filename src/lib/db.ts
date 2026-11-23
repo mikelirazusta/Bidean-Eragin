@@ -730,8 +730,33 @@ function createFallbackStore() {
             save();
             return { changes: 1 };
           }
-          if (q.startsWith("UPDATE esperimentuak SET pilotu_id = ?, hipotesia = ?, taldea = ?, pertsonak = ?, gunea = ?, xede_portzentajea = ?, estatusa = ? WHERE id = ?")) {
-            const [pilotu_id, hipotesia, taldea, pertsonak, gunea, xede_portzentajea, estatusa, id] = params;
+          if (q.startsWith("UPDATE esperimentuak SET blokeatuta = 1 WHERE id = ?")) {
+            const [id] = params;
+            const exp = store.esperimentuak.find((e) => e.id === id);
+            if (exp) {
+              exp.blokeatuta = 1;
+              save();
+              return { changes: 1 };
+            }
+            return { changes: 0 };
+          }
+          if (q.startsWith("UPDATE esperimentuak SET pilotu_id = ?, hipotesia = ?, taldea = ?, pertsonak = ?, gunea = ?, xede_portzentajea = ?, estatusa = ?, protokoloa_json = ?, n_gutxienekoa = ?, saio_gutxienekoa = ?, t2_mota = ?, kontagailu_txantiloia = ?, aldaketa_erregistroa_json = ? WHERE id = ?")) {
+            const [
+              pilotu_id,
+              hipotesia,
+              taldea,
+              pertsonak,
+              gunea,
+              xede_portzentajea,
+              estatusa,
+              protokoloa_json,
+              n_gutxienekoa,
+              saio_gutxienekoa,
+              t2_mota,
+              kontagailu_txantiloia,
+              aldaketa_erregistroa_json,
+              id,
+            ] = params;
             const exp = store.esperimentuak.find((e) => e.id === id);
             if (exp) {
               exp.pilotu_id = pilotu_id;
@@ -741,6 +766,12 @@ function createFallbackStore() {
               exp.gunea = gunea;
               exp.xede_portzentajea = Number(xede_portzentajea);
               exp.estatusa = estatusa;
+              exp.protokoloa_json = protokoloa_json ?? null;
+              exp.n_gutxienekoa = Number(n_gutxienekoa || 20);
+              exp.saio_gutxienekoa = Number(saio_gutxienekoa || 4);
+              exp.t2_mota = t2_mota || "jarraipena";
+              exp.kontagailu_txantiloia = kontagailu_txantiloia || "oinarrizkoa";
+              exp.aldaketa_erregistroa_json = aldaketa_erregistroa_json || "[]";
               save();
               return { changes: 1 };
             }

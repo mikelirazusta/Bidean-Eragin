@@ -223,6 +223,11 @@ export async function POST(request: Request) {
         atzeratua ? 1 : 0
       );
 
+      // Lehen T0 saioa gorde ondoren, hipotesia, xedea eta kontagailuak blokeatu
+      if (unea === "T0") {
+        db.prepare("UPDATE esperimentuak SET blokeatuta = 1 WHERE id = ?").run(esperimentu_id);
+      }
+
       // Get experiment and Eragile details
       const exp = db.prepare(`
         SELECT e.*, er.id as eragile_id, er.izena as eragile_izena
