@@ -2,15 +2,88 @@ import { NextResponse } from "next/server";
 import db, { Neurketa, Esperimentua, syncDbFromCloud, syncDbToCloud } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 
-const HILABETEAK = [
-  "Urtarrilak", "Otsailak", "Martxoak", "Apirilak", "Maiatzak", "Ekainak",
-  "Uztailak", "Abuztuak", "Irailak", "Urriak", "Azaroak", "Abenduak"
+const ASTEKO_EGUNAK_EU = [
+  "igandean",
+  "astelehenean",
+  "asteartean",
+  "asteazkenean",
+  "ostegunean",
+  "ostiralean",
+  "larunbatean",
 ];
 
-function formatEuskalData(date: Date): string {
-  const hilabetea = HILABETEAK[date.getMonth()];
-  const eguna = date.getDate();
-  return `${hilabetea} ${eguna}`;
+function formatProtokoloDeskribapena(protokoloaJson?: string | null): string {
+  if (!protokoloaJson) return "egun eta ordu berean";
+  try {
+    const p = JSON.parse(protokoloaJson);
+    const egunak: number[] = Array.isArray(p.asteko_egunak) ? p.asteko_egunak : [];
+    const egunakText =
+      egunak.length > 0
+        ? egunak
+            .filter((d) => d >= 0 && d <= 6)
+            .map((d) => ASTEKO_EGUNAK_EU[d])
+            .join("/")
+        : "egun berean";
+    const orduText =
+      p.ordu_hasiera && p.ordu_amaiera
+        ? `${p.ordu_hasiera}-${p.ordu_amaiera}`
+        : p.ordu_hasiera || "ordu berean";
+    return `${egunakText} (${orduText})`;
+  } catch {
+    return "egun eta ordu berean";
+  }
+}
+
+function isNeurketaOsoaBasic(n: Neurketa, exp: Esperimentua): boolean {
+  const nMin = exp.n_gutxienekoa || 20;
+  const total = (n.euskaraz_count || 0) + (n.erdaraz_count || 0) + (n.elebi_count || 0);
+  if (total < nMin) return false;
+  if (exp.protokoloa_json) {
+    try {
+      const p = JSON.parse(exp.protokoloa_json);
+      const dt = new Date(n.data_ordu);
+      if (!isNaN(dt.getTime())) {
+        if (Array.isArray(p.asteko_egunak) && p.asteko_egunak.length > 0) {
+          if (!p.asteko_egunak.includes(dt.getDay())) return false;
+        }
+        if (p.ordu_hasiera && p.ordu_amaiera) {
+          const [h1, m1] = String(p.ordu_hasiera).split(":").map(Number);
+          const [h2, m2] = String(p.ordu_amaiera).split(":").map(Number);
+          const tol = Number(p.tolerantzia_min ?? 60);
+          const mins = dt.getHours() * 60 + dt.getMinutes();
+          const startMins = h1 * 60 + (m1 || 0) - tol;
+          const endMins = h2 * 60 + (m2 || 0) + tol;
+          if (mins < startMins || mins > endMins) return false;
+        }
+      }
+    } catch {}
+  }
+  return true;
+}
+
+function isPhaseStable(osoaSessions: Neurketa[], saioMin: number): boolean {
+  if (osoaSessions.length < saioMin) return false;
+  const sorted = [...osoaSessions].sort((a, b) => a.data_ordu.localeCompare(b.data_ordu));
+  const recent = sorted.slice(-saioMin);
+  const pcts = recent.map((n) => {
+    const tot = (n.euskaraz_count || 0) + (n.erdaraz_count || 0) + (n.elebi_count || 0);
+    return tot > 0 ? ((n.euskaraz_count || 0) / tot) * 100 : 0;
+  });
+  const maxPct = Math.max(...pcts);
+  const minPct = Math.min(...pcts);
+  if (maxPct - minPct > 15) return false;
+  // Simple linear regression slope of pct vs index (0..k-1)
+  const k = pcts.length;
+  const xMean = (k - 1) / 2;
+  const yMean = pcts.reduce((a, b) => a + b, 0) / k;
+  let num = 0;
+  let den = 0;
+  for (let i = 0; i < k; i++) {
+    num += (i - xMean) * (pcts[i] - yMean);
+    den += (i - xMean) * (i - xMean);
+  }
+  const slope = den > 0 ? num / den : 0;
+  return Math.abs(slope) < 3;
 }
 
 export async function POST(request: Request) {
@@ -88,72 +161,112 @@ export async function POST(request: Request) {
         `);
 
         const allNeurketak = db.prepare("SELECT * FROM neurketak").all() as Neurketa[];
-        const existingSamePhaseCount = allNeurketak.filter(
-          (n) => n.esperimentu_id === esperimentu_id && n.unea === unea && n.id !== id
-        ).length;
+        const phaseNeurketak = allNeurketak.filter(
+          (n) => n.esperimentu_id === esperimentu_id && n.unea === unea
+        );
+        const saioGutxienekoa = exp.saio_gutxienekoa || 4;
+        const osoaSessions = phaseNeurketak.filter((n) => isNeurketaOsoaBasic(n, exp));
+        const osoaCount = osoaSessions.length;
+        const totalEusk = phaseNeurketak.reduce((s, n) => s + (n.euskaraz_count || 0), 0);
+        const totalN = phaseNeurketak.reduce(
+          (s, n) => s + (n.euskaraz_count || 0) + (n.erdaraz_count || 0) + (n.elebi_count || 0),
+          0
+        );
+        const phasePct = totalN > 0 ? Math.round((totalEusk / totalN) * 100) : 0;
+        const protokoloTestua = formatProtokoloDeskribapena(exp.protokoloa_json);
+        const nextDueDate = new Date(now.getTime() + 7 * 86400000).toISOString();
 
-        if (existingSamePhaseCount === 0) {
-          // Lehen neurketa fase honetan
-          if (unea === "T0") {
-            if (exp.estatusa === "T0_zain" || (exp.estatusa !== "T2_zain" && exp.estatusa !== "Amaituta")) {
-              db.prepare("UPDATE esperimentuak SET estatusa = ? WHERE id = ?").run("T1_zain", esperimentu_id);
-            }
-            const t1DueDate = new Date(now.getTime() + 7 * 86400000);
+        // Ez aldatu estatusa automatikoki lehen saioarekin: fase-aldaketa esplizitua da
+        if (unea === "T0") {
+          if (osoaCount < saioGutxienekoa) {
             insertNudge.run(
               "nudge-" + Date.now(),
               exp.eragile_id,
-              "T0 oinarrizko neurketa eginda! 📊",
-              `Bikain! Hasierako argazkia dugu. Orain jarri martxan pilotua espazioan. 7 egun barru (${formatEuskalData(t1DueDate)}) egingo dugu T1 neurketa berehalako eragina ikusteko! Nahi baduzu, T0 fasean beste behaketa-saio batzuk ere egin ditzakezu oinarrizko batez bestekoa aberasteko.`,
+              `T0: ${osoaCount}/${saioGutxienekoa} saio oso`,
+              `T0: ${osoaCount}/${saioGutxienekoa} saio. Neurtu berriro ${protokoloTestua}, esku-hartzea martxan jarri gabe.`,
               "bultzada",
-              t1DueDate.toISOString(),
+              nextDueDate,
+              0,
+              `/behaketa?expId=${esperimentu_id}&phase=T0`,
+              data_ordu
+            );
+          } else if (isPhaseStable(osoaSessions, saioGutxienekoa)) {
+            insertNudge.run(
+              "nudge-" + Date.now(),
+              exp.eragile_id,
+              "T0 oinarri-lerroa egonkor dago",
+              `Oinarri-lerroa egonkor dago (%${phasePct}, ${totalN} elkarrizketa). Orain jar dezakezue pilotua martxan.`,
+              "zoriontzea",
+              nextDueDate,
+              0,
+              `/panela`,
+              data_ordu
+            );
+          } else {
+            insertNudge.run(
+              "nudge-" + Date.now(),
+              exp.eragile_id,
+              "T0: itxaron — erabilera aldatzen ari da",
+              `Erabilera aldatzen ari da esku-hartu gabe ere. Neurtu berriro ${protokoloTestua}, oinarri-lerroa egonkortu arte.`,
+              "abisua",
+              nextDueDate,
+              0,
+              `/behaketa?expId=${esperimentu_id}&phase=T0`,
+              data_ordu
+            );
+          }
+        } else if (unea === "T1") {
+          if (osoaCount < saioGutxienekoa) {
+            insertNudge.run(
+              "nudge-" + Date.now(),
+              exp.eragile_id,
+              `T1: ${osoaCount}/${saioGutxienekoa} saio oso`,
+              `T1: ${osoaCount}/${saioGutxienekoa} saio oso. Neurtu berriro ${protokoloTestua} (gutxienez ${saioGutxienekoa} saio gomendatzen dira).`,
+              "bultzada",
+              nextDueDate,
               0,
               `/behaketa?expId=${esperimentu_id}&phase=T1`,
               data_ordu
             );
-          } else if (unea === "T1") {
-            if (exp.estatusa !== "Amaituta") {
-              db.prepare("UPDATE esperimentuak SET estatusa = ? WHERE id = ?").run("T2_zain", esperimentu_id);
-            }
-            const t2DueDate = new Date(now.getTime() + 14 * 86400000);
+          } else {
             insertNudge.run(
               "nudge-" + Date.now(),
               exp.eragile_id,
-              "T1 neurketa osatuta! 🚀 14 egunera T2 dator",
-              `T1 neurketa egin duzu. 14 egun barru T2 neurketa egitea tokatzen zaizu (${formatEuskalData(t2DueDate)}). Izango duzu tarterik ohitura berria sendotu den ikusteko? T1 fasean saio gehiago ere egin ditzakezu nahi izanez gero.`,
-              "abisua",
-              t2DueDate.toISOString(),
-              0,
-              `/behaketa?expId=${esperimentu_id}&phase=T2`,
-              data_ordu
-            );
-          } else if (unea === "T2") {
-            db.prepare("UPDATE esperimentuak SET estatusa = ? WHERE id = ?").run("Amaituta", esperimentu_id);
-            insertNudge.run(
-              "nudge-" + Date.now(),
-              exp.eragile_id,
-              "Esperimentu-zikloa amaituta! 🎉 Ikasi eta zabaldu!",
-              `Zorionak lan bikainagatik! T0, T1 eta T2 neurketak bilduta dituzue. Ikusi lortutako aldaketa panelean eta partekatu lankideekin hurrengo urratsa erabakitzeko.`,
-              "zoriontzea",
-              new Date(now.getTime() + 30 * 86400000).toISOString(),
+              `T1: ${osoaCount} saio oso jasota`,
+              `T1 faseko emaitza: %${phasePct} (${totalN} elkarrizketa). Nahi duzuenean T2 has dezakezue paneletik.`,
+              "bultzada",
+              nextDueDate,
               0,
               `/panela`,
               data_ordu
             );
           }
-        } else {
-          // Dagoeneko bazegoen neurketaren bat fase honetan: batez bestekoa aberastu da!
-          const nextDueDate = new Date(now.getTime() + 7 * 86400000).toISOString();
-          insertNudge.run(
-            "nudge-" + Date.now(),
-            exp.eragile_id,
-            `${unea} faseko beste saio bat gehitu da (${existingSamePhaseCount + 1}. saioa) 📈`,
-            `${unea} faseko neurketa osagarria erregistratuta. Datu honekin fase honetako batez bestekoa zehatzagoa eta sendoagoa da orain!`,
-            "bultzada",
-            nextDueDate,
-            0,
-            `/panela`,
-            data_ordu
-          );
+        } else if (unea === "T2") {
+          if (osoaCount < saioGutxienekoa) {
+            insertNudge.run(
+              "nudge-" + Date.now(),
+              exp.eragile_id,
+              `T2: ${osoaCount}/${saioGutxienekoa} saio oso`,
+              `T2: ${osoaCount}/${saioGutxienekoa} saio oso. Neurtu berriro ${protokoloTestua} (gutxienez ${saioGutxienekoa} saio gomendatzen dira).`,
+              "bultzada",
+              nextDueDate,
+              0,
+              `/behaketa?expId=${esperimentu_id}&phase=T2`,
+              data_ordu
+            );
+          } else {
+            insertNudge.run(
+              "nudge-" + Date.now(),
+              exp.eragile_id,
+              `T2: ${osoaCount} saio oso jasota`,
+              `T2 faseko emaitza: %${phasePct} (${totalN} elkarrizketa). Ikusi emaitza osoak eta zalantza-tarteak panelean.`,
+              "zoriontzea",
+              nextDueDate,
+              0,
+              `/panela`,
+              data_ordu
+            );
+          }
         }
       } catch (nudgeErr) {
         console.warn("Oharra: ezin izan da bultzada automatikoa sortu neurketa gordetzean:", nudgeErr);

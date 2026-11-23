@@ -52,11 +52,11 @@ export const DEFAULT_UI_TEXTS: Record<string, string> = {
   counter_btn_euskaraz: "Euskaraz",
   counter_btn_erdaraz: "Erdaraz",
   counter_btn_elebi: "Elebi (bi hizkuntzatan)",
-  dashboard_step1_title: "1. urratsa: egin T0 hasierako neurketa (pilotuaren aurretik)",
+  dashboard_step1_title: "1. urratsa: egin T0 hasierako neurketak (gutxienez 4, pilotuaren aurretik)",
   dashboard_step1_desc:
-    "Pilotua martxan jarri aurretik, neurtu 10-30 minutuz gaur egungo elkarrizketak zein hizkuntzatan diren (abiapuntua ezagutzeko).",
-  dashboard_step2_title: "2. urratsa: jarri pilotua martxan eta neurtu T1",
-  dashboard_step3_title: "3. urratsa: egin T2 neurketa ohitura egonkortu dela egiaztatzeko",
+    "Pilotua martxan jarri aurretik, egin gutxienez 4 neurketa egun eta ordu berean, oinarri-lerroa ezagutzeko.",
+  dashboard_step2_title: "2. urratsa: jarri pilotua martxan eta egin T1 neurketak (gutxienez 4)",
+  dashboard_step3_title: "3. urratsa: egin T2 neurketak (gutxienez 4)",
   katalogoa_title: "Esku-hartze pilotuak",
   katalogoa_subtitle:
     "Aukeratu zure entitatean probatu nahi duzun dinamika, deskargatu materialak eta zehaztu hipotesia.",
@@ -218,6 +218,7 @@ interface AppContextType {
     xede_portzentajea?: number;
     estatusa?: string;
   }) => Promise<Esperimentua | null>;
+  startPhase: (id: string, fasea: "T0" | "T1" | "T2" | "Amaituta", egonkortu_gabe?: boolean) => Promise<Esperimentua | null>;
   deleteEsperimentua: (id: string) => Promise<boolean>;
   updateNeurketa: (data: {
     id: string;
@@ -944,6 +945,39 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
     return false;
   };
 
+  const startPhase = async (
+    id: string,
+    fasea: "T0" | "T1" | "T2" | "Amaituta",
+    egonkortu_gabe?: boolean
+  ) => {
+    try {
+      const res = await fetch("/api/esperimentuak", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id,
+          ekintza: "hasi_fasea",
+          fasea,
+          egonkortu_gabe: Boolean(egonkortu_gabe),
+        }),
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        await refreshData();
+        showToast(
+          fasea === "Amaituta"
+            ? "Esperimentua amaitutzat markatu da."
+            : `${fasea} fasea hasi da.`,
+          "success"
+        );
+        return json.data as Esperimentua;
+      }
+    } catch (e) {
+      console.error("Errorea fasea hastean:", e);
+    }
+    return null;
+  };
+
   const updateEsperimentua = async (data: {
     id: string;
     pilotu_id?: string;
@@ -1287,6 +1321,7 @@ export function AppProvider({ children, initialData }: AppProviderProps) {
         createQuickPostua,
         updateEragilea,
         updateEsperimentua,
+        startPhase,
         deleteEsperimentua,
         updateNeurketa,
         saveNeurketa,

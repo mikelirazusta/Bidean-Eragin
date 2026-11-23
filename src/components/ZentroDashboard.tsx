@@ -92,6 +92,7 @@ export default function ZentroDashboard() {
     deleteNeurketa,
     updateNeurketa,
     updateEsperimentua,
+    startPhase,
     deleteEsperimentua,
     updateEragilea,
     createEsperimentua,
@@ -424,7 +425,42 @@ export default function ZentroDashboard() {
     (n) => n.eragile_id === activeEragilea?.id && n.irakurria === 0
   );
 
-  // Hobekuntza urratsak
+  // Hobekuntza urratsak (4 saio gomendatuta fase bakoitzean, fase-aldaketa esplizitua)
+  const saioGutxienekoa = currentExp?.saio_gutxienekoa || 4;
+  const activePhase: "T0" | "T1" | "T2" =
+    currentExp?.estatusa === "T1_zain"
+      ? "T1"
+      : currentExp?.estatusa === "T2_zain" || currentExp?.estatusa === "Amaituta"
+      ? "T2"
+      : "T0";
+  const isT1Started =
+    currentExp?.estatusa === "T1_zain" ||
+    currentExp?.estatusa === "T2_zain" ||
+    currentExp?.estatusa === "Amaituta" ||
+    Boolean(t1Stats);
+  const isT2Started =
+    currentExp?.estatusa === "T2_zain" ||
+    currentExp?.estatusa === "Amaituta" ||
+    Boolean(t2Stats);
+
+  const handleExplicitStartPhase = async (targetFasea: "T1" | "T2" | "Amaituta") => {
+    if (!currentExp) return;
+    let egonkortuGabe = false;
+    if (targetFasea === "T1" && (t0Stats?.count || 0) < saioGutxienekoa) {
+      const ok = window.confirm(
+        `T0 fasean ${t0Stats?.count || 0}/${saioGutxienekoa} saio baino ez daude oraindik. Oinarri-lerroa egonkortu gabe T1 hasi nahi duzu? Erregistroan gordeko da.`
+      );
+      if (!ok) return;
+      egonkortuGabe = true;
+    } else if (targetFasea === "T2" && (t1Stats?.count || 0) < saioGutxienekoa) {
+      const ok = window.confirm(
+        `T1 fasean ${t1Stats?.count || 0}/${saioGutxienekoa} saio baino ez daude oraindik. Hala ere T2 hasi nahi duzu?`
+      );
+      if (!ok) return;
+    }
+    await startPhase(currentExp.id, targetFasea, egonkortuGabe);
+  };
+
   const steps = [
     {
       step: 1,
@@ -435,41 +471,43 @@ export default function ZentroDashboard() {
     },
     {
       step: 2,
-      title: "T0 neurtu (oinarrizko marra)",
+      title: `T0 neurtu (oinarri-lerroa, gutxienez ${saioGutxienekoa} saio)`,
       desc: t0Stats
-        ? `${t0Stats.count === 1 ? "Hasierako saio 1 eginda" : `${t0Stats.count} saio eginda (batez bestekoa: %${t0Stats.pct})`}. ${t0Stats.totalInteractions} elkarrizketa neurtuta.`
-        : "Esku-hartzea hasi aurretiko hasierako neurketa.",
-      completed: !!t0Stats,
-      current: !t0Stats,
+        ? `${t0Stats.count}/${saioGutxienekoa} saio eginda (%${t0Stats.pct}, ${t0Stats.totalInteractions} elkarrizketa).`
+        : "Esku-hartzea hasi aurretiko hasierako neurketak (egun eta ordu berean).",
+      completed: (t0Stats?.count || 0) >= saioGutxienekoa || isT1Started,
+      current: activePhase === "T0",
       actionPhase: "T0" as const,
       count: t0Stats?.count || 0,
     },
     {
       step: 3,
-      title: "Pilotua martxan jarri",
-      desc: "Materialak edo dinamika espazioan aktibatuta.",
-      completed: !!t0Stats,
-      current: !!t0Stats && !t1Stats,
+      title: "Pilotua martxan jarri (Hasi T1)",
+      desc: isT1Started
+        ? "Pilotua martxan jarrita eta T1 fasea aktibatuta."
+        : "T0 oinarri-lerroa egonkor dagoenean, sakatu 'Hasi T1' eta jarri pilotua martxan.",
+      completed: isT1Started,
+      current: activePhase === "T0" && (t0Stats?.count || 0) >= saioGutxienekoa,
     },
     {
       step: 4,
-      title: "T1 neurtu (berehalako eragina)",
+      title: `T1 neurtu (gutxienez ${saioGutxienekoa} saio)`,
       desc: t1Stats
-        ? `${t1Stats.count === 1 ? "Saio 1 eginda" : `${t1Stats.count} saio eginda (batez bestekoa: %${t1Stats.pct})`}. ${immediateGain !== null ? (immediateGain >= 0 ? `+${immediateGain}%` : `${immediateGain}%`) : ""}`
-        : "Lehen asteko efektu zuzena neurtu.",
-      completed: !!t1Stats,
-      current: !!t0Stats && !t1Stats,
+        ? `${t1Stats.count}/${saioGutxienekoa} saio eginda (%${t1Stats.pct}, ${t1Stats.totalInteractions} elkarrizketa).`
+        : "Pilotua martxan dagoela egindako neurketak (egun eta ordu berean).",
+      completed: (t1Stats?.count || 0) >= saioGutxienekoa || isT2Started,
+      current: activePhase === "T1",
       actionPhase: "T1" as const,
       count: t1Stats?.count || 0,
     },
     {
       step: 5,
-      title: "T2 neurtu (ohitura sendotzea)",
+      title: `T2 neurtu (gutxienez ${saioGutxienekoa} saio)`,
       desc: t2Stats
-        ? `${t2Stats.count === 1 ? "Saio 1 eginda" : `${t2Stats.count} saio eginda (batez bestekoa: %${t2Stats.pct})`}. ${sustainedGain !== null ? (sustainedGain >= 0 ? `+${sustainedGain}%` : `${sustainedGain}%`) : ""}`
-        : "14-21 egunera, epe ertaineko aldaketa finkatu al da?",
-      completed: !!t2Stats,
-      current: !!t1Stats && !t2Stats,
+        ? `${t2Stats.count}/${saioGutxienekoa} saio eginda (%${t2Stats.pct}, ${t2Stats.totalInteractions} elkarrizketa).`
+        : "T2 faseko neurketak (egun eta ordu berean).",
+      completed: (t2Stats?.count || 0) >= saioGutxienekoa || currentExp?.estatusa === "Amaituta",
+      current: activePhase === "T2" && currentExp?.estatusa !== "Amaituta",
       actionPhase: "T2" as const,
       count: t2Stats?.count || 0,
     },
@@ -548,14 +586,14 @@ export default function ZentroDashboard() {
               onClick={() => {
                 setObservationConfig({
                   expId: currentExp?.id,
-                  phase: !t0Stats ? "T0" : !t1Stats ? "T1" : "T2",
+                  phase: activePhase,
                 });
                 setActiveTab("behaketa");
               }}
               className="px-4 py-2.5 rounded-xl bg-euskara hover:opacity-95 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-xs transition cursor-pointer"
             >
               <Clock className="w-4 h-4" />
-              <span>Hasi behaketa</span>
+              <span>Hasi behaketa ({activePhase})</span>
             </button>
           )}
         </div>
@@ -574,51 +612,79 @@ export default function ZentroDashboard() {
             <h2 className="text-base sm:text-lg font-bold text-ink mt-0.5">
               {!currentExp
                 ? "1. urratsa: aukeratu esku-hartze pilotu bat katalogotik edo sortu hipotesia"
-                : !t0Stats
-                ? uiTexts.dashboard_step1_title || "1. urratsa: egin T0 hasierako neurketa (pilotuaren aurretik)"
-                : !t1Stats
-                ? uiTexts.dashboard_step2_title || "2. urratsa: aktibatu pilotuaren euskarriak eta neurtu T1"
-                : !t2Stats
-                ? uiTexts.dashboard_step3_title || "3. urratsa: egin T2 neurketa ohitura sendotu dela egiaztatzeko"
-                : "Zorionak! Ziklo osoa (T0, T1 eta T2) osatu duzue"}
+                : currentExp.estatusa === "Amaituta"
+                ? "Zikloa amaitutzat markatuta dago (T0, T1 eta T2)"
+                : activePhase === "T0"
+                ? uiTexts.dashboard_step1_title || "1. urratsa: egin T0 hasierako neurketak (gutxienez 4, pilotuaren aurretik)"
+                : activePhase === "T1"
+                ? uiTexts.dashboard_step2_title || "2. urratsa: jarri pilotua martxan eta egin T1 neurketak (gutxienez 4)"
+                : uiTexts.dashboard_step3_title || "3. urratsa: egin T2 neurketak (gutxienez 4)"}
             </h2>
             <p className="text-xs text-ink-muted mt-1 max-w-2xl leading-relaxed">
               {!currentExp
                 ? "Aztertu esku-hartze pilotuen katalogoa eta aukeratu zuen entitatearen erronkari ondoen egokitzen zaiona."
-                : !t0Stats
-                ? uiTexts.dashboard_step1_desc || "Pilotua martxan jarri aurretik, neurtu 10-30 minutuz gaur egungo elkarrizketak zein hizkuntzatan diren (abiapuntua ezagutzeko)."
-                : !t1Stats
-                ? `T0 oinarria baduzue (%${t0Stats.pct} euskara). Orain jarri pilotua martxan eta egin T1 neurketa berehalako eragina neurtzeko.`
-                : !t2Stats
-                ? `T1 neurketan %${t1Stats.pct} jaso duzue. Egin T2 neurketa 14-21 egunera portaera berria egonkortu den ikusteko.`
-                : "Nahi baduzue, saio gehitu ditzakezue batez bestekoa sendotzeko edo PDF txostena inprimatu."}
+                : currentExp.estatusa === "Amaituta"
+                ? "Nahi baduzue, saio gehiago gehitu ditzakezue edo PDF txostena inprimatu."
+                : activePhase === "T0"
+                ? (t0Stats?.count || 0) < saioGutxienekoa
+                  ? `T0: ${t0Stats?.count || 0}/${saioGutxienekoa} saio. Neurtu berriro egun eta ordu berean, esku-hartzea martxan jarri gabe.`
+                  : `T0 fasean ${t0Stats?.count} saio dituzue (%${t0Stats?.pct}, ${t0Stats?.totalInteractions} elkarrizketa). Oinarri-lerroa prest dagoenean, sakatu «Hasi T1» pilotua martxan jartzeko.`
+                : activePhase === "T1"
+                ? `T1: ${t1Stats?.count || 0}/${saioGutxienekoa} saio${t1Stats ? ` (%${t1Stats.pct}, ${t1Stats.totalInteractions} elkarrizketa)` : ""}. Gutxienez ${saioGutxienekoa} saio gomendatzen dira egun eta ordu berean.`
+                : `T2: ${t2Stats?.count || 0}/${saioGutxienekoa} saio${t2Stats ? ` (%${t2Stats.pct}, ${t2Stats.totalInteractions} elkarrizketa)` : ""}. Gutxienez ${saioGutxienekoa} saio gomendatzen dira egun eta ordu berean.`}
             </p>
           </div>
         </div>
 
         {currentExp ? (
-          <button
-            type="button"
-            onClick={() => {
-              setObservationConfig({
-                expId: currentExp.id,
-                phase: !t0Stats ? "T0" : !t1Stats ? "T1" : "T2",
-              });
-              setActiveTab("behaketa");
-            }}
-            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-euskara hover:bg-emerald-800 text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-2 shrink-0 cursor-pointer"
-          >
-            <span>
-              {!t0Stats
-                ? "Neurtu T0 orain"
-                : !t1Stats
-                ? "Neurtu T1 orain"
-                : !t2Stats
-                ? "Neurtu T2 orain"
-                : "+ Gehitu beste saio bat"}
-            </span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                setObservationConfig({
+                  expId: currentExp.id,
+                  phase: activePhase,
+                });
+                setActiveTab("behaketa");
+              }}
+              className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-euskara hover:bg-emerald-800 text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span>
+                {currentExp.estatusa === "Amaituta"
+                  ? "+ Gehitu beste saio bat"
+                  : `Neurtu ${activePhase} orain`}
+              </span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+
+            {activePhase === "T0" && (
+              <button
+                type="button"
+                onClick={() => handleExplicitStartPhase("T1")}
+                className="px-3.5 py-2.5 rounded-xl bg-paper hover:bg-sand text-ink border border-line font-bold text-xs transition cursor-pointer"
+              >
+                Hasi T1
+              </button>
+            )}
+            {activePhase === "T1" && (
+              <button
+                type="button"
+                onClick={() => handleExplicitStartPhase("T2")}
+                className="px-3.5 py-2.5 rounded-xl bg-paper hover:bg-sand text-ink border border-line font-bold text-xs transition cursor-pointer"
+              >
+                Hasi T2
+              </button>
+            )}
+            {activePhase === "T2" && currentExp.estatusa !== "Amaituta" && t2Stats && (
+              <button
+                type="button"
+                onClick={() => handleExplicitStartPhase("Amaituta")}
+                className="px-3.5 py-2.5 rounded-xl bg-paper hover:bg-sand text-ink border border-line font-bold text-xs transition cursor-pointer"
+              >
+                Amaitu zikloa
+              </button>
+            )}
+          </div>
         ) : (
           <button
             type="button"

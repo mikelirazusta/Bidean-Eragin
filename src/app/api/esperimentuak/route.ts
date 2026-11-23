@@ -36,11 +36,14 @@ export async function POST(request: Request) {
 
     const id = "exp-" + Date.now();
     const hasiera_data = new Date().toISOString();
+    const initialFaseakJson = JSON.stringify([{ fasea: "T0", hasiera: hasiera_data }]);
 
     const insert = db.prepare(`
       INSERT INTO esperimentuak (
-        id, eragile_id, pilotu_id, hipotesia, taldea, pertsonak, gunea, xede_portzentajea, estatusa, hasiera_data
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        id, eragile_id, pilotu_id, hipotesia, taldea, pertsonak, gunea, xede_portzentajea, estatusa, hasiera_data,
+        ai_txostena_json, protokoloa_json, n_gutxienekoa, saio_gutxienekoa, faseak_json, t2_mota,
+        kontagailu_txantiloia, blokeatuta, aldaketa_erregistroa_json, t1_egonkortu_gabe
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     insert.run(
@@ -53,7 +56,17 @@ export async function POST(request: Request) {
       gunea || "Espazioa",
       Number(xede_portzentajea) || 20,
       "T0_zain",
-      hasiera_data
+      hasiera_data,
+      null,
+      body.protokoloa_json ?? null,
+      body.n_gutxienekoa !== undefined ? Number(body.n_gutxienekoa) : 20,
+      body.saio_gutxienekoa !== undefined ? Number(body.saio_gutxienekoa) : 4,
+      initialFaseakJson,
+      body.t2_mota === "kentzea" ? "kentzea" : "jarraipena",
+      body.kontagailu_txantiloia === "aldaketa" ? "aldaketa" : "oinarrizkoa",
+      0,
+      "[]",
+      0
     );
 
     // Create a Nudge to encourage taking the T0 baseline measurement
@@ -135,6 +148,81 @@ export async function PATCH(request: Request) {
         { success: false, error: "Beste entitate baten hipotesia ezin da editatu." },
         { status: 403 }
       );
+    }
+
+    // Explicit phase transition: { id, ekintza: "hasi_fasea", fasea: "T1" | "T2" | "Amaituta", egonkortu_gabe?: boolean }
+    if (body.ekintza === "hasi_fasea") {
+      const targetFasea = String(body.fasea || "").trim();
+      if (!["T0", "T1", "T2", "Amaituta"].includes(targetFasea)) {
+        return NextResponse.json(
+          { success: false, error: "Fase baliogabea. Erabili T0, T1, T2 edo Amaituta." },
+          { status: 400 }
+        );
+      }
+      const now = new Date().toISOString();
+      let faseak: Array<{ fasea: string; hasiera: string }> = [];
+      try {
+        if (existing.faseak_json) {
+          const parsed = JSON.parse(existing.faseak_json);
+          if (Array.isArray(parsed)) faseak = parsed;
+        }
+      } catch {}
+      if (!faseak.some((f) => f.fasea === "T0")) {
+        faseak.unshift({ fasea: "T0", hasiera: existing.hasiera_data || now });
+      }
+      if (targetFasea !== "Amaituta") {
+        const idx = faseak.findIndex((f) => f.fasea === targetFasea);
+        if (idx >= 0) {
+          faseak[idx] = { fasea: targetFasea, hasiera: now };
+        } else {
+          faseak.push({ fasea: targetFasea, hasiera: now });
+        }
+      }
+
+      const nextEstatusa =
+        targetFasea === "T0"
+          ? "T0_zain"
+          : targetFasea === "T1"
+          ? "T1_zain"
+          : targetFasea === "T2"
+          ? "T2_zain"
+          : "Amaituta";
+
+      let erregistroa: Array<{ data: string; erabiltzailea: string; oharra: string }> = [];
+      try {
+        if (existing.aldaketa_erregistroa_json) {
+          const parsed = JSON.parse(existing.aldaketa_erregistroa_json);
+          if (Array.isArray(parsed)) erregistroa = parsed;
+        }
+      } catch {}
+
+      let t1EgonkortuGabe = Number(existing.t1_egonkortu_gabe || 0);
+      if (targetFasea === "T1" && body.egonkortu_gabe) {
+        t1EgonkortuGabe = 1;
+        erregistroa.push({
+          data: now,
+          erabiltzailea: auth.session.name || auth.session.email,
+          oharra: "T1 oinarri-lerroa egonkortu gabe hasia",
+        });
+      }
+
+      db.prepare(
+        "UPDATE esperimentuak SET estatusa = ?, faseak_json = ?, t1_egonkortu_gabe = ?, aldaketa_erregistroa_json = ? WHERE id = ?"
+      ).run(nextEstatusa, JSON.stringify(faseak), t1EgonkortuGabe, JSON.stringify(erregistroa), id);
+
+      const updatedExp = db.prepare(`
+        SELECT e.*, p.izena as pilotu_izena, p.ikonoa as pilotu_ikonoa
+        FROM esperimentuak e
+        LEFT JOIN pilotuak p ON e.pilotu_id = p.id
+        WHERE e.id = ?
+      `).get(id) as Esperimentua;
+
+      await syncDbToCloud();
+
+      return NextResponse.json({
+        success: true,
+        data: updatedExp,
+      });
     }
 
     const updatedPilotuId = pilotu_id !== undefined ? String(pilotu_id).trim() : existing.pilotu_id;

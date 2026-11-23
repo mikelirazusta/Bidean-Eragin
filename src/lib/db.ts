@@ -95,6 +95,15 @@ export interface Esperimentua {
   pilotu_izena?: string;
   pilotu_ikonoa?: string;
   ai_txostena_json?: string;
+  protokoloa_json?: string | null;
+  n_gutxienekoa?: number;
+  saio_gutxienekoa?: number;
+  faseak_json?: string | null;
+  t2_mota?: "jarraipena" | "kentzea";
+  kontagailu_txantiloia?: "oinarrizkoa" | "aldaketa";
+  blokeatuta?: number;
+  aldaketa_erregistroa_json?: string;
+  t1_egonkortu_gabe?: number;
 }
 
 export interface Neurketa {
@@ -133,10 +142,10 @@ const DEFAULT_PILOT: Pilotua = {
   adibidea: "Langileak txapa paparrean daramanean, herritarrak 'Egun on!' esan eta elkarrizketa naturaltasunez euskaraz abiatzen da.",
   urratsak_json: JSON.stringify([
     "1. Entitateko lantaldearekin dinamika adostu eta 'Euskaraz barra-barra' txapak banatu.",
-    "2. T0 hasierako neurketa egin (txapa jarri aurretik, lehen hitza eta elkarrizketak zein hizkuntzatan diren jasotzeko).",
+    "2. T0 neurketak egin (gutxienez 4, egun eta ordu berean), txapa jarri aurretik.",
     "3. Txapak soinean eta leku ikusgarrian jarri.",
-    "4. T1 neurketa egin (txapa jarri eta lehen astean izandako eragina neurtzeko).",
-    "5. T2 neurketa egin 14-21 egunera, ohitura berria egonkortu dela egiaztatzeko."
+    "4. T1 neurketak egin (gutxienez 4, egun eta ordu berean), txapa jarrita izandako eragina neurtzeko.",
+    "5. T2 neurketak egin (gutxienez 4, egun eta ordu berean)."
   ]),
   ikonoa: "BadgeCheck",
   kolorea: "emerald",
@@ -173,11 +182,11 @@ export const DEFAULT_UI_TEXTS: Record<string, string> = {
   counter_btn_euskaraz: "Euskaraz",
   counter_btn_erdaraz: "Erdaraz",
   counter_btn_elebi: "Elebi (bi hizkuntzatan)",
-  dashboard_step1_title: "1. urratsa: egin T0 hasierako neurketa (pilotuaren aurretik)",
+  dashboard_step1_title: "1. urratsa: egin T0 hasierako neurketak (gutxienez 4, pilotuaren aurretik)",
   dashboard_step1_desc:
-    "Pilotua martxan jarri aurretik, neurtu 10-30 minutuz gaur egungo elkarrizketak zein hizkuntzatan diren (abiapuntua ezagutzeko).",
-  dashboard_step2_title: "2. urratsa: jarri pilotua martxan eta neurtu T1",
-  dashboard_step3_title: "3. urratsa: egin T2 neurketa ohitura egonkortu dela egiaztatzeko",
+    "Pilotua martxan jarri aurretik, egin gutxienez 4 neurketa egun eta ordu berean, oinarri-lerroa ezagutzeko.",
+  dashboard_step2_title: "2. urratsa: jarri pilotua martxan eta egin T1 neurketak (gutxienez 4)",
+  dashboard_step3_title: "3. urratsa: egin T2 neurketak (gutxienez 4)",
   katalogoa_title: "Esku-hartze pilotuak",
   katalogoa_subtitle:
     "Aukeratu zure entitatean probatu nahi duzun dinamika, deskargatu materialak eta zehaztu hipotesia.",
@@ -576,10 +585,65 @@ function createFallbackStore() {
             return { changes: 1 };
           }
           if (q.startsWith("INSERT INTO esperimentuak")) {
-            const [id, eragile_id, pilotu_id, hipotesia, taldea, pertsonak, gunea, xede_portzentajea, estatusa, hasiera_data, ai_txostena_json] = params;
-            store.esperimentuak.push({ id, eragile_id, pilotu_id, hipotesia, taldea, pertsonak, gunea, xede_portzentajea, estatusa, hasiera_data, ai_txostena_json: ai_txostena_json || undefined });
+            const [
+              id,
+              eragile_id,
+              pilotu_id,
+              hipotesia,
+              taldea,
+              pertsonak,
+              gunea,
+              xede_portzentajea,
+              estatusa,
+              hasiera_data,
+              ai_txostena_json,
+              protokoloa_json,
+              n_gutxienekoa,
+              saio_gutxienekoa,
+              faseak_json,
+              t2_mota,
+              kontagailu_txantiloia,
+              blokeatuta,
+              aldaketa_erregistroa_json,
+              t1_egonkortu_gabe,
+            ] = params;
+            store.esperimentuak.push({
+              id,
+              eragile_id,
+              pilotu_id,
+              hipotesia,
+              taldea,
+              pertsonak,
+              gunea,
+              xede_portzentajea,
+              estatusa,
+              hasiera_data,
+              ai_txostena_json: ai_txostena_json || undefined,
+              protokoloa_json: protokoloa_json ?? null,
+              n_gutxienekoa: n_gutxienekoa !== undefined ? Number(n_gutxienekoa) : 20,
+              saio_gutxienekoa: saio_gutxienekoa !== undefined ? Number(saio_gutxienekoa) : 4,
+              faseak_json: faseak_json ?? null,
+              t2_mota: t2_mota || "jarraipena",
+              kontagailu_txantiloia: kontagailu_txantiloia || "oinarrizkoa",
+              blokeatuta: Number(blokeatuta || 0),
+              aldaketa_erregistroa_json: aldaketa_erregistroa_json || "[]",
+              t1_egonkortu_gabe: Number(t1_egonkortu_gabe || 0),
+            });
             save();
             return { changes: 1 };
+          }
+          if (q.startsWith("UPDATE esperimentuak SET estatusa = ?, faseak_json = ?, t1_egonkortu_gabe = ?, aldaketa_erregistroa_json = ? WHERE id = ?")) {
+            const [estatusa, faseak_json, t1_egonkortu_gabe, aldaketa_erregistroa_json, id] = params;
+            const exp = store.esperimentuak.find((e) => e.id === id);
+            if (exp) {
+              exp.estatusa = estatusa;
+              exp.faseak_json = faseak_json;
+              exp.t1_egonkortu_gabe = Number(t1_egonkortu_gabe || 0);
+              exp.aldaketa_erregistroa_json = aldaketa_erregistroa_json || "[]";
+              save();
+              return { changes: 1 };
+            }
+            return { changes: 0 };
           }
           if (q.startsWith("UPDATE esperimentuak SET ai_txostena_json = ? WHERE id = ?")) {
             const [ai_txostena_json, id] = params;
@@ -853,6 +917,33 @@ function initSqliteTables(db: any) {
   } catch {}
   try {
     db.exec("ALTER TABLE esperimentuak ADD COLUMN ai_txostena_json TEXT;");
+  } catch {}
+  try {
+    db.exec("ALTER TABLE esperimentuak ADD COLUMN protokoloa_json TEXT;");
+  } catch {}
+  try {
+    db.exec("ALTER TABLE esperimentuak ADD COLUMN n_gutxienekoa INTEGER DEFAULT 20;");
+  } catch {}
+  try {
+    db.exec("ALTER TABLE esperimentuak ADD COLUMN saio_gutxienekoa INTEGER DEFAULT 4;");
+  } catch {}
+  try {
+    db.exec("ALTER TABLE esperimentuak ADD COLUMN faseak_json TEXT;");
+  } catch {}
+  try {
+    db.exec("ALTER TABLE esperimentuak ADD COLUMN t2_mota TEXT DEFAULT 'jarraipena';");
+  } catch {}
+  try {
+    db.exec("ALTER TABLE esperimentuak ADD COLUMN kontagailu_txantiloia TEXT DEFAULT 'oinarrizkoa';");
+  } catch {}
+  try {
+    db.exec("ALTER TABLE esperimentuak ADD COLUMN blokeatuta INTEGER DEFAULT 0;");
+  } catch {}
+  try {
+    db.exec("ALTER TABLE esperimentuak ADD COLUMN aldaketa_erregistroa_json TEXT DEFAULT '[]';");
+  } catch {}
+  try {
+    db.exec("ALTER TABLE esperimentuak ADD COLUMN t1_egonkortu_gabe INTEGER DEFAULT 0;");
   } catch {}
 
   try {
@@ -1350,6 +1441,10 @@ const LEGACY_UI_TEXT_VALUES = new Set([
   "2. Urratsa: Jarri 'Euskaraz barra-barra' txapa ikusgai eta neurtu T1",
   "3. Urratsa: Egin T2 neurketa ohitura egonkortu dela egiaztatzeko",
   "3. Urratsa: Egin T2 neurketa ohitura sendotu dela egiaztatzeko",
+  "1. urratsa: egin T0 hasierako neurketa (pilotuaren aurretik)",
+  "Pilotua martxan jarri aurretik, neurtu 10-30 minutuz gaur egungo elkarrizketak zein hizkuntzatan diren (abiapuntua ezagutzeko).",
+  "2. urratsa: jarri pilotua martxan eta neurtu T1",
+  "3. urratsa: egin T2 neurketa ohitura egonkortu dela egiaztatzeko",
   "Esku-hartze Pilotuak",
   "Aukeratu zure gunean probatu nahi duzun dinamika, deskargatu materialak eta zehaztu hipotesia.",
 ]);
@@ -1502,8 +1597,11 @@ export function importDbSnapshot(snapshot: MemoryStoreData) {
     for (const e of expsToInsert) {
       database
         .prepare(
-          `INSERT INTO esperimentuak (id, eragile_id, pilotu_id, hipotesia, taldea, pertsonak, gunea, xede_portzentajea, estatusa, hasiera_data, ai_txostena_json)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          `INSERT INTO esperimentuak (
+             id, eragile_id, pilotu_id, hipotesia, taldea, pertsonak, gunea, xede_portzentajea, estatusa, hasiera_data,
+             ai_txostena_json, protokoloa_json, n_gutxienekoa, saio_gutxienekoa, faseak_json, t2_mota,
+             kontagailu_txantiloia, blokeatuta, aldaketa_erregistroa_json, t1_egonkortu_gabe
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
         )
         .run(
           e.id,
@@ -1516,7 +1614,16 @@ export function importDbSnapshot(snapshot: MemoryStoreData) {
           e.xede_portzentajea,
           e.estatusa,
           e.hasiera_data,
-          e.ai_txostena_json || null
+          e.ai_txostena_json || null,
+          e.protokoloa_json ?? null,
+          e.n_gutxienekoa !== undefined ? Number(e.n_gutxienekoa) : 20,
+          e.saio_gutxienekoa !== undefined ? Number(e.saio_gutxienekoa) : 4,
+          e.faseak_json ?? null,
+          e.t2_mota || "jarraipena",
+          e.kontagailu_txantiloia || "oinarrizkoa",
+          Number(e.blokeatuta || 0),
+          e.aldaketa_erregistroa_json || "[]",
+          Number(e.t1_egonkortu_gabe || 0)
         );
     }
 
