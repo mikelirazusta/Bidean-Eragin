@@ -250,9 +250,9 @@ export async function POST(request: Request) {
           const saioGutxienekoa = exp.saio_gutxienekoa || 4;
           const osoaSessions = phaseNeurketak.filter((n) => isNeurketaOsoaBasic(n, exp));
           const osoaCount = osoaSessions.length;
-          const totalEusk = phaseNeurketak.reduce((s, n) => s + (n.euskaraz_count || 0), 0);
+          const totalEusk = phaseNeurketak.reduce((s, n) => s + (n.euskaraz_count || 0) + (n.aldaketa_count || 0), 0);
           const totalN = phaseNeurketak.reduce(
-            (s, n) => s + (n.euskaraz_count || 0) + (n.erdaraz_count || 0) + (n.elebi_count || 0),
+            (s, n) => s + (n.euskaraz_count || 0) + (n.aldaketa_count || 0) + (n.erdaraz_count || 0) + (n.elebi_count || 0),
             0
           );
           const phasePct = totalN > 0 ? Math.round((totalEusk / totalN) * 100) : 0;

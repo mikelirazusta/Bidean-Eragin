@@ -109,9 +109,11 @@ export default function BehatzaileKontagailua() {
   const [sessionElapsed, setSessionElapsed] = useState<number>(0);
 
   const [euskarazCount, setEuskarazCount] = useState<number>(0);
+  const [aldaketaCount, setAldaketaCount] = useState<number>(0);
   const [erdarazCount, setErdarazCount] = useState<number>(0);
   const [elebiCount, setElebiCount] = useState<number>(0);
-  const [history, setHistory] = useState<Array<"euskaraz" | "erdaraz" | "elebi">>([]);
+  const [history, setHistory] = useState<Array<"euskaraz" | "aldaketa" | "erdaraz" | "elebi">>([]);
+  const isAldaketaTemplate = currentExp?.kontagailu_txantiloia === "aldaketa";
 
   // Modal for saving
   const [showSaveModal, setShowSaveModal] = useState<boolean>(false);
@@ -229,10 +231,12 @@ export default function BehatzaileKontagailua() {
         const parsed = JSON.parse(savedSession);
         const totalSaved =
           (parsed.euskarazCount || 0) +
+          (parsed.aldaketaCount || 0) +
           (parsed.erdarazCount || 0) +
           (parsed.elebiCount || 0);
         if (totalSaved > 0 || parsed.sessionActive) {
           setEuskarazCount(parsed.euskarazCount || 0);
+          setAldaketaCount(parsed.aldaketaCount || 0);
           setErdarazCount(parsed.erdarazCount || 0);
           setElebiCount(parsed.elebiCount || 0);
           if (Array.isArray(parsed.history)) setHistory(parsed.history);
@@ -259,7 +263,7 @@ export default function BehatzaileKontagailua() {
   // Save active session state to localStorage
   useEffect(() => {
     try {
-      const total = euskarazCount + erdarazCount + elebiCount;
+      const total = euskarazCount + aldaketaCount + erdarazCount + elebiCount;
       if (sessionActive || total > 0) {
         localStorage.setItem(
           ACTIVE_SESSION_STORAGE_KEY,
@@ -267,6 +271,7 @@ export default function BehatzaileKontagailua() {
             expId: currentExp?.id,
             phase,
             euskarazCount,
+            aldaketaCount,
             erdarazCount,
             elebiCount,
             history,
@@ -375,7 +380,7 @@ export default function BehatzaileKontagailua() {
   }, [sessionActive, isPaused, timerMode]);
 
   // Click handlers
-  const handleCount = (type: "euskaraz" | "erdaraz" | "elebi") => {
+  const handleCount = (type: "euskaraz" | "aldaketa" | "erdaraz" | "elebi") => {
     if (!behatzailea.trim()) {
       showToast("Aukeratu edo gehitu behatzaile bat saioa hasi aurretik.", "error");
       return;
@@ -388,9 +393,10 @@ export default function BehatzaileKontagailua() {
       setIsPaused(false);
     }
 
-    playCounterClick(type, { soundEnabled });
+    playCounterClick(type === "aldaketa" ? "euskaraz" : type, { soundEnabled });
 
     if (type === "euskaraz") setEuskarazCount((c) => c + 1);
+    if (type === "aldaketa") setAldaketaCount((c) => c + 1);
     if (type === "erdaraz") setErdarazCount((c) => c + 1);
     if (type === "elebi") setElebiCount((c) => c + 1);
 
@@ -421,11 +427,12 @@ export default function BehatzaileKontagailua() {
 
   const handleDecrement = (
     e: React.MouseEvent,
-    type: "euskaraz" | "erdaraz" | "elebi"
+    type: "euskaraz" | "aldaketa" | "erdaraz" | "elebi"
   ) => {
     e.stopPropagation();
     playCounterClick("undo", { soundEnabled });
     if (type === "euskaraz" && euskarazCount > 0) setEuskarazCount((c) => c - 1);
+    if (type === "aldaketa" && aldaketaCount > 0) setAldaketaCount((c) => c - 1);
     if (type === "erdaraz" && erdarazCount > 0) setErdarazCount((c) => c - 1);
     if (type === "elebi" && elebiCount > 0) setElebiCount((c) => c - 1);
   };
@@ -436,6 +443,7 @@ export default function BehatzaileKontagailua() {
     playCounterClick("undo", { soundEnabled });
     const last = history[history.length - 1];
     if (last === "euskaraz" && euskarazCount > 0) setEuskarazCount((c) => c - 1);
+    if (last === "aldaketa" && aldaketaCount > 0) setAldaketaCount((c) => c - 1);
     if (last === "erdaraz" && erdarazCount > 0) setErdarazCount((c) => c - 1);
     if (last === "elebi" && elebiCount > 0) setElebiCount((c) => c - 1);
 
@@ -444,12 +452,13 @@ export default function BehatzaileKontagailua() {
 
   const handleResetSession = () => {
     if (
-      euskarazCount + erdarazCount + elebiCount > 0 &&
+      euskarazCount + aldaketaCount + erdarazCount + elebiCount > 0 &&
       !window.confirm("Ziur zaude uneko kontagailua 0ra berrabiarazi nahi duzula?")
     ) {
       return;
     }
     setEuskarazCount(0);
+    setAldaketaCount(0);
     setErdarazCount(0);
     setElebiCount(0);
     setHistory([]);
@@ -469,6 +478,7 @@ export default function BehatzaileKontagailua() {
       return;
     }
     setEuskarazCount(0);
+    setAldaketaCount(0);
     setErdarazCount(0);
     setElebiCount(0);
     setHistory([]);
@@ -513,6 +523,7 @@ export default function BehatzaileKontagailua() {
       esperimentu_id: expId,
       unea: phase,
       euskaraz_count: euskarazCount,
+      aldaketa_count: aldaketaCount,
       erdaraz_count: erdarazCount,
       elebi_count: elebiCount,
       iraupena_segundotan: durationToSave,
@@ -529,6 +540,7 @@ export default function BehatzaileKontagailua() {
         localStorage.removeItem(ACTIVE_SESSION_STORAGE_KEY);
       } catch {}
       setEuskarazCount(0);
+      setAldaketaCount(0);
       setErdarazCount(0);
       setElebiCount(0);
       setHistory([]);
@@ -586,16 +598,17 @@ export default function BehatzaileKontagailua() {
     }
   };
 
-  // Calculations
-  const totalInteractions = euskarazCount + erdarazCount + elebiCount;
+  // Calculations (aldaketaCount euskarazkoen artean zenbatzen da zenbakitzailean eta izendatzailean)
+  const totalEuskarazSession = euskarazCount + aldaketaCount;
+  const totalInteractions = totalEuskarazSession + erdarazCount + elebiCount;
   const euskaraPct =
     totalInteractions > 0
-      ? Math.round((euskarazCount / totalInteractions) * 100)
+      ? Math.round((totalEuskarazSession / totalInteractions) * 100)
       : 0;
   const nGutxienekoa = currentExp?.n_gutxienekoa || 20;
   const currentMarjinaPuntu =
     totalInteractions > 0
-      ? Math.round(wilsonMarjinaPuntu(euskarazCount, totalInteractions))
+      ? Math.round(wilsonMarjinaPuntu(totalEuskarazSession, totalInteractions))
       : null;
   const expProtokoloa = parseProtokoloa(currentExp?.protokoloa_json);
   const isOutOfProtocolNow = expProtokoloa ? !isDateInProtokoloa(new Date(), expProtokoloa) : false;
@@ -1267,7 +1280,8 @@ export default function BehatzaileKontagailua() {
       ) : (
         <div className="space-y-3.5">
           
-          {/* EUSKARAZ BUTTON (Matte tactile physical clicker) */}
+          {/* EUSKARAZ + (AUKERAKO) ALDAKETA BUTTON */}
+          <div className={isAldaketaTemplate ? "grid grid-cols-1 sm:grid-cols-2 gap-3" : ""}>
           <div
             onClick={() => handleCount("euskaraz")}
             role="button"
@@ -1311,6 +1325,46 @@ export default function BehatzaileKontagailua() {
                 </span>
               </div>
             </div>
+          </div>
+
+          {isAldaketaTemplate && (
+            <div
+              onClick={() => handleCount("aldaketa")}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") handleCount("aldaketa");
+              }}
+              className="w-full h-32 sm:h-36 rounded-2xl bg-teal-700 hover:opacity-95 text-white border border-teal-800 border-b-4 border-b-teal-950 active:border-b active:translate-y-0.5 flex items-center justify-between px-5 sm:px-6 transition active-press cursor-pointer relative overflow-hidden select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2"
+            >
+              <div className="text-left pr-2">
+                <span className="text-lg sm:text-xl font-extrabold tracking-tight block leading-snug">
+                  {uiTexts.counter_btn_aldaketa || "Erdaraz hasi → euskaraz amaitu"}
+                </span>
+                <span className="text-[11px] text-white/80 font-medium block mt-0.5">
+                  Euskarazkoen artean zenbatzen da
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                {aldaketaCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={(e) => handleDecrement(e, "aldaketa")}
+                    className="px-2 py-1.5 rounded-lg bg-black/25 hover:bg-black/40 text-white font-bold text-xs border border-white/15 transition cursor-pointer"
+                    title="Kendu 1"
+                  >
+                    -1
+                  </button>
+                )}
+                <div className="text-right tabular-nums">
+                  <span className="text-4xl sm:text-5xl font-black tracking-tight block">
+                    {aldaketaCount}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
           </div>
 
           {/* ERDARAZ BUTTON */}

@@ -54,6 +54,7 @@ export interface PhaseStats {
   unea: "T0" | "T1" | "T2";
   count: number;
   totalEuskaraz: number;
+  totalAldaketa: number;
   totalErdaraz: number;
   totalElebi: number;
   totalInteractions: number;
@@ -66,7 +67,8 @@ function computePhaseStats(list: Neurketa[], phase: "T0" | "T1" | "T2"): PhaseSt
   const phaseList = list.filter((n) => n.unea === phase);
   if (phaseList.length === 0) return null;
 
-  const totalEuskaraz = phaseList.reduce((sum, n) => sum + (n.euskaraz_count || 0), 0);
+  const totalAldaketa = phaseList.reduce((sum, n) => sum + (n.aldaketa_count || 0), 0);
+  const totalEuskaraz = phaseList.reduce((sum, n) => sum + (n.euskaraz_count || 0) + (n.aldaketa_count || 0), 0);
   const totalErdaraz = phaseList.reduce((sum, n) => sum + (n.erdaraz_count || 0), 0);
   const totalElebi = phaseList.reduce((sum, n) => sum + (n.elebi_count || 0), 0);
   const totalInteractions = totalEuskaraz + totalErdaraz + totalElebi;
@@ -79,6 +81,7 @@ function computePhaseStats(list: Neurketa[], phase: "T0" | "T1" | "T2"): PhaseSt
     unea: phase,
     count: phaseList.length,
     totalEuskaraz,
+    totalAldaketa,
     totalErdaraz,
     totalElebi,
     totalInteractions,
@@ -1622,6 +1625,15 @@ export default function ZentroDashboard() {
                     {Number(currentExp.t1_egonkortu_gabe || 0) === 1 && (
                       <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
                         Kontuz: oinarri-lerroa igotzen ari zen. Igoeraren zati bat esku-hartzearen aurrekoa izan daiteke.
+                      </p>
+                    )}
+                    {((t0Stats?.totalAldaketa || 0) + (t1Stats?.totalAldaketa || 0) + (t2Stats?.totalAldaketa || 0)) > 0 && (
+                      <p className="text-[11px] text-teal-800 bg-teal-50 border border-teal-200 rounded-xl px-3 py-2">
+                        Horietatik{" "}
+                        <strong>
+                          {(t0Stats?.totalAldaketa || 0) + (t1Stats?.totalAldaketa || 0) + (t2Stats?.totalAldaketa || 0)}
+                        </strong>{" "}
+                        bezero erdaraz hasi eta euskarara pasatu dira.
                       </p>
                     )}
                   </>

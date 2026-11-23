@@ -52,6 +52,7 @@ export const DEFAULT_UI_TEXTS: Record<string, string> = {
   counter_t2_kentzea_desc:
     "Kendu esku-hartzea (adib. txapak) eta neurtu egun eta ordu berean.",
   counter_btn_euskaraz: "Euskaraz",
+  counter_btn_aldaketa: "Erdaraz hasi → euskaraz amaitu",
   counter_btn_erdaraz: "Erdaraz",
   counter_btn_elebi: "Elebi (bi hizkuntzatan)",
   dashboard_step1_title: "1. urratsa: egin T0 hasierako neurketak (gutxienez 4, pilotuaren aurretik)",

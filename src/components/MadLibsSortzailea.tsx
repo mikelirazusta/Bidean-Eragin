@@ -73,6 +73,7 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
   const [protokoloOrduAmaiera, setProtokoloOrduAmaiera] = useState<string>("12:30");
   const [protokoloIraupena, setProtokoloIraupena] = useState<number>(30);
   const [t2Mota, setT2Mota] = useState<"kentzea" | "jarraipena">("kentzea");
+  const [kontagailuTxantiloia, setKontagailuTxantiloia] = useState<"oinarrizkoa" | "aldaketa">("oinarrizkoa");
 
   const toggleProtokoloEguna = (dayIdx: number) => {
     setProtokoloEgunak((prev) =>
@@ -201,6 +202,7 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
       xede_portzentajea: metrika,
       protokoloa_json: protokoloaJson,
       t2_mota: t2Mota,
+      kontagailu_txantiloia: kontagailuTxantiloia,
     });
 
     setIsSubmitting(false);
@@ -527,6 +529,41 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
                 <span className="text-xs font-bold text-ink block">Jarraipena</span>
                 <p className="text-[11px] text-ink-muted mt-1">
                   Esku-hartzearekin jarraitu eta 2-3 astera berriro neurtu.
+                </p>
+              </button>
+            </div>
+          </div>
+
+          {/* Kontagailu-txantiloia */}
+          <div className="p-4 rounded-2xl bg-paper border border-line space-y-2">
+            <h4 className="text-xs font-bold text-ink uppercase tracking-wider">
+              Kontagailuaren botoiak
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setKontagailuTxantiloia("oinarrizkoa")}
+                className={`p-3 rounded-xl border text-left transition cursor-pointer ${
+                  kontagailuTxantiloia === "oinarrizkoa"
+                    ? "bg-sea/10 border-sea text-ink"
+                    : "bg-white border-line text-ink-muted hover:bg-sand"
+                }`}
+              >
+                <span className="text-xs font-bold text-ink block">Oinarrizkoa (3 botoi)</span>
+                <p className="text-[11px] text-ink-muted mt-0.5">Euskaraz / Erdaraz / Elebi</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setKontagailuTxantiloia("aldaketa")}
+                className={`p-3 rounded-xl border text-left transition cursor-pointer ${
+                  kontagailuTxantiloia === "aldaketa"
+                    ? "bg-euskara/10 border-euskara text-ink"
+                    : "bg-white border-line text-ink-muted hover:bg-sand"
+                }`}
+              >
+                <span className="text-xs font-bold text-ink block">Hizkuntza-aldaketarekin (4 botoi)</span>
+                <p className="text-[11px] text-ink-muted mt-0.5">
+                  Gehitzen du: «Erdaraz hasi → euskaraz amaitu»
                 </p>
               </button>
             </div>
