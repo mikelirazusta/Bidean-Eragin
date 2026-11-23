@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server";
-import db, { Neurketa, Esperimentua, syncDbFromCloud, syncDbToCloud } from "@/lib/db";
+import db, {
+  Neurketa,
+  Esperimentua,
+  syncDbFromCloud,
+  syncDbToCloud,
+  runWithCloudRetry,
+  writeCustomBlobJson,
+} from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 
 const ASTEKO_EGUNAK_EU = [
@@ -91,8 +98,6 @@ export async function POST(request: Request) {
     const auth = await requireAuth();
     if (auth.error) return auth.error;
 
-    await syncDbFromCloud();
-
     const body = await request.json();
     const {
       esperimentu_id,
@@ -124,16 +129,6 @@ export async function POST(request: Request) {
         { success: false, error: "Behatzailea aukeratu behar da neurketa gorde aurretik." },
         { status: 400 }
       );
-    }
-
-    if (auth.session.role !== "admin") {
-      const targetExp = db.prepare("SELECT * FROM esperimentuak WHERE id = ?").get(esperimentu_id) as Esperimentua | undefined;
-      if (targetExp && targetExp.eragile_id !== auth.session.eragile_id) {
-        return NextResponse.json(
-          { success: false, error: "Beste entitate baten neurketa ezin da gorde." },
-          { status: 403 }
-        );
-      }
     }
 
     const id = "neu-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6);
@@ -195,166 +190,187 @@ export async function POST(request: Request) {
       }
     }
 
-    const insertNeurketa = db.prepare(`
-      INSERT INTO neurketak (
-        id, esperimentu_id, unea, euskaraz_count, erdaraz_count, elebi_count, iraupena_segundotan, data_ordu, oharrak, behatzailea,
-        hasiera_ordu, amaiera_ordu, aldaketa_count, lineaz_kanpo, atzeratua
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    insertNeurketa.run(
-      id,
-      esperimentu_id,
-      unea,
-      Number(euskaraz_count) || 0,
-      Number(erdaraz_count) || 0,
-      Number(elebi_count) || 0,
-      Number(iraupena_segundotan) || 600,
-      data_ordu,
-      oharrak || "",
-      cleanBehatzailea,
-      resolvedHasiera,
-      resolvedAmaiera,
-      Number(aldaketa_count) || 0,
-      lineaz_kanpo ? 1 : 0,
-      atzeratua ? 1 : 0
-    );
-
-    // Get experiment and Eragile details
-    const exp = db.prepare(`
-      SELECT e.*, er.id as eragile_id, er.izena as eragile_izena
-      FROM esperimentuak e
-      JOIN eragileak er ON e.eragile_id = er.id
-      WHERE e.id = ?
-    `).get(esperimentu_id) as (Esperimentua & { eragile_id: string; eragile_izena: string });
-
-    if (exp) {
-      try {
-        const insertNudge = db.prepare(`
-          INSERT INTO nudges (id, eragile_id, titulua, mezua, mota, epemuga, irakurria, ekintza_esteka, sortze_data)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `);
-
-        const allNeurketak = db.prepare("SELECT * FROM neurketak").all() as Neurketa[];
-        const phaseNeurketak = allNeurketak.filter(
-          (n) => n.esperimentu_id === esperimentu_id && n.unea === unea
-        );
-        const saioGutxienekoa = exp.saio_gutxienekoa || 4;
-        const osoaSessions = phaseNeurketak.filter((n) => isNeurketaOsoaBasic(n, exp));
-        const osoaCount = osoaSessions.length;
-        const totalEusk = phaseNeurketak.reduce((s, n) => s + (n.euskaraz_count || 0), 0);
-        const totalN = phaseNeurketak.reduce(
-          (s, n) => s + (n.euskaraz_count || 0) + (n.erdaraz_count || 0) + (n.elebi_count || 0),
-          0
-        );
-        const phasePct = totalN > 0 ? Math.round((totalEusk / totalN) * 100) : 0;
-        const protokoloTestua = formatProtokoloDeskribapena(exp.protokoloa_json);
-        const nextDueDate = new Date(now.getTime() + 7 * 86400000).toISOString();
-
-        // Ez aldatu estatusa automatikoki lehen saioarekin: fase-aldaketa esplizitua da
-        if (unea === "T0") {
-          if (osoaCount < saioGutxienekoa) {
-            insertNudge.run(
-              "nudge-" + Date.now(),
-              exp.eragile_id,
-              `T0: ${osoaCount}/${saioGutxienekoa} saio oso`,
-              `T0: ${osoaCount}/${saioGutxienekoa} saio. Neurtu berriro ${protokoloTestua}, esku-hartzea martxan jarri gabe.`,
-              "bultzada",
-              nextDueDate,
-              0,
-              `/behaketa?expId=${esperimentu_id}&phase=T0`,
-              data_ordu
-            );
-          } else if (isPhaseStable(osoaSessions, saioGutxienekoa)) {
-            insertNudge.run(
-              "nudge-" + Date.now(),
-              exp.eragile_id,
-              "T0 oinarri-lerroa egonkor dago",
-              `Oinarri-lerroa egonkor dago (%${phasePct}, ${totalN} elkarrizketa). Orain jar dezakezue pilotua martxan.`,
-              "zoriontzea",
-              nextDueDate,
-              0,
-              `/panela`,
-              data_ordu
-            );
-          } else {
-            insertNudge.run(
-              "nudge-" + Date.now(),
-              exp.eragile_id,
-              "T0: itxaron — erabilera aldatzen ari da",
-              `Erabilera aldatzen ari da esku-hartu gabe ere. Neurtu berriro ${protokoloTestua}, oinarri-lerroa egonkortu arte.`,
-              "abisua",
-              nextDueDate,
-              0,
-              `/behaketa?expId=${esperimentu_id}&phase=T0`,
-              data_ordu
-            );
-          }
-        } else if (unea === "T1") {
-          if (osoaCount < saioGutxienekoa) {
-            insertNudge.run(
-              "nudge-" + Date.now(),
-              exp.eragile_id,
-              `T1: ${osoaCount}/${saioGutxienekoa} saio oso`,
-              `T1: ${osoaCount}/${saioGutxienekoa} saio oso. Neurtu berriro ${protokoloTestua} (gutxienez ${saioGutxienekoa} saio gomendatzen dira).`,
-              "bultzada",
-              nextDueDate,
-              0,
-              `/behaketa?expId=${esperimentu_id}&phase=T1`,
-              data_ordu
-            );
-          } else {
-            insertNudge.run(
-              "nudge-" + Date.now(),
-              exp.eragile_id,
-              `T1: ${osoaCount} saio oso jasota`,
-              `T1 faseko emaitza: %${phasePct} (${totalN} elkarrizketa). Nahi duzuenean T2 has dezakezue paneletik.`,
-              "bultzada",
-              nextDueDate,
-              0,
-              `/panela`,
-              data_ordu
-            );
-          }
-        } else if (unea === "T2") {
-          if (osoaCount < saioGutxienekoa) {
-            insertNudge.run(
-              "nudge-" + Date.now(),
-              exp.eragile_id,
-              `T2: ${osoaCount}/${saioGutxienekoa} saio oso`,
-              `T2: ${osoaCount}/${saioGutxienekoa} saio oso. Neurtu berriro ${protokoloTestua} (gutxienez ${saioGutxienekoa} saio gomendatzen dira).`,
-              "bultzada",
-              nextDueDate,
-              0,
-              `/behaketa?expId=${esperimentu_id}&phase=T2`,
-              data_ordu
-            );
-          } else {
-            insertNudge.run(
-              "nudge-" + Date.now(),
-              exp.eragile_id,
-              `T2: ${osoaCount} saio oso jasota`,
-              `T2 faseko emaitza: %${phasePct} (${totalN} elkarrizketa). Ikusi emaitza osoak eta zalantza-tarteak panelean.`,
-              "zoriontzea",
-              nextDueDate,
-              0,
-              `/panela`,
-              data_ordu
-            );
-          }
+    const result = await runWithCloudRetry(() => {
+      if (auth.session.role !== "admin") {
+        const targetExp = db.prepare("SELECT * FROM esperimentuak WHERE id = ?").get(esperimentu_id) as Esperimentua | undefined;
+        if (targetExp && targetExp.eragile_id !== auth.session.eragile_id) {
+          return { forbidden: true as const };
         }
-      } catch (nudgeErr) {
-        console.warn("Oharra: ezin izan da bultzada automatikoa sortu neurketa gordetzean:", nudgeErr);
       }
+
+      const insertNeurketa = db.prepare(`
+        INSERT INTO neurketak (
+          id, esperimentu_id, unea, euskaraz_count, erdaraz_count, elebi_count, iraupena_segundotan, data_ordu, oharrak, behatzailea,
+          hasiera_ordu, amaiera_ordu, aldaketa_count, lineaz_kanpo, atzeratua
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+
+      insertNeurketa.run(
+        id,
+        esperimentu_id,
+        unea,
+        Number(euskaraz_count) || 0,
+        Number(erdaraz_count) || 0,
+        Number(elebi_count) || 0,
+        Number(iraupena_segundotan) || 600,
+        data_ordu,
+        oharrak || "",
+        cleanBehatzailea,
+        resolvedHasiera,
+        resolvedAmaiera,
+        Number(aldaketa_count) || 0,
+        lineaz_kanpo ? 1 : 0,
+        atzeratua ? 1 : 0
+      );
+
+      // Get experiment and Eragile details
+      const exp = db.prepare(`
+        SELECT e.*, er.id as eragile_id, er.izena as eragile_izena
+        FROM esperimentuak e
+        JOIN eragileak er ON e.eragile_id = er.id
+        WHERE e.id = ?
+      `).get(esperimentu_id) as (Esperimentua & { eragile_id: string; eragile_izena: string });
+
+      if (exp) {
+        try {
+          const insertNudge = db.prepare(`
+            INSERT INTO nudges (id, eragile_id, titulua, mezua, mota, epemuga, irakurria, ekintza_esteka, sortze_data)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `);
+
+          const allNeurketak = db.prepare("SELECT * FROM neurketak").all() as Neurketa[];
+          const phaseNeurketak = allNeurketak.filter(
+            (n) => n.esperimentu_id === esperimentu_id && n.unea === unea
+          );
+          const saioGutxienekoa = exp.saio_gutxienekoa || 4;
+          const osoaSessions = phaseNeurketak.filter((n) => isNeurketaOsoaBasic(n, exp));
+          const osoaCount = osoaSessions.length;
+          const totalEusk = phaseNeurketak.reduce((s, n) => s + (n.euskaraz_count || 0), 0);
+          const totalN = phaseNeurketak.reduce(
+            (s, n) => s + (n.euskaraz_count || 0) + (n.erdaraz_count || 0) + (n.elebi_count || 0),
+            0
+          );
+          const phasePct = totalN > 0 ? Math.round((totalEusk / totalN) * 100) : 0;
+          const protokoloTestua = formatProtokoloDeskribapena(exp.protokoloa_json);
+          const nextDueDate = new Date(now.getTime() + 7 * 86400000).toISOString();
+          const nudgeId = "nudge-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6);
+
+          // Ez aldatu estatusa automatikoki lehen saioarekin: fase-aldaketa esplizitua da
+          if (unea === "T0") {
+            if (osoaCount < saioGutxienekoa) {
+              insertNudge.run(
+                nudgeId,
+                exp.eragile_id,
+                `T0: ${osoaCount}/${saioGutxienekoa} saio oso`,
+                `T0: ${osoaCount}/${saioGutxienekoa} saio. Neurtu berriro ${protokoloTestua}, esku-hartzea martxan jarri gabe.`,
+                "bultzada",
+                nextDueDate,
+                0,
+                `/behaketa?expId=${esperimentu_id}&phase=T0`,
+                data_ordu
+              );
+            } else if (isPhaseStable(osoaSessions, saioGutxienekoa)) {
+              insertNudge.run(
+                nudgeId,
+                exp.eragile_id,
+                "T0 oinarri-lerroa egonkor dago",
+                `Oinarri-lerroa egonkor dago (%${phasePct}, ${totalN} elkarrizketa). Orain jar dezakezue pilotua martxan.`,
+                "zoriontzea",
+                nextDueDate,
+                0,
+                `/panela`,
+                data_ordu
+              );
+            } else {
+              insertNudge.run(
+                nudgeId,
+                exp.eragile_id,
+                "T0: itxaron — erabilera aldatzen ari da",
+                `Erabilera aldatzen ari da esku-hartu gabe ere. Neurtu berriro ${protokoloTestua}, oinarri-lerroa egonkortu arte.`,
+                "abisua",
+                nextDueDate,
+                0,
+                `/behaketa?expId=${esperimentu_id}&phase=T0`,
+                data_ordu
+              );
+            }
+          } else if (unea === "T1") {
+            if (osoaCount < saioGutxienekoa) {
+              insertNudge.run(
+                nudgeId,
+                exp.eragile_id,
+                `T1: ${osoaCount}/${saioGutxienekoa} saio oso`,
+                `T1: ${osoaCount}/${saioGutxienekoa} saio oso. Neurtu berriro ${protokoloTestua} (gutxienez ${saioGutxienekoa} saio gomendatzen dira).`,
+                "bultzada",
+                nextDueDate,
+                0,
+                `/behaketa?expId=${esperimentu_id}&phase=T1`,
+                data_ordu
+              );
+            } else {
+              insertNudge.run(
+                nudgeId,
+                exp.eragile_id,
+                `T1: ${osoaCount} saio oso jasota`,
+                `T1 faseko emaitza: %${phasePct} (${totalN} elkarrizketa). Nahi duzuenean T2 has dezakezue paneletik.`,
+                "bultzada",
+                nextDueDate,
+                0,
+                `/panela`,
+                data_ordu
+              );
+            }
+          } else if (unea === "T2") {
+            if (osoaCount < saioGutxienekoa) {
+              insertNudge.run(
+                nudgeId,
+                exp.eragile_id,
+                `T2: ${osoaCount}/${saioGutxienekoa} saio oso`,
+                `T2: ${osoaCount}/${saioGutxienekoa} saio oso. Neurtu berriro ${protokoloTestua} (gutxienez ${saioGutxienekoa} saio gomendatzen dira).`,
+                "bultzada",
+                nextDueDate,
+                0,
+                `/behaketa?expId=${esperimentu_id}&phase=T2`,
+                data_ordu
+              );
+            } else {
+              insertNudge.run(
+                nudgeId,
+                exp.eragile_id,
+                `T2: ${osoaCount} saio oso jasota`,
+                `T2 faseko emaitza: %${phasePct} (${totalN} elkarrizketa). Ikusi emaitza osoak eta zalantza-tarteak panelean.`,
+                "zoriontzea",
+                nextDueDate,
+                0,
+                `/panela`,
+                data_ordu
+              );
+            }
+          }
+        } catch (nudgeErr) {
+          console.warn("Oharra: ezin izan da bultzada automatikoa sortu neurketa gordetzean:", nudgeErr);
+        }
+      }
+
+      const savedNeurketa = db.prepare("SELECT * FROM neurketak WHERE id = ?").get(id) as Neurketa;
+      return { forbidden: false as const, savedNeurketa };
+    });
+
+    if (result.forbidden) {
+      return NextResponse.json(
+        { success: false, error: "Beste entitate baten neurketa ezin da gorde." },
+        { status: 403 }
+      );
     }
 
-    const savedNeurketa = db.prepare("SELECT * FROM neurketak WHERE id = ?").get(id) as Neurketa;
-
-    await syncDbToCloud();
+    // Segurtasun-kopia gako propioan (neu-<id>)
+    try {
+      await writeCustomBlobJson(id, result.savedNeurketa);
+    } catch {}
 
     return NextResponse.json({
       success: true,
-      data: savedNeurketa,
+      data: result.savedNeurketa,
     });
   } catch (error) {
     console.error("Errorea neurketa gordetzean:", error);
@@ -422,27 +438,10 @@ export async function PATCH(request: Request) {
       if (existingExpForEragile) {
         updatedExpId = existingExpForEragile.id;
       } else {
-        // If target entity has no experiment yet, create a default one so the measurement attaches cleanly
-        const eragileRow = db.prepare("SELECT * FROM eragileak WHERE id = ?").get(targetEragileId) as { id: string; izena: string } | undefined;
-        const newExpId = "exp-" + Date.now();
-        const defaultHipotesia = `${eragileRow?.izena || "Entitatean"} esku-hartze pilotua aktibatzen badugu, euskarazko elkarrizketak %25 handituko dira.`;
-        db.prepare(`
-          INSERT INTO esperimentuak (
-            id, eragile_id, pilotu_id, hipotesia, taldea, pertsonak, gunea, xede_portzentajea, estatusa, hasiera_data
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(
-          newExpId,
-          targetEragileId,
-          "barra-barra-txapak",
-          defaultHipotesia,
-          "Entitateko lantaldeak",
-          "herritarrekin",
-          "Harrera edo gune nagusia",
-          25,
-          "T1_zain",
-          new Date().toISOString()
+        return NextResponse.json(
+          { success: false, error: "Entitate honek ez du esperimenturik. Sortu lehenik." },
+          { status: 400 }
         );
-        updatedExpId = newExpId;
       }
     }
 

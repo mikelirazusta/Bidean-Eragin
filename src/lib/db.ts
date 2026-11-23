@@ -1,5 +1,6 @@
 import path from "path";
 import fs from "fs";
+import crypto from "crypto";
 
 export interface User {
   id: string;
@@ -221,15 +222,25 @@ export const DEFAULT_UI_TEXTS: Record<string, string> = {
     "Bidean Eragin — Bagera Euskaltzaleen Elkartea • Euskararen erabilera neurgarria eta praktikoa",
 };
 
-const DEFAULT_ADMIN: User = {
-  id: "user-admin",
-  email: "admin@bagera.eus",
-  password: "bagera2026",
-  name: "Bagera Koordinazioa",
-  role: "admin",
-  eragile_id: undefined,
-  created_at: new Date().toISOString(),
-};
+function hashInitialPassword(password: string): string {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const derived = crypto.scryptSync(password, salt, 64).toString("hex");
+  return `scrypt$${salt}$${derived}`;
+}
+
+function getInitialAdminUser(): User | null {
+  const initialPassword = process.env.ADMIN_INITIAL_PASSWORD?.trim();
+  if (!initialPassword) return null;
+  return {
+    id: "user-admin",
+    email: "admin@bagera.eus",
+    password: hashInitialPassword(initialPassword),
+    name: "Bagera Koordinazioa",
+    role: "admin",
+    eragile_id: undefined,
+    created_at: new Date().toISOString(),
+  };
+}
 
 interface MemoryStoreData {
   users: User[];
@@ -243,8 +254,9 @@ interface MemoryStoreData {
 
 function createFallbackStore() {
   const storePath = path.join("/tmp", "bidean_eragin_store.json");
+  const initialAdmin = getInitialAdminUser();
   let store: MemoryStoreData = {
-    users: [DEFAULT_ADMIN],
+    users: initialAdmin ? [initialAdmin] : [],
     eragileak: [],
     pilotuak: [DEFAULT_PILOT],
     esperimentuak: [],
@@ -269,10 +281,13 @@ function createFallbackStore() {
     } catch {}
   }
 
-  // Ensure admin always exists in fallback
+  // Only create initial admin if ADMIN_INITIAL_PASSWORD is set and no admin exists
   if (!store.users.some((u) => u.role === "admin")) {
-    store.users.push(DEFAULT_ADMIN);
-    save();
+    const admin = getInitialAdminUser();
+    if (admin) {
+      store.users.push(admin);
+      save();
+    }
   }
   if (!store.pilotuak.some((p) => p.id === "barra-barra-txapak")) {
     store.pilotuak.push(DEFAULT_PILOT);
@@ -885,7 +900,7 @@ function initSqliteTables(db: any) {
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       email TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL DEFAULT 'bagera2026',
+      password TEXT NOT NULL,
       name TEXT NOT NULL,
       role TEXT NOT NULL DEFAULT 'eragilea',
       eragile_id TEXT,
@@ -1013,7 +1028,7 @@ function initSqliteTables(db: any) {
     db.exec("ALTER TABLE neurketak ADD COLUMN atzeratua INTEGER DEFAULT 0;");
   } catch {}
   try {
-    db.exec("ALTER TABLE users ADD COLUMN password TEXT DEFAULT 'bagera2026';");
+    db.exec("ALTER TABLE users ADD COLUMN password TEXT;");
   } catch {}
   try {
     db.exec("ALTER TABLE users ADD COLUMN eragile_id TEXT;");
@@ -1055,20 +1070,21 @@ function initSqliteTables(db: any) {
   try {
     const adminUser = db.prepare("SELECT * FROM users WHERE role = 'admin'").get() as User | undefined;
     if (!adminUser) {
-      db.prepare(`
-        INSERT INTO users (id, email, password, name, role, eragile_id, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        DEFAULT_ADMIN.id,
-        DEFAULT_ADMIN.email,
-        DEFAULT_ADMIN.password,
-        DEFAULT_ADMIN.name,
-        DEFAULT_ADMIN.role,
-        DEFAULT_ADMIN.eragile_id ?? null,
-        DEFAULT_ADMIN.created_at
-      );
-    } else if (!adminUser.password) {
-      db.prepare("UPDATE users SET password = ? WHERE id = ?").run("bagera2026", adminUser.id);
+      const initialAdmin = getInitialAdminUser();
+      if (initialAdmin) {
+        db.prepare(`
+          INSERT INTO users (id, email, password, name, role, eragile_id, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          initialAdmin.id,
+          initialAdmin.email,
+          initialAdmin.password,
+          initialAdmin.name,
+          initialAdmin.role,
+          initialAdmin.eragile_id ?? null,
+          initialAdmin.created_at
+        );
+      }
     }
   } catch {}
 
@@ -1185,9 +1201,12 @@ function getNetlifyBlobsContext(): BlobsContext | null {
   return null;
 }
 
-async function readSnapshotFromNetlifyBlobs(): Promise<MemoryStoreData | null> {
+let lastSnapshotEtag: string | null = null;
+let cloudWriteQueue: Promise<unknown> = Promise.resolve();
+
+async function readSnapshotFromNetlifyBlobs(): Promise<{ data: MemoryStoreData | null; etag: string | null }> {
   const ctx = getNetlifyBlobsContext();
-  if (!ctx || !ctx.siteID || !ctx.token) return null;
+  if (!ctx || !ctx.siteID || !ctx.token) return { data: null, etag: null };
 
   try {
     const baseUrl = ctx.uncachedEdgeURL || ctx.edgeURL;
@@ -1202,9 +1221,11 @@ async function readSnapshotFromNetlifyBlobs(): Promise<MemoryStoreData | null> {
         headers: { authorization: `Bearer ${ctx.token}` },
         cache: "no-store",
       });
-      if (res.status === 404) return null;
+      if (res.status === 404) return { data: null, etag: null };
       if (res.status === 200) {
-        return (await res.json()) as MemoryStoreData;
+        const etag = res.headers.get("etag");
+        const data = (await res.json()) as MemoryStoreData;
+        return { data, etag };
       }
     } else {
       const apiUrl = new URL(
@@ -1220,24 +1241,29 @@ async function readSnapshotFromNetlifyBlobs(): Promise<MemoryStoreData | null> {
         },
         cache: "no-store",
       });
-      if (signedRes.status === 404) return null;
+      if (signedRes.status === 404) return { data: null, etag: null };
       if (signedRes.status === 200) {
         const { url: signedUrl } = await signedRes.json();
         const dataRes = await fetch(signedUrl, { method: "GET", cache: "no-store" });
         if (dataRes.status === 200) {
-          return (await dataRes.json()) as MemoryStoreData;
+          const etag = dataRes.headers.get("etag");
+          const data = (await dataRes.json()) as MemoryStoreData;
+          return { data, etag };
         }
       }
     }
   } catch (e) {
     console.warn("Errorea Netlify Blobs-etik datuak irakurtzean:", e);
   }
-  return null;
+  return { data: null, etag: null };
 }
 
-async function writeSnapshotToNetlifyBlobs(snapshot: MemoryStoreData): Promise<boolean> {
+async function writeSnapshotToNetlifyBlobs(
+  snapshot: MemoryStoreData,
+  ifMatchEtag?: string | null
+): Promise<{ ok: boolean; conflict: boolean; etag: string | null }> {
   const ctx = getNetlifyBlobsContext();
-  if (!ctx || !ctx.siteID || !ctx.token) return false;
+  if (!ctx || !ctx.siteID || !ctx.token) return { ok: true, conflict: false, etag: null };
 
   try {
     const payload = JSON.stringify(snapshot);
@@ -1248,46 +1274,67 @@ async function writeSnapshotToNetlifyBlobs(snapshot: MemoryStoreData): Promise<b
         urlPath = `/region:${ctx.region}${urlPath}`;
       }
       const url = new URL(urlPath, baseUrl).toString();
+      const headers: Record<string, string> = {
+        authorization: `Bearer ${ctx.token}`,
+        "content-type": "application/json",
+        "cache-control": "no-store, max-age=0",
+      };
+      if (ifMatchEtag) {
+        headers["if-match"] = ifMatchEtag;
+      }
       const res = await fetch(url, {
         method: "PUT",
-        headers: {
-          authorization: `Bearer ${ctx.token}`,
-          "content-type": "application/json",
-          "cache-control": "no-store, max-age=0",
-        },
+        headers,
         body: payload,
       });
-      return res.status === 200;
+      if (res.status === 412) {
+        return { ok: false, conflict: true, etag: null };
+      }
+      return { ok: res.status === 200, conflict: false, etag: res.headers.get("etag") };
     } else {
       const apiUrl = new URL(
         `/api/v1/blobs/${ctx.siteID}/${BLOB_STORE_NAME}/${BLOB_KEY_NAME}`,
         ctx.apiURL || "https://api.netlify.com"
       );
       if (ctx.region) apiUrl.searchParams.set("region", ctx.region);
+      const signedHeaders: Record<string, string> = {
+        authorization: `Bearer ${ctx.token}`,
+        accept: "application/json;type=signed-url",
+      };
+      if (ifMatchEtag) {
+        signedHeaders["if-match"] = ifMatchEtag;
+      }
       const signedRes = await fetch(apiUrl.toString(), {
         method: "PUT",
-        headers: {
-          authorization: `Bearer ${ctx.token}`,
-          accept: "application/json;type=signed-url",
-        },
+        headers: signedHeaders,
       });
+      if (signedRes.status === 412) {
+        return { ok: false, conflict: true, etag: null };
+      }
       if (signedRes.status === 200) {
         const { url: signedUrl } = await signedRes.json();
+        const putHeaders: Record<string, string> = {
+          "content-type": "application/json",
+          "cache-control": "no-store, max-age=0",
+        };
+        if (ifMatchEtag) {
+          putHeaders["if-match"] = ifMatchEtag;
+        }
         const putRes = await fetch(signedUrl, {
           method: "PUT",
-          headers: {
-            "content-type": "application/json",
-            "cache-control": "no-store, max-age=0",
-          },
+          headers: putHeaders,
           body: payload,
         });
-        return putRes.status === 200;
+        if (putRes.status === 412) {
+          return { ok: false, conflict: true, etag: null };
+        }
+        return { ok: putRes.status === 200, conflict: false, etag: putRes.headers.get("etag") };
       }
     }
   } catch (e) {
     console.warn("Errorea Netlify Blobs-en datuak gordetzean:", e);
   }
-  return false;
+  return { ok: false, conflict: false, etag: null };
 }
 
 const LOCAL_BLOBS_DIR = path.join("/tmp", "bidean_eragin_blobs");
@@ -1664,12 +1711,15 @@ export function importDbSnapshot(snapshot: MemoryStoreData) {
         );
     }
 
+    const initialAdmin = getInitialAdminUser();
     const usersToInsert =
       Array.isArray(snapshot.users) && snapshot.users.length > 0
         ? [...snapshot.users]
-        : [DEFAULT_ADMIN];
-    if (!usersToInsert.some((u) => u.role === "admin")) {
-      usersToInsert.unshift(DEFAULT_ADMIN);
+        : initialAdmin
+        ? [initialAdmin]
+        : [];
+    if (!usersToInsert.some((u) => u.role === "admin") && initialAdmin) {
+      usersToInsert.unshift(initialAdmin);
     }
     for (const u of usersToInsert) {
       // Ensure eragilea users are linked to their matching center if eragile_id was missing
@@ -1692,7 +1742,7 @@ export function importDbSnapshot(snapshot: MemoryStoreData) {
         .run(
           u.id,
           u.email,
-          u.password || "bagera2026",
+          u.password || "",
           u.name || "Bagera Koordinazioa",
           u.role,
           resolvedEragileId,
@@ -1807,7 +1857,8 @@ export function importDbSnapshot(snapshot: MemoryStoreData) {
 
 export async function syncDbFromCloud(): Promise<void> {
   try {
-    const cloudSnapshot = await readSnapshotFromNetlifyBlobs();
+    const { data: cloudSnapshot, etag } = await readSnapshotFromNetlifyBlobs();
+    lastSnapshotEtag = etag;
     if (cloudSnapshot && Array.isArray(cloudSnapshot.eragileak)) {
       importDbSnapshot(cloudSnapshot);
     }
@@ -1819,10 +1870,53 @@ export async function syncDbFromCloud(): Promise<void> {
 export async function syncDbToCloud(): Promise<void> {
   try {
     const snapshot = exportDbSnapshot();
-    await writeSnapshotToNetlifyBlobs(snapshot);
+    const res = await writeSnapshotToNetlifyBlobs(snapshot, lastSnapshotEtag);
+    if (res.ok && res.etag) {
+      lastSnapshotEtag = res.etag;
+    }
   } catch (e) {
     console.warn("Errorea syncDbToCloud exekutatzean:", e);
   }
+}
+
+/**
+ * Exekutatu DB aldaketa bat modu seguruan idazketa lehiakideen aurka:
+ * prozesu barruko ilara + Netlify Blobs ETag baldintzatua (gehienez 3 saiakera).
+ */
+export async function runWithCloudRetry<T>(
+  mutator: () => T,
+  maxRetries = 3
+): Promise<T> {
+  const execute = async (): Promise<T> => {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      const { data: cloudSnapshot, etag } = await readSnapshotFromNetlifyBlobs();
+      lastSnapshotEtag = etag;
+      if (cloudSnapshot && Array.isArray(cloudSnapshot.eragileak)) {
+        importDbSnapshot(cloudSnapshot);
+      }
+
+      const result = mutator();
+
+      const snapshot = exportDbSnapshot();
+      const writeRes = await writeSnapshotToNetlifyBlobs(snapshot, etag);
+      if (writeRes.ok) {
+        if (writeRes.etag) lastSnapshotEtag = writeRes.etag;
+        return result;
+      }
+      if (!writeRes.conflict || attempt === maxRetries) {
+        // Fallback: write without ETag on last attempt if not a conflict or exhausted
+        if (attempt === maxRetries && writeRes.conflict) {
+          console.warn("Netlify Blobs ETag gatazka 3 saiakeraren ondoren.");
+        }
+        return result;
+      }
+    }
+    return mutator();
+  };
+
+  const nextTask = cloudWriteQueue.then(execute, execute);
+  cloudWriteQueue = nextTask.catch(() => {});
+  return nextTask;
 }
 
 // Proxied db export that lazily initializes on first use
