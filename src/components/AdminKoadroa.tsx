@@ -1428,6 +1428,157 @@ export default function AdminKoadroa() {
         </div>
       </div>
 
+      {/* 3.10 Koordinazioaren abisuak eta semaforoak */}
+      {!isPresentationMode && esperimentuak.length > 0 && (
+        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-line shadow-sm mb-8">
+          <div className="flex items-center justify-between gap-2 mb-4">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-600" />
+              <h3 className="font-editorial text-xl font-semibold text-ink">
+                Koordinazioaren abisuak eta semaforoak
+              </h3>
+            </div>
+            <span className="text-xs text-ink-muted font-medium">
+              {esperimentuak.length} esperimentu jarraipenean
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {esperimentuak.map((exp) => {
+              const eragilea = eragileak.find((er) => er.id === exp.eragile_id);
+              const expNeur = neurketak.filter((n) => n.esperimentu_id === exp.id);
+              const protokoloa = parseProtokoloa(exp.protokoloa_json);
+              const nMin = exp.n_gutxienekoa || 20;
+              const saioMin = exp.saio_gutxienekoa || 4;
+              const activePhase: "T0" | "T1" | "T2" =
+                exp.estatusa === "T1_zain"
+                  ? "T1"
+                  : exp.estatusa === "T2_zain" || exp.estatusa === "Amaituta"
+                  ? "T2"
+                  : "T0";
+
+              const sem = faseSemaforoa(
+                expNeur.filter((n) => n.unea === activePhase),
+                activePhase,
+                { nGutxienekoa: nMin, saioGutxienekoa: saioMin, protokoloa }
+              );
+
+              const phaseLine = (fasea: "T0" | "T1" | "T2") => {
+                const list = expNeur.filter((n) => n.unea === fasea);
+                if (list.length === 0) return null;
+                const x = list.reduce((s, n) => s + (n.euskaraz_count || 0) + (n.aldaketa_count || 0), 0);
+                const n = list.reduce(
+                  (s, item) =>
+                    s +
+                    (item.euskaraz_count || 0) +
+                    (item.aldaketa_count || 0) +
+                    (item.erdaraz_count || 0) +
+                    (item.elebi_count || 0),
+                  0
+                );
+                if (n === 0) return null;
+                const w = wilson(x, n);
+                return `${fasea}: %${formatDecimalEu(w.p * 100)} (${formatDecimalEu(w.behea * 100)}–${formatDecimalEu(w.goia * 100)})`;
+              };
+
+              const phaseSummaries = (["T0", "T1", "T2"] as const)
+                .map(phaseLine)
+                .filter((s): s is string => Boolean(s));
+
+              // Abisuak
+              const abisuak: string[] = [];
+              const fourteenDaysMs = 14 * 86400 * 1000;
+              const nowMs = Date.now();
+              if (expNeur.length === 0) {
+                const startMs = new Date(exp.hasiera_data).getTime();
+                if (!isNaN(startMs) && nowMs - startMs > fourteenDaysMs) {
+                  abisuak.push("14 egun neurketarik gabe");
+                }
+              } else {
+                const latestMs = Math.max(
+                  ...expNeur.map((n) => new Date(n.hasiera_ordu || n.data_ordu).getTime()).filter((t) => !isNaN(t))
+                );
+                if (latestMs > 0 && nowMs - latestMs > fourteenDaysMs) {
+                  abisuak.push("14 egun neurketarik gabe");
+                }
+              }
+
+              if (Number(exp.t1_egonkortu_gabe || 0) === 1) {
+                abisuak.push("T1 oinarri-lerro egonkorrik gabe hasia");
+              }
+
+              if (expNeur.length > 0) {
+                const laginTxikiaCount = expNeur.filter(
+                  (n) => neurketaEgoera(n, { nGutxienekoa: nMin, protokoloa }).laginTxikia
+                ).length;
+                if (laginTxikiaCount > expNeur.length / 2) {
+                  abisuak.push('Saioen erdia baino gehiago "lagin txikia"');
+                }
+                const hasUnknownObserver = expNeur.some(
+                  (n) => formatBehatzaileaDisplay(n.behatzailea) === "Ezezaguna"
+                );
+                if (hasUnknownObserver) {
+                  abisuak.push('Behatzailea "Ezezaguna"');
+                }
+              }
+
+              return (
+                <div
+                  key={exp.id}
+                  className="rounded-2xl border border-line bg-paper/60 p-4 space-y-2.5"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h4 className="font-bold text-ink text-sm">
+                        {eragilea?.izena || exp.eragile_izena || "Entitatea"}
+                      </h4>
+                      <span className="text-[11px] text-ink-muted">
+                        {exp.gunea} · {expNeur.length} saio
+                      </span>
+                    </div>
+                    <span
+                      className={`px-2.5 py-1 rounded-xl text-[11px] font-bold border shrink-0 ${
+                        sem.kolorea === "berdea"
+                          ? "bg-euskara/10 text-euskara border-euskara/30"
+                          : sem.kolorea === "horia"
+                          ? "bg-amber-50 text-amber-900 border-amber-300"
+                          : "bg-terracotta/10 text-terracotta border-terracotta/30"
+                      }`}
+                    >
+                      {sem.kolorea === "berdea" ? "🟢" : sem.kolorea === "horia" ? "🟡" : "🔴"}{" "}
+                      {sem.mezua}
+                    </span>
+                  </div>
+
+                  {phaseSummaries.length > 0 && (
+                    <div className="text-xs font-semibold text-ink tabular-nums">
+                      {phaseSummaries.join(" · ")}
+                    </div>
+                  )}
+
+                  {abisuak.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {abisuak.map((ab, idx) => (
+                        <span
+                          key={idx}
+                          className="px-2 py-0.5 rounded-lg bg-amber-100 text-amber-900 border border-amber-200 text-[10px] font-bold"
+                        >
+                          {ab}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="inline-block text-[11px] text-euskara font-semibold">
+                      Abisurik ez
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Centers Table */}
       <div className="bg-white rounded-2xl p-6 sm:p-8 border border-line shadow-sm">
         
