@@ -72,6 +72,7 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
   const [protokoloOrduHasiera, setProtokoloOrduHasiera] = useState<string>("11:00");
   const [protokoloOrduAmaiera, setProtokoloOrduAmaiera] = useState<string>("12:30");
   const [protokoloIraupena, setProtokoloIraupena] = useState<number>(30);
+  const [t2Mota, setT2Mota] = useState<"kentzea" | "jarraipena">("kentzea");
 
   const toggleProtokoloEguna = (dayIdx: number) => {
     setProtokoloEgunak((prev) =>
@@ -199,6 +200,7 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
       gunea: gunea.trim(),
       xede_portzentajea: metrika,
       protokoloa_json: protokoloaJson,
+      t2_mota: t2Mota,
     });
 
     setIsSubmitting(false);
@@ -480,6 +482,53 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
                   className="w-full px-2.5 py-1.5 rounded-lg bg-white border border-line text-xs font-semibold text-ink tabular-nums"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* T2 mota: Kentzea (ABA) vs Jarraipena */}
+          <div className="p-4 rounded-2xl bg-paper border border-line space-y-2.5">
+            <div>
+              <h4 className="text-xs font-bold text-ink uppercase tracking-wider">
+                Nola egingo duzue T2 fasea?
+              </h4>
+              <p className="text-xs text-ink-muted mt-0.5">
+                Esku-hartzea kentzean erabilera jaisten bada, badakizue esku-hartzeak eragin duela. Bestela, ezin da hori jakin.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setT2Mota("kentzea")}
+                className={`p-3 rounded-xl border text-left transition cursor-pointer ${
+                  t2Mota === "kentzea"
+                    ? "bg-euskara/10 border-euskara text-ink"
+                    : "bg-white border-line text-ink-muted hover:bg-sand"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-ink">Esku-hartzea kentzea (ABA)</span>
+                  <span className="px-1.5 py-0.5 rounded-md bg-euskara text-white text-[9px] font-bold">
+                    Gomendatua
+                  </span>
+                </div>
+                <p className="text-[11px] text-ink-muted mt-1">
+                  Kendu esku-hartzea (adib. txapak) eta neurtu egun eta ordu berean.
+                </p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setT2Mota("jarraipena")}
+                className={`p-3 rounded-xl border text-left transition cursor-pointer ${
+                  t2Mota === "jarraipena"
+                    ? "bg-sea/10 border-sea text-ink"
+                    : "bg-white border-line text-ink-muted hover:bg-sand"
+                }`}
+              >
+                <span className="text-xs font-bold text-ink block">Jarraipena</span>
+                <p className="text-[11px] text-ink-muted mt-1">
+                  Esku-hartzearekin jarraitu eta 2-3 astera berriro neurtu.
+                </p>
+              </button>
             </div>
           </div>
 

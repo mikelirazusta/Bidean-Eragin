@@ -175,6 +175,7 @@ export default function ZentroDashboard() {
   const [editPertsonakText, setEditPertsonakText] = useState("");
   const [editGuneaText, setEditGuneaText] = useState("");
   const [editXedeaNum, setEditXedeaNum] = useState<number>(25);
+  const [editT2Mota, setEditT2Mota] = useState<"jarraipena" | "kentzea">("jarraipena");
   const [editAldaketaArrazoia, setEditAldaketaArrazoia] = useState("");
   const [isSavingHypothesis, setIsSavingHypothesis] = useState(false);
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState(false);
@@ -307,6 +308,7 @@ export default function ZentroDashboard() {
     setEditPertsonakText(currentExp.pertsonak);
     setEditGuneaText(currentExp.gunea);
     setEditXedeaNum(currentExp.xede_portzentajea || 25);
+    setEditT2Mota(currentExp.t2_mota === "kentzea" ? "kentzea" : "jarraipena");
     setEditAldaketaArrazoia("");
     setIsEditingHypothesis(true);
   };
@@ -330,6 +332,7 @@ export default function ZentroDashboard() {
       pertsonak: editPertsonakText.trim() || currentExp.pertsonak,
       gunea: editGuneaText.trim() || currentExp.gunea,
       xede_portzentajea: editXedeaNum,
+      t2_mota: isAdmin ? editT2Mota : undefined,
       aldaketa_arrazoia: editAldaketaArrazoia.trim() || undefined,
     });
     setIsSavingHypothesis(false);
@@ -369,9 +372,19 @@ export default function ZentroDashboard() {
           t2Stats.totalInteractions
         )
       : null;
+  const t2VsT1 =
+    t1Stats && t2Stats
+      ? aldea(
+          t1Stats.totalEuskaraz,
+          t1Stats.totalInteractions,
+          t2Stats.totalEuskaraz,
+          t2Stats.totalInteractions
+        )
+      : null;
+  const isT2Kentzea = currentExp?.t2_mota === "kentzea";
   const immediateGain = t1VsT0 ? Math.round(t1VsT0.d * 1000) / 10 : null;
   const sustainedGain = t2VsT0 ? Math.round(t2VsT0.d * 1000) / 10 : null;
-  const primaryDiff = t2VsT0 || t1VsT0;
+  const primaryDiff = isT2Kentzea ? t1VsT0 : t2VsT0 || t1VsT0;
   const primaryOndorioa =
     primaryDiff && currentExp
       ? ondorioa(primaryDiff, currentExp.xede_portzentajea || 20)
@@ -1022,6 +1035,22 @@ export default function ZentroDashboard() {
                     </div>
                   </div>
 
+                  {isAdmin && (
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase text-ink-muted mb-0.5">
+                        T2 mota (Admin)
+                      </label>
+                      <select
+                        value={editT2Mota}
+                        onChange={(e) => setEditT2Mota(e.target.value === "kentzea" ? "kentzea" : "jarraipena")}
+                        className="w-full border border-line bg-white rounded-lg px-2.5 py-1.5 text-xs font-semibold text-ink"
+                      >
+                        <option value="jarraipena">Jarraipena</option>
+                        <option value="kentzea">Esku-hartzea kentzea (ABA)</option>
+                      </select>
+                    </div>
+                  )}
+
                   {Number(currentExp.blokeatuta || 0) === 1 && (
                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5">
                       <label className="block text-[10px] font-bold uppercase text-amber-900 mb-1">
@@ -1567,6 +1596,24 @@ export default function ZentroDashboard() {
                     >
                       {primaryOndorioa.testua}
                     </p>
+                    {isT2Kentzea && t1Stats && t2Stats && t2VsT1 && (
+                      <div className="pt-2 border-t border-line/70 space-y-1">
+                        <p className="text-xs font-semibold text-ink tabular-nums">
+                          T2 kentzea (ABA): T1 %{formatDecimalEu(t1Stats.pct)} ({t1Stats.totalEuskaraz}/{t1Stats.totalInteractions})
+                          {" → "}
+                          T2 %{formatDecimalEu(t2Stats.pct)} ({t2Stats.totalEuskaraz}/{t2Stats.totalInteractions})
+                          {" · "}
+                          Aldea (T2 − T1): {formatSignedPuntu(t2VsT1.d * 100)} puntu ({formatAldeaTarteaEu(t2VsT1)})
+                        </p>
+                        <p className="text-xs text-ink-muted leading-relaxed">
+                          {t2VsT1.goia < 0
+                            ? "Esku-hartzea kentzean erabilera jaitsi da: horrek adierazten du esku-hartzeak eragina zuela."
+                            : t2VsT1.behea <= 0 && 0 <= t2VsT1.goia
+                            ? "Esku-hartzea kendu eta erabilera antzeko mantendu da. Igoera ez da esku-hartzearen ondorioa, edo ohitura bihurtu da. Oraindik ez dakigu."
+                            : "Esku-hartzea kendu eta erabilera igo egin da. Beste faktore batzuek eragin dezakete; oraindik ez dakigu."}
+                        </p>
+                      </div>
+                    )}
                     {observerChangedAcrossPhases && (
                       <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
                         Behatzailea aldatu da faseen artean; aldearen zati bat horregatik izan daiteke.

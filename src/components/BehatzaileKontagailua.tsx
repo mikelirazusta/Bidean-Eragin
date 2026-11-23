@@ -867,7 +867,11 @@ export default function BehatzaileKontagailua() {
                 <strong className="text-ink">T1 (lehen eragina):</strong>
               )}
               {phase === "T2" && (
-                <strong className="text-ink">T2 (ohitura egonkortua):</strong>
+                <strong className="text-ink">
+                  {currentExp?.t2_mota === "kentzea"
+                    ? "T2 (esku-hartzea kentzea — ABA):"
+                    : "T2 (jarraipena):"}
+                </strong>
               )}{" "}
               {phase === "T0" &&
                 (uiTexts.counter_t0_desc ||
@@ -876,8 +880,11 @@ export default function BehatzaileKontagailua() {
                 (uiTexts.counter_t1_desc ||
                   "Pilotua martxan jarri berritan egindako neurketa, lehen eragina ikusteko.")}
               {phase === "T2" &&
-                (uiTexts.counter_t2_desc ||
-                  "Handik 2-3 astera egindako neurketa, ohitura berria egonkortu den egiaztatzeko.")}
+                (currentExp?.t2_mota === "kentzea"
+                  ? uiTexts.counter_t2_kentzea_desc ||
+                    "Kendu esku-hartzea (adib. txapak) eta neurtu egun eta ordu berean."
+                  : uiTexts.counter_t2_desc ||
+                    "Handik 2-3 astera egindako neurketa, ohitura berria egonkortu den ikusteko.")}
             </span>
           </div>
 

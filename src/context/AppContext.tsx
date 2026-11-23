@@ -48,7 +48,9 @@ export const DEFAULT_UI_TEXTS: Record<string, string> = {
   counter_t1_desc:
     "Pilotua martxan jarri berritan egindako neurketa, lehen eragina ikusteko.",
   counter_t2_desc:
-    "Handik 2-3 astera egindako neurketa, ohitura berria egonkortu den egiaztatzeko.",
+    "Handik 2-3 astera egindako neurketa, ohitura berria egonkortu den ikusteko.",
+  counter_t2_kentzea_desc:
+    "Kendu esku-hartzea (adib. txapak) eta neurtu egun eta ordu berean.",
   counter_btn_euskaraz: "Euskaraz",
   counter_btn_erdaraz: "Erdaraz",
   counter_btn_elebi: "Elebi (bi hizkuntzatan)",
