@@ -41,6 +41,14 @@ import {
 } from "lucide-react";
 import { useApp, getPublicEragileLabel, DEFAULT_UI_TEXTS, formatBehatzaileaDisplay } from "@/context/AppContext";
 import type { Eragilea, Esperimentua, Neurketa } from "@/lib/db";
+import {
+  wilson,
+  aldea,
+  parseProtokoloa,
+  neurketaEgoera,
+  faseSemaforoa,
+  formatDecimalEu,
+} from "@/lib/estatistika";
 
 const UI_TEXT_FIELDS: Array<{
   section: string;
@@ -711,50 +719,191 @@ export default function AdminKoadroa() {
   };
 
   // Export CSV
+  const downloadCsvFile = (filename: string, csvLines: string[]) => {
+    const blob = new Blob([csvLines.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const escapeCsvCell = (val: string | number | null | undefined): string => {
+    const s = String(val ?? "");
+    if (s.includes(",") || s.includes('"') || s.includes("\n")) {
+      return `"${s.replace(/"/g, '""')}"`;
+    }
+    return s;
+  };
+
   const handleExportCSV = () => {
+    const ASTEKO_EGUNAK = [
+      "igandea",
+      "astelehena",
+      "asteartea",
+      "asteazkena",
+      "osteguna",
+      "ostirala",
+      "larunbata",
+    ];
     const headers = [
-      "Neurketa_ID",
-      "Esperimentu_ID",
-      "Entitatea",
-      "Fasea",
-      "Euskaraz",
-      "Erdaraz",
-      "Elebi",
-      "Euskara_Portzentajea",
-      "Data",
-      "Behatzailea",
-      "Oharrak",
+      "neurketa_id",
+      "esperimentu_id",
+      "entitatea",
+      "fasea",
+      "hasiera_ordu",
+      "amaiera_ordu",
+      "data_ordu",
+      "iraupena_min",
+      "asteko_eguna",
+      "behatzailea",
+      "euskaraz",
+      "erdaraz",
+      "elebi",
+      "aldaketa",
+      "n",
+      "euskara_pct",
+      "wilson_behea",
+      "wilson_goia",
+      "egoera",
+      "lineaz_kanpo",
+      "atzeratua",
+      "oharrak",
     ];
 
     const rows = neurketak.map((n) => {
       const exp = esperimentuak.find((e) => e.id === n.esperimentu_id);
       const eragilea = eragileak.find((er) => er.id === exp?.eragile_id);
-      const total = n.euskaraz_count + n.erdaraz_count + n.elebi_count;
-      const pct = total > 0 ? Math.round((n.euskaraz_count / total) * 100) : 0;
+      const aldaketa = Number(n.aldaketa_count || 0);
+      const euskGuztira = Number(n.euskaraz_count || 0) + aldaketa;
+      const total = euskGuztira + Number(n.erdaraz_count || 0) + Number(n.elebi_count || 0);
+      const w = wilson(euskGuztira, total);
+      const pctNum = total > 0 ? (w.p * 100).toFixed(1) : "0.0";
+      const wBehea = total > 0 ? (w.behea * 100).toFixed(1) : "0.0";
+      const wGoia = total > 0 ? (w.goia * 100).toFixed(1) : "0.0";
+      const protokoloa = parseProtokoloa(exp?.protokoloa_json);
+      const egoera = neurketaEgoera(n, {
+        nGutxienekoa: exp?.n_gutxienekoa || 20,
+        protokoloa,
+      });
+      const refDate = new Date(n.hasiera_ordu || n.data_ordu);
+      const astekoEguna = !isNaN(refDate.getTime()) ? ASTEKO_EGUNAK[refDate.getDay()] : "";
+      const iraupenaMin = Math.round(((n.iraupena_segundotan || 0) / 60) * 10) / 10;
 
       return [
-        n.id,
-        n.esperimentu_id,
-        `"${eragilea?.izena || "Entitatea"}"`,
-        n.unea,
-        n.euskaraz_count,
-        n.erdaraz_count,
-        n.elebi_count,
-        `${pct}%`,
-        `"${new Date(n.data_ordu).toLocaleString("eu-ES")}"`,
-        `"${n.behatzailea || ""}"`,
-        `"${(n.oharrak || "").replace(/"/g, '""')}"`,
+        escapeCsvCell(n.id),
+        escapeCsvCell(n.esperimentu_id),
+        escapeCsvCell(eragilea?.izena || "Entitatea"),
+        escapeCsvCell(n.unea),
+        escapeCsvCell(n.hasiera_ordu || ""),
+        escapeCsvCell(n.amaiera_ordu || ""),
+        escapeCsvCell(n.data_ordu || ""),
+        iraupenaMin,
+        escapeCsvCell(astekoEguna),
+        escapeCsvCell(formatBehatzaileaDisplay(n.behatzailea)),
+        Number(n.euskaraz_count || 0),
+        Number(n.erdaraz_count || 0),
+        Number(n.elebi_count || 0),
+        aldaketa,
+        total,
+        pctNum,
+        wBehea,
+        wGoia,
+        escapeCsvCell(egoera.etiketak.join("+")),
+        Number(n.lineaz_kanpo || 0),
+        Number(n.atzeratua || 0),
+        escapeCsvCell(n.oharrak || ""),
       ].join(",");
     });
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `bidean_eragin_neurketak_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadCsvFile(
+      `bidean_eragin_neurketak_${new Date().toISOString().slice(0, 10)}.csv`,
+      [headers.join(","), ...rows]
+    );
+  };
+
+  const handleExportPhaseSummaryCSV = () => {
+    const headers = [
+      "esperimentu_id",
+      "entitatea",
+      "fasea",
+      "euskaraz",
+      "n",
+      "euskara_pct",
+      "wilson_behea",
+      "wilson_goia",
+      "saio_kopurua",
+      "saio_osoak",
+      "semaforoa",
+      "aldea_t0rekiko_puntu",
+      "aldea_behea",
+      "aldea_goia",
+    ];
+
+    const rows: string[] = [];
+    for (const exp of esperimentuak) {
+      const eragilea = eragileak.find((er) => er.id === exp.eragile_id);
+      const expNeur = neurketak.filter((n) => n.esperimentu_id === exp.id);
+      const protokoloa = parseProtokoloa(exp.protokoloa_json);
+      const nMin = exp.n_gutxienekoa || 20;
+      const saioMin = exp.saio_gutxienekoa || 4;
+
+      const t0List = expNeur.filter((n) => n.unea === "T0");
+      const t0X = t0List.reduce((s, n) => s + (n.euskaraz_count || 0) + (n.aldaketa_count || 0), 0);
+      const t0N = t0List.reduce(
+        (s, n) => s + (n.euskaraz_count || 0) + (n.aldaketa_count || 0) + (n.erdaraz_count || 0) + (n.elebi_count || 0),
+        0
+      );
+
+      for (const fasea of ["T0", "T1", "T2"] as const) {
+        const list = expNeur.filter((n) => n.unea === fasea);
+        if (list.length === 0) continue;
+        const x = list.reduce((s, n) => s + (n.euskaraz_count || 0) + (n.aldaketa_count || 0), 0);
+        const n = list.reduce(
+          (s, item) =>
+            s +
+            (item.euskaraz_count || 0) +
+            (item.aldaketa_count || 0) +
+            (item.erdaraz_count || 0) +
+            (item.elebi_count || 0),
+          0
+        );
+        const w = wilson(x, n);
+        const sem = faseSemaforoa(list, fasea, {
+          nGutxienekoa: nMin,
+          saioGutxienekoa: saioMin,
+          protokoloa,
+        });
+        const diff = fasea !== "T0" && t0N > 0 && n > 0 ? aldea(t0X, t0N, x, n) : null;
+
+        rows.push(
+          [
+            escapeCsvCell(exp.id),
+            escapeCsvCell(eragilea?.izena || "Entitatea"),
+            fasea,
+            x,
+            n,
+            n > 0 ? (w.p * 100).toFixed(1) : "0.0",
+            n > 0 ? (w.behea * 100).toFixed(1) : "0.0",
+            n > 0 ? (w.goia * 100).toFixed(1) : "0.0",
+            list.length,
+            sem.osoaKopurua,
+            sem.kolorea,
+            diff ? (diff.d * 100).toFixed(1) : "",
+            diff ? (diff.behea * 100).toFixed(1) : "",
+            diff ? (diff.goia * 100).toFixed(1) : "",
+          ].join(",")
+        );
+      }
+    }
+
+    downloadCsvFile(
+      `bidean_eragin_faseen_laburpena_${new Date().toISOString().slice(0, 10)}.csv`,
+      [headers.join(","), ...rows]
+    );
   };
 
   return (
@@ -824,6 +973,14 @@ export default function AdminKoadroa() {
               >
                 <Download className="w-4 h-4 text-white/80" />
                 <span>Esportatu (CSV)</span>
+              </button>
+
+              <button
+                onClick={handleExportPhaseSummaryCSV}
+                className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-sand text-sea border border-line font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5 text-sea" />
+                <span>Esportatu faseen laburpena</span>
               </button>
 
               <button
