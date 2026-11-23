@@ -24,9 +24,13 @@ interface LatxaRequestBody {
   gunea?: string;
   xede_portzentajea?: number;
   nudge_mota?: "abisua" | "zoriontzea" | "bultzada";
-  t0_stats?: { pct: number; count: number; euskaraz: number; total: number } | null;
-  t1_stats?: { pct: number; count: number; euskaraz: number; total: number; gain?: number } | null;
-  t2_stats?: { pct: number; count: number; euskaraz: number; total: number; gain?: number } | null;
+  t0_stats?: { pct: number; count: number; euskaraz: number; total: number; wilson_behea?: number; wilson_goia?: number } | null;
+  t1_stats?: { pct: number; count: number; euskaraz: number; total: number; gain?: number; wilson_behea?: number; wilson_goia?: number } | null;
+  t2_stats?: { pct: number; count: number; euskaraz: number; total: number; gain?: number; wilson_behea?: number; wilson_goia?: number } | null;
+  aldea_tartea?: { d: number; behea: number; goia: number; etiketa?: string } | null;
+  ondorioa_testua?: string;
+  semaforoa_egoera?: string;
+  abisuak?: string[];
   oharrak_zerrenda?: Array<{ unea: string; oharra: string; behatzailea: string; data: string; eragilea?: string }>;
   komunitate_datuak?: {
     eragile_kopurua: number;
@@ -233,41 +237,59 @@ ERANTZUN BETI ETA SALBUESPENIK GABE JSON FORMATU BALIOZKOAN (markdown blokerik g
         t0_stats: t0,
         t1_stats: t1,
         t2_stats: t2,
+        aldea_tartea: aldeaT,
+        ondorioa_testua: ondorioTestua,
+        semaforoa_egoera: semaforoEgoera,
+        abisuak,
         oharrak_zerrenda: oharrak,
       } = body;
 
+      const ondorioBlokea = ondorioTestua
+        ? `Datuen ondorioa hau da: «${ondorioTestua}». Ez kontraesan ondorio hori, eta ez esan hipotesia egiaztatu denik aldea zoriz azal badaiteke. Zalantza badago, esan argi eta lasai, eta azaldu zer neurtu beharko litzatekeen jakiteko. Motibatu jarraitzera, ez emaitzak puztuz.`
+        : `Ez esan hipotesia egiaztatu denik aldea zoriz azal badaiteke. Zalantza badago, esan argi eta lasai, eta azaldu zer neurtu beharko litzatekeen jakiteko. Motibatu jarraitzera, ez emaitzak puztuz.`;
+
       systemPrompt = `Bidean Eragin egitasmoko ebaluatzaile soziolinguistikoa eta portaera-ekonomian aditua zara.
-Zure zeregina da entitate batek burututako esperimentuaren datu kuantitatiboak (% eta faseak) eta behatzaileek idatzitako OHAR KUALITATIBOAK batera aztertzea, eta lantaldearentzako ondorio zientifiko, motibagarri eta sakon bat osatzea.
+Zure zeregina da entitate batek burututako esperimentuaren datu kuantitatiboak (faseko emaitzak, Wilson zalantza-tarteak eta faseen arteko aldeak) eta behatzaileek idatzitako OHAR KUALITATIBOAK batera aztertzea, eta lantaldearentzako ondorio zintzo, zorrotz eta lagungarri bat osatzea.
 
 GARRANTZITSUA:
-1. Erreparatu bereziki behatzaileen oharrei (bezeroen erreakzioak, langileen jarrerak, zailtasunak, pasadizoak, etiketa kualitatiboak). Ohar horiek azaldu eta balioetsi behar dituzu, datu hutsetatik harago doan ikuspegia emateko.
-2. Ebaluatu hipotesiaren betetze-maila zintzotasunez.
-3. Eman hurrengo urrats egingarri eta praktikoak ohitura berria finkatzeko edo zabaltzeko.
+1. ${ondorioBlokea}
+2. Erreparatu bereziki behatzaileen oharrei (bezeroen erreakzioak, langileen jarrerak, zailtasunak, pasadizoak, etiketa kualitatiboak). Ohar horiek azaldu eta balioetsi behar dituzu, datu hutsetatik harago doan ikuspegia emateko.
+3. balorazio_kuantitatiboa eremuak fase bakoitzaren Wilson zalantza-tarteak eta faseen arteko aldearen tartea aipatu behar ditu. Ez erabili p-baliorik edo estatistika-jargoirik.
+4. Eman hurrengo urrats egingarri eta praktikoak (zer neurtu beharko litzatekeen zalantza murrizteko edo ohitura sendotzeko).
 
 ERANTZUN BETI ETA SALBUESPENIK GABE JSON FORMATUAN (markdown gabe, \`\`\` gabe):
 {
-  "ondorio_nagusia": "Emaitzen eta bilakaeraren interpretazio orokor argia eta soziolinguistikoki aberatsa (1-2 paragrafo).",
+  "ondorio_nagusia": "Emaitzen eta bilakaeraren interpretazio orokor argia eta zintzoa (1-2 paragrafo).",
   "oharren_analisia": "Behatzaileen ohar kualitatiboetatik ateratako gako nagusiak: zer portaera-aldaketa ikusi diren kalean/espazioan, zer erresistentzia edo inertzia agertu diren eta zer indargune nabarmendu diren.",
-  "balorazio_kuantitatiboa": "Faseen arteko datuen (% igoera, saio kopuruaren fidagarritasuna) balorazio zehatza.",
+  "balorazio_kuantitatiboa": "Faseen arteko datuen (% emaitza, Wilson tarteak, faseen arteko aldea eta bere tartea, saio kopurua) balorazio zehatza eta zintzoa.",
   "hurrengo_urratsak": [
-    "Ohitura sendotzeko 1. gomendio praktikoa",
-    "Ohitura sendotzeko 2. gomendio praktikoa",
-    "Beste gune edo egoeretara zabaltzeko 3. gomendioa"
+    "1. gomendio praktikoa",
+    "2. gomendio praktikoa",
+    "3. gomendio praktikoa"
   ],
-  "txosten_laburpena": "Lantaldearekin, zuzendaritzarekin edo bezeroekin partekatzeko orri bateko laburpen narratibo dotorea eta ulergarria."
+  "txosten_laburpena": "Lantaldearekin, zuzendaritzarekin edo bezeroekin partekatzeko orri bateko laburpen narratibo zintzo eta ulergarria."
 }`;
 
       const oharrakTestua =
         oharrak && oharrak.length > 0
           ? oharrak
-              .map((o) => `- [${o.unea}] (${o.behatzailea || "Behatzailea"}): "${o.oharra}"`)
+              .map((o) => `- [${o.unea}] (${o.behatzailea || "Ezezaguna"}): "${o.oharra}"`)
               .join("\n")
           : "(Ez dago testuzko ohar kualitatiborik jasoa saioetan)";
 
+      const fmtWilson = (s?: { wilson_behea?: number; wilson_goia?: number } | null) =>
+        s && s.wilson_behea !== undefined && s.wilson_goia !== undefined
+          ? `, Wilson tartea: %${s.wilson_behea}–%${s.wilson_goia}`
+          : "";
+
       const kuantitatiboaTestua = `
-- T0 (hasierakoa): ${t0 ? `%${t0.pct} euskara (${t0.count} saiotan, ${t0.euskaraz}/${t0.total} elkarrizketa)` : "Oraindik ez dago neurtuta"}
-- T1 (tartekoa/berehalakoa): ${t1 ? `%${t1.pct} euskara (${t1.count} saiotan, ${t1.euskaraz}/${t1.total} elkarrizketa, igoera: +%${t1.gain ?? 0})` : "Oraindik ez dago neurtuta"}
-- T2 (sendotua): ${t2 ? `%${t2.pct} euskara (${t2.count} saiotan, ${t2.euskaraz}/${t2.total} elkarrizketa, igoera: +%${t2.gain ?? 0})` : "Oraindik ez dago neurtuta"}`;
+- T0 (hasierakoa): ${t0 ? `%${t0.pct} euskara (${t0.count} saiotan, ${t0.euskaraz}/${t0.total} elkarrizketa${fmtWilson(t0)})` : "Oraindik ez dago neurtuta"}
+- T1 (esku-hartzea): ${t1 ? `%${t1.pct} euskara (${t1.count} saiotan, ${t1.euskaraz}/${t1.total} elkarrizketa${fmtWilson(t1)})` : "Oraindik ez dago neurtuta"}
+- T2: ${t2 ? `%${t2.pct} euskara (${t2.count} saiotan, ${t2.euskaraz}/${t2.total} elkarrizketa${fmtWilson(t2)})` : "Oraindik ez dago neurtuta"}
+- Faseen arteko aldea: ${aldeaT ? `${aldeaT.etiketa || "T1 − T0"}: ${aldeaT.d >= 0 ? "+" : ""}${aldeaT.d} puntu (tartea: ${aldeaT.behea}etik ${aldeaT.goia}ra)` : "Ez dago kalkulatzeko bi faserik"}
+- Datuen ondorioa: ${ondorioTestua || "Oraindik ez dago bi faseren alderaketarik"}
+- Semaforoaren egoera: ${semaforoEgoera || "Ez dago zehaztuta"}
+- Abisuak: ${abisuak && abisuak.length > 0 ? abisuak.join(" | ") : "Abisurik ez"}`;
 
       conversationMessages.push({ role: "system", content: systemPrompt });
       conversationMessages.push({

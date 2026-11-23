@@ -431,6 +431,14 @@ export default function ZentroDashboard() {
         data: n.data_ordu,
       }));
 
+    const abisuakList: string[] = [];
+    if (observerChangedAcrossPhases) {
+      abisuakList.push("Behatzailea aldatu da faseen artean; aldearen zati bat horregatik izan daiteke.");
+    }
+    if (Number(currentExp.t1_egonkortu_gabe || 0) === 1) {
+      abisuakList.push("T1 oinarri-lerroa egonkortu gabe hasi zen.");
+    }
+
     try {
       const res = await fetch("/api/ai/latxa", {
         method: "POST",
@@ -448,6 +456,8 @@ export default function ZentroDashboard() {
                 count: t0Stats.count,
                 euskaraz: t0Stats.totalEuskaraz,
                 total: t0Stats.totalInteractions,
+                wilson_behea: Math.round(t0Stats.wilson.behea * 1000) / 10,
+                wilson_goia: Math.round(t0Stats.wilson.goia * 1000) / 10,
               }
             : null,
           t1_stats: t1Stats
@@ -457,6 +467,8 @@ export default function ZentroDashboard() {
                 euskaraz: t1Stats.totalEuskaraz,
                 total: t1Stats.totalInteractions,
                 gain: immediateGain ?? undefined,
+                wilson_behea: Math.round(t1Stats.wilson.behea * 1000) / 10,
+                wilson_goia: Math.round(t1Stats.wilson.goia * 1000) / 10,
               }
             : null,
           t2_stats: t2Stats
@@ -466,8 +478,21 @@ export default function ZentroDashboard() {
                 euskaraz: t2Stats.totalEuskaraz,
                 total: t2Stats.totalInteractions,
                 gain: sustainedGain ?? undefined,
+                wilson_behea: Math.round(t2Stats.wilson.behea * 1000) / 10,
+                wilson_goia: Math.round(t2Stats.wilson.goia * 1000) / 10,
               }
             : null,
+          aldea_tartea: primaryDiff
+            ? {
+                d: Math.round(primaryDiff.d * 1000) / 10,
+                behea: Math.round(primaryDiff.behea * 1000) / 10,
+                goia: Math.round(primaryDiff.goia * 1000) / 10,
+                etiketa: t2Stats && !isT2Kentzea ? "T2 − T0" : "T1 − T0",
+              }
+            : null,
+          ondorioa_testua: primaryOndorioa?.testua,
+          semaforoa_egoera: `${activePhase}: ${activeSemaforoa.kolorea} — ${activeSemaforoa.mezua}`,
+          abisuak: abisuakList,
           oharrak_zerrenda: oharrakList,
         }),
       });
