@@ -139,13 +139,20 @@ body {
 /* Clean PDF / print layout */
 @media print {
   @page {
-    margin: 14mm;
+    size: A4;
+    margin: 15mm 16mm;
   }
   body {
     background: #ffffff !important;
     color: #162024 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
   .print\:hidden {
     display: none !important;
+  }
+  .report-section {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 }

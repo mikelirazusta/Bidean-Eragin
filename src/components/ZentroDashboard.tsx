@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { useApp, getPublicEragileLabel, formatBehatzaileaDisplay } from "@/context/AppContext";
 import type { Esperimentua, Neurketa } from "@/lib/db";
+import TxostenInprimagarria from "@/components/TxostenInprimagarria";
 import {
   wilson,
   wilsonMarjinaPuntu,
@@ -190,17 +191,19 @@ export default function ZentroDashboard() {
     sessionIndex: number;
   } | null>(null);
   const [isDeletingNeurketa, setIsDeletingNeurketa] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   React.useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
-      if (neurketaToDeleteConfirm) setNeurketaToDeleteConfirm(null);
+      if (showReportModal) setShowReportModal(false);
+      else if (neurketaToDeleteConfirm) setNeurketaToDeleteConfirm(null);
       else if (expToDelete) setExpToDelete(null);
       else if (neurketaToEdit) setNeurketaToEdit(null);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [neurketaToDeleteConfirm, expToDelete, neurketaToEdit]);
+  }, [showReportModal, neurketaToDeleteConfirm, expToDelete, neurketaToEdit]);
 
   // Latxa qualitative analysis state
   const [isAnalyzingWithLatxa, setIsAnalyzingWithLatxa] = useState(false);
@@ -682,8 +685,17 @@ export default function ZentroDashboard() {
     );
   }
 
+  const handleOpenReportModal = () => {
+    setShowReportModal(true);
+    // Txostena oraindik Latxarekin sortu gabe badago eta neurketak badaude, automatikoki sortu
+    if (!latxaAnalysisResult && !isAnalyzingWithLatxa && currentExp && expNeurketak.length > 0) {
+      handleRunLatxaAnalysis();
+    }
+  };
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 print:hidden">
       
       {/* Top Organization Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-5 border-b border-line">
@@ -703,15 +715,17 @@ export default function ZentroDashboard() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 print:hidden">
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="px-3.5 py-2.5 rounded-xl border border-line bg-white hover:bg-paper text-ink text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
-            title="Inprimatu edo gorde PDF gisa entitatearen txostena"
-          >
-            <Printer className="w-4 h-4 text-ink-muted" />
-            <span>Inprimatu txostena (PDF)</span>
-          </button>
+          {currentExp && (
+            <button
+              type="button"
+              onClick={handleOpenReportModal}
+              className="px-3.5 py-2.5 rounded-xl border border-line bg-white hover:bg-paper text-ink text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
+              title="Ikusi eta deskargatu A4 txosten ofiziala (PDF) Latxaren analisiarekin"
+            >
+              <FileText className="w-4 h-4 text-euskara" />
+              <span>Txostena (PDF)</span>
+            </button>
+          )}
 
           <button
             onClick={() => setActiveTab("katalogoa")}
@@ -2552,6 +2566,118 @@ export default function ZentroDashboard() {
           </div>
         </div>
       )}
+
+      {/* Txostenaren aurrebista eta PDF deskarga modala */}
+      {showReportModal && currentExp && activeEragilea && (
+        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex flex-col items-center justify-center p-3 sm:p-6 print:hidden">
+          <div className="bg-paper rounded-2xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-line overflow-hidden">
+            {/* Modal Toolbar */}
+            <div className="bg-white border-b border-line px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-2 shrink-0">
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-euskara" />
+                <div>
+                  <h3 className="text-sm font-bold text-ink">
+                    Txostenaren aurrebista (A4 · PDF)
+                  </h3>
+                  <p className="text-[11px] text-ink-muted">
+                    {isAnalyzingWithLatxa
+                      ? "Latxa txostenaren testua eta ondorioak idazten ari da..."
+                      : latxaAnalysisResult
+                      ? "Latxaren analisiarekin osatuta — prest PDF gisa gordetzeko."
+                      : "Datuen txostena prest. Nahi baduzu, sortu analisi narratiboa Latxarekin."}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {expNeurketak.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleRunLatxaAnalysis}
+                    disabled={isAnalyzingWithLatxa}
+                    className="px-3 py-2 rounded-xl bg-sea/10 hover:bg-sea/15 text-sea border border-sea/25 text-xs font-bold inline-flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+                  >
+                    {isAnalyzingWithLatxa ? (
+                      <>
+                        <RotateCcw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Latxa idazten...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Bot className="w-3.5 h-3.5" />
+                        <span>{latxaAnalysisResult ? "Berritu Latxarekin" : "Sortu Latxarekin"}</span>
+                      </>
+                    )}
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-4 py-2 rounded-xl bg-euskara hover:opacity-95 text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Deskargatu PDF / Inprimatu</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowReportModal(false)}
+                  className="p-2 rounded-xl text-ink-muted hover:bg-sand transition cursor-pointer"
+                  title="Itxi"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {latxaAnalysisError && (
+              <div className="bg-amber-50 border-b border-amber-200 px-6 py-2 text-xs text-amber-900">
+                Latxa ezin izan da konektatu ({latxaAnalysisError}), baina datuen PDF txostena zuzenean deskarga dezakezu.
+              </div>
+            )}
+
+            {/* A4 Paper Preview */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-200/70">
+              <div className="bg-white shadow-lg border border-line rounded-sm p-6 sm:p-10 mx-auto max-w-[210mm]">
+                <TxostenInprimagarria
+                  eragilea={activeEragilea}
+                  esperimentua={currentExp}
+                  expNeurketak={expNeurketak}
+                  t0Stats={t0Stats}
+                  t1Stats={t1Stats}
+                  t2Stats={t2Stats}
+                  primaryDiff={primaryDiff}
+                  primaryOndorioa={primaryOndorioa}
+                  t2VsT1={t2VsT1}
+                  observerChangedAcrossPhases={observerChangedAcrossPhases}
+                  latxaAnalysis={latxaAnalysisResult}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+
+    {/* Inprimatzeko / PDF bertsio garbia (aplikazioaren interfazerik gabe) */}
+    {currentExp && activeEragilea && (
+      <div className="hidden print:block bg-white">
+        <TxostenInprimagarria
+          eragilea={activeEragilea}
+          esperimentua={currentExp}
+          expNeurketak={expNeurketak}
+          t0Stats={t0Stats}
+          t1Stats={t1Stats}
+          t2Stats={t2Stats}
+          primaryDiff={primaryDiff}
+          primaryOndorioa={primaryOndorioa}
+          t2VsT1={t2VsT1}
+          observerChangedAcrossPhases={observerChangedAcrossPhases}
+          latxaAnalysis={latxaAnalysisResult}
+        />
+      </div>
+    )}
+    </>
   );
 }
