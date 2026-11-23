@@ -36,6 +36,16 @@ import {
 } from "lucide-react";
 import { useApp, getPublicEragileLabel } from "@/context/AppContext";
 import type { Esperimentua, Neurketa } from "@/lib/db";
+import {
+  wilson,
+  wilsonMarjinaPuntu,
+  aldea,
+  ondorioa,
+  formatDecimalEu,
+  formatSignedPuntu,
+  formatAldeaTarteaEu,
+  type WilsonTartea,
+} from "@/lib/estatistika";
 
 export interface PhaseStats {
   unea: "T0" | "T1" | "T2";
@@ -45,7 +55,7 @@ export interface PhaseStats {
   totalElebi: number;
   totalInteractions: number;
   pct: number;
-  avgSessionPct: number;
+  wilson: WilsonTartea;
   neurketak: Neurketa[];
 }
 
@@ -57,13 +67,10 @@ function computePhaseStats(list: Neurketa[], phase: "T0" | "T1" | "T2"): PhaseSt
   const totalErdaraz = phaseList.reduce((sum, n) => sum + (n.erdaraz_count || 0), 0);
   const totalElebi = phaseList.reduce((sum, n) => sum + (n.elebi_count || 0), 0);
   const totalInteractions = totalEuskaraz + totalErdaraz + totalElebi;
-  const pct = totalInteractions > 0 ? Math.round((totalEuskaraz / totalInteractions) * 100) : 0;
-
-  const sessionPcts = phaseList.map((n) => {
-    const tot = (n.euskaraz_count || 0) + (n.erdaraz_count || 0) + (n.elebi_count || 0);
-    return tot > 0 ? (n.euskaraz_count / tot) * 100 : 0;
-  });
-  const avgSessionPct = Math.round(sessionPcts.reduce((a, b) => a + b, 0) / phaseList.length);
+  const pct =
+    totalInteractions > 0
+      ? Math.round((totalEuskaraz / totalInteractions) * 1000) / 10
+      : 0;
 
   return {
     unea: phase,
@@ -73,7 +80,7 @@ function computePhaseStats(list: Neurketa[], phase: "T0" | "T1" | "T2"): PhaseSt
     totalElebi,
     totalInteractions,
     pct,
-    avgSessionPct,
+    wilson: wilson(totalEuskaraz, totalInteractions),
     neurketak: phaseList,
   };
 }
@@ -256,7 +263,7 @@ export default function ZentroDashboard() {
 
   // Quick setup state when !currentExp
   const [quickHipotesia, setQuickHipotesia] = useState(
-    `${activeEragilea?.izena || "Gure entitatean"} esku-hartze pilotua aktibatzen badugu, euskarazko elkarrizketak %20 handituko dira.`
+    `${activeEragilea?.izena || "Gure entitatean"} esku-hartze pilotua aktibatzen badugu, euskararen erabilera 20 puntu igoko da (adib. %30etik %50era).`
   );
   const [quickGunea, setQuickGunea] = useState(activeEragilea?.izena || "Harrera edo gune nagusia");
   const [quickXedea, setQuickXedea] = useState(20);
@@ -329,11 +336,32 @@ export default function ZentroDashboard() {
   const t1Pct = t1Stats ? t1Stats.pct : null;
   const t2Pct = t2Stats ? t2Stats.pct : null;
 
-  // Growth calculations
-  const immediateGain =
-    t1Pct !== null && t0Pct !== null ? t1Pct - t0Pct : null;
-  const sustainedGain =
-    t2Pct !== null && t0Pct !== null ? t2Pct - t0Pct : null;
+  // Growth calculations (Newcombe intervals & percentage points)
+  const t1VsT0 =
+    t0Stats && t1Stats
+      ? aldea(
+          t0Stats.totalEuskaraz,
+          t0Stats.totalInteractions,
+          t1Stats.totalEuskaraz,
+          t1Stats.totalInteractions
+        )
+      : null;
+  const t2VsT0 =
+    t0Stats && t2Stats
+      ? aldea(
+          t0Stats.totalEuskaraz,
+          t0Stats.totalInteractions,
+          t2Stats.totalEuskaraz,
+          t2Stats.totalInteractions
+        )
+      : null;
+  const immediateGain = t1VsT0 ? Math.round(t1VsT0.d * 1000) / 10 : null;
+  const sustainedGain = t2VsT0 ? Math.round(t2VsT0.d * 1000) / 10 : null;
+  const primaryDiff = t2VsT0 || t1VsT0;
+  const primaryOndorioa =
+    primaryDiff && currentExp
+      ? ondorioa(primaryDiff, currentExp.xede_portzentajea || 20)
+      : null;
 
   const handleRunLatxaAnalysis = async () => {
     if (!currentExp) return;
@@ -777,7 +805,7 @@ export default function ZentroDashboard() {
 
                 <div className="flex items-center gap-1.5">
                   <span className="px-2.5 py-1 text-xs font-bold rounded-md bg-euskara/10 text-euskara border border-euskara/20 tabular-nums">
-                    Xedea: +%{currentExp.xede_portzentajea}
+                    Xedea: +{currentExp.xede_portzentajea} puntu
                   </span>
                   {!isEditingHypothesis && (
                     <>
@@ -824,7 +852,7 @@ export default function ZentroDashboard() {
                           type="button"
                           onClick={() =>
                             setEditHipotesiaText(
-                              `Gure ustez, ${editTaldeaText || "entitateko lantaldeak"} ${editPertsonakText || "herritarrekin eta bezeroekin"}, ${editGuneaText || "harrera gunean"} esku-hartze pilotua aktibatuta, euskararen erabilera %${editXedeaNum} igoko da.`
+                              `Gure ustez, ${editTaldeaText || "entitateko lantaldeak"} ${editPertsonakText || "herritarrekin eta bezeroekin"}, ${editGuneaText || "harrera gunean"} esku-hartze pilotua aktibatuta, euskararen erabilera ${editXedeaNum} puntu igoko da (adib. %30etik %${30 + editXedeaNum}era).`
                             )
                           }
                           className="text-[10px] font-bold text-euskara hover:underline cursor-pointer"
@@ -881,7 +909,7 @@ export default function ZentroDashboard() {
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold uppercase text-ink-muted mb-0.5">
-                        Xedea (+%)
+                        Xede-igoera (puntu)
                       </label>
                       <input
                         type="number"
@@ -1000,7 +1028,7 @@ export default function ZentroDashboard() {
                                 setActiveTab("behaketa");
                               }}
                               className="text-[10px] font-bold text-euskara bg-white hover:bg-euskara/10 px-2 py-0.5 rounded-lg border border-euskara/40 shadow-2xs transition cursor-pointer inline-flex items-center gap-1 shrink-0"
-                              title="Egin beste behaketa saio bat fase honetako batez bestekoa sendotzeko"
+                              title="Egin beste behaketa saio bat fase honetako emaitza osatzeko"
                             >
                               <Plus className="w-3 h-3" />
                               <span>+ Saio berria</span>
@@ -1110,10 +1138,10 @@ export default function ZentroDashboard() {
                   </p>
                 </div>
 
-                {sustainedGain !== null && sustainedGain > 0 && (
+                {primaryOndorioa && primaryDiff && primaryOndorioa.kodea === "argia" && (
                   <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-euskara/10 border border-euskara/20 text-euskara text-xs font-bold tabular-nums">
                     <TrendingUp className="w-4 h-4" />
-                    <span>+%{sustainedGain} igoera egonkorra</span>
+                    <span>{formatSignedPuntu(primaryDiff.d * 100)} puntu (aldea argia da)</span>
                   </div>
                 )}
               </div>
@@ -1124,13 +1152,27 @@ export default function ZentroDashboard() {
                 {/* T0 Bar */}
                 <div className="flex flex-col items-center">
                   <div className="h-56 w-full max-w-[92px] bg-sand rounded-xl p-1.5 flex flex-col justify-end relative border border-line">
-                    {t0Pct !== null ? (
-                      <div
-                        className="w-full bg-sea rounded-lg transition-all duration-700 flex flex-col items-center justify-center text-white font-bold text-sm tabular-nums"
-                        style={{ height: `${Math.max(t0Pct, 15)}%` }}
-                      >
-                        <span>%{t0Pct}</span>
-                      </div>
+                    {t0Stats !== null && t0Pct !== null ? (
+                      <>
+                        <div
+                          className="w-full bg-sea rounded-lg transition-all duration-700 flex flex-col items-center justify-center text-white font-bold text-sm tabular-nums"
+                          style={{ height: `${Math.max(t0Pct, 15)}%` }}
+                        >
+                          <span>%{formatDecimalEu(t0Pct)}</span>
+                        </div>
+                        {/* Wilson %95eko zalantza-tartea */}
+                        <div
+                          className="pointer-events-none absolute left-1/2 -translate-x-1/2 w-0.5 bg-slate-900/75"
+                          style={{
+                            bottom: `${Math.max(0, Math.min(100, t0Stats.wilson.behea * 100))}%`,
+                            height: `${Math.max(1, (t0Stats.wilson.goia - t0Stats.wilson.behea) * 100)}%`,
+                          }}
+                          title={`Zalantza-tartea: %${formatDecimalEu(t0Stats.wilson.behea * 100)}–%${formatDecimalEu(t0Stats.wilson.goia * 100)}`}
+                        >
+                          <div className="absolute -top-0.5 -left-1.5 w-3.5 h-0.5 bg-slate-900/75" />
+                          <div className="absolute -bottom-0.5 -left-1.5 w-3.5 h-0.5 bg-slate-900/75" />
+                        </div>
+                      </>
                     ) : (
                       <div className="h-full flex items-center justify-center text-[10px] text-ink-muted text-center font-medium p-1">
                         Zain (ez dago daturik)
@@ -1146,13 +1188,18 @@ export default function ZentroDashboard() {
                       {t0Stats
                         ? t0Stats.count === 1
                           ? "1 saio erregistratua"
-                          : `${t0Stats.count} saioen batez bestekoa`
+                          : `${t0Stats.count} saioren faseko emaitza`
                         : "Oinarrizkoa (aurretik)"}
                     </span>
                     {t0Stats && (
-                      <span className="text-[10px] text-sea font-bold block mt-0.5 tabular-nums">
-                        %{t0Stats.pct} euskara ({t0Stats.totalEuskaraz}/{t0Stats.totalInteractions})
-                      </span>
+                      <>
+                        <span className="text-[10px] text-sea font-bold block mt-0.5 tabular-nums">
+                          %{formatDecimalEu(t0Stats.pct)} ({t0Stats.totalEuskaraz}/{t0Stats.totalInteractions})
+                        </span>
+                        <span className="text-[9px] text-ink-muted block tabular-nums">
+                          Tartea: %{formatDecimalEu(t0Stats.wilson.behea * 100)}–%{formatDecimalEu(t0Stats.wilson.goia * 100)}
+                        </span>
+                      </>
                     )}
 
                     <button
@@ -1165,7 +1212,7 @@ export default function ZentroDashboard() {
                           ? "text-sea bg-paper hover:bg-sand border-line"
                           : "text-white bg-sea hover:opacity-95 border-transparent"
                       }`}
-                      title="Egin beste behaketa-saio bat T0 batez bestekoa sendotzeko"
+                      title="Egin beste behaketa-saio bat T0 faseko emaitza osatzeko"
                     >
                       <Plus className="w-3 h-3" />
                       <span>{t0Stats ? "Beste saio bat" : "Neurtu T0"}</span>
@@ -1176,18 +1223,32 @@ export default function ZentroDashboard() {
                 {/* T1 Bar */}
                 <div className="flex flex-col items-center">
                   <div className="h-56 w-full max-w-[92px] bg-sand rounded-xl p-1.5 flex flex-col justify-end relative border border-line">
-                    {t1Pct !== null ? (
-                      <div
-                        className="w-full bg-ochre rounded-lg transition-all duration-700 flex flex-col items-center justify-center text-white font-bold text-sm tabular-nums"
-                        style={{ height: `${Math.max(t1Pct, 15)}%` }}
-                      >
-                        <span>%{t1Pct}</span>
-                        {immediateGain !== null && (
-                          <span className="text-[10px] bg-black/20 px-1.5 rounded-sm mt-0.5">
-                            {immediateGain >= 0 ? `+${immediateGain}%` : `${immediateGain}%`}
-                          </span>
-                        )}
-                      </div>
+                    {t1Stats !== null && t1Pct !== null ? (
+                      <>
+                        <div
+                          className="w-full bg-ochre rounded-lg transition-all duration-700 flex flex-col items-center justify-center text-white font-bold text-sm tabular-nums"
+                          style={{ height: `${Math.max(t1Pct, 15)}%` }}
+                        >
+                          <span>%{formatDecimalEu(t1Pct)}</span>
+                          {immediateGain !== null && (
+                            <span className="text-[10px] bg-black/20 px-1.5 rounded-sm mt-0.5">
+                              {formatSignedPuntu(immediateGain)} p.
+                            </span>
+                          )}
+                        </div>
+                        {/* Wilson %95eko zalantza-tartea */}
+                        <div
+                          className="pointer-events-none absolute left-1/2 -translate-x-1/2 w-0.5 bg-slate-900/75"
+                          style={{
+                            bottom: `${Math.max(0, Math.min(100, t1Stats.wilson.behea * 100))}%`,
+                            height: `${Math.max(1, (t1Stats.wilson.goia - t1Stats.wilson.behea) * 100)}%`,
+                          }}
+                          title={`Zalantza-tartea: %${formatDecimalEu(t1Stats.wilson.behea * 100)}–%${formatDecimalEu(t1Stats.wilson.goia * 100)}`}
+                        >
+                          <div className="absolute -top-0.5 -left-1.5 w-3.5 h-0.5 bg-slate-900/75" />
+                          <div className="absolute -bottom-0.5 -left-1.5 w-3.5 h-0.5 bg-slate-900/75" />
+                        </div>
+                      </>
                     ) : (
                       <div className="h-full flex flex-col items-center justify-center text-[10px] text-ink-muted text-center font-medium p-1">
                         <span>T1 zain</span>
@@ -1214,13 +1275,18 @@ export default function ZentroDashboard() {
                       {t1Stats
                         ? t1Stats.count === 1
                           ? "1 saio erregistratua"
-                          : `${t1Stats.count} saioen batez bestekoa`
-                        : "Berehalakoa (1. astea)"}
+                          : `${t1Stats.count} saioren faseko emaitza`
+                        : "Esku-hartzearekin"}
                     </span>
                     {t1Stats && (
-                      <span className="text-[10px] text-ochre font-bold block mt-0.5 tabular-nums">
-                        %{t1Stats.pct} euskara ({t1Stats.totalEuskaraz}/{t1Stats.totalInteractions})
-                      </span>
+                      <>
+                        <span className="text-[10px] text-ochre font-bold block mt-0.5 tabular-nums">
+                          %{formatDecimalEu(t1Stats.pct)} ({t1Stats.totalEuskaraz}/{t1Stats.totalInteractions})
+                        </span>
+                        <span className="text-[9px] text-ink-muted block tabular-nums">
+                          Tartea: %{formatDecimalEu(t1Stats.wilson.behea * 100)}–%{formatDecimalEu(t1Stats.wilson.goia * 100)}
+                        </span>
+                      </>
                     )}
 
                     {t0Stats && (
@@ -1246,18 +1312,32 @@ export default function ZentroDashboard() {
                 {/* T2 Bar */}
                 <div className="flex flex-col items-center">
                   <div className="h-56 w-full max-w-[92px] bg-sand rounded-xl p-1.5 flex flex-col justify-end relative border border-line">
-                    {t2Pct !== null ? (
-                      <div
-                        className="w-full bg-euskara rounded-lg transition-all duration-700 flex flex-col items-center justify-center text-white font-bold text-sm tabular-nums"
-                        style={{ height: `${Math.max(t2Pct, 15)}%` }}
-                      >
-                        <span>%{t2Pct}</span>
-                        {sustainedGain !== null && (
-                          <span className="text-[10px] bg-black/20 px-1.5 rounded-sm mt-0.5">
-                            {sustainedGain >= 0 ? `+${sustainedGain}%` : `${sustainedGain}%`}
-                          </span>
-                        )}
-                      </div>
+                    {t2Stats !== null && t2Pct !== null ? (
+                      <>
+                        <div
+                          className="w-full bg-euskara rounded-lg transition-all duration-700 flex flex-col items-center justify-center text-white font-bold text-sm tabular-nums"
+                          style={{ height: `${Math.max(t2Pct, 15)}%` }}
+                        >
+                          <span>%{formatDecimalEu(t2Pct)}</span>
+                          {sustainedGain !== null && (
+                            <span className="text-[10px] bg-black/20 px-1.5 rounded-sm mt-0.5">
+                              {formatSignedPuntu(sustainedGain)} p.
+                            </span>
+                          )}
+                        </div>
+                        {/* Wilson %95eko zalantza-tartea */}
+                        <div
+                          className="pointer-events-none absolute left-1/2 -translate-x-1/2 w-0.5 bg-slate-900/75"
+                          style={{
+                            bottom: `${Math.max(0, Math.min(100, t2Stats.wilson.behea * 100))}%`,
+                            height: `${Math.max(1, (t2Stats.wilson.goia - t2Stats.wilson.behea) * 100)}%`,
+                          }}
+                          title={`Zalantza-tartea: %${formatDecimalEu(t2Stats.wilson.behea * 100)}–%${formatDecimalEu(t2Stats.wilson.goia * 100)}`}
+                        >
+                          <div className="absolute -top-0.5 -left-1.5 w-3.5 h-0.5 bg-slate-900/75" />
+                          <div className="absolute -bottom-0.5 -left-1.5 w-3.5 h-0.5 bg-slate-900/75" />
+                        </div>
+                      </>
                     ) : (
                       <div className="h-full flex flex-col items-center justify-center text-[10px] text-ink-muted text-center font-medium p-1">
                         <span>T2 zain</span>
@@ -1284,13 +1364,18 @@ export default function ZentroDashboard() {
                       {t2Stats
                         ? t2Stats.count === 1
                           ? "1 saio erregistratua"
-                          : `${t2Stats.count} saioen batez bestekoa`
-                        : "Epe ertaina (14 egunera)"}
+                          : `${t2Stats.count} saioren faseko emaitza`
+                        : "Jarraipena / kentzea"}
                     </span>
                     {t2Stats && (
-                      <span className="text-[10px] text-euskara font-bold block mt-0.5 tabular-nums">
-                        %{t2Stats.pct} euskara ({t2Stats.totalEuskaraz}/{t2Stats.totalInteractions})
-                      </span>
+                      <>
+                        <span className="text-[10px] text-euskara font-bold block mt-0.5 tabular-nums">
+                          %{formatDecimalEu(t2Stats.pct)} ({t2Stats.totalEuskaraz}/{t2Stats.totalInteractions})
+                        </span>
+                        <span className="text-[9px] text-ink-muted block tabular-nums">
+                          Tartea: %{formatDecimalEu(t2Stats.wilson.behea * 100)}–%{formatDecimalEu(t2Stats.wilson.goia * 100)}
+                        </span>
+                      </>
                     )}
 
                     {t1Stats && (
@@ -1314,40 +1399,53 @@ export default function ZentroDashboard() {
                 </div>
               </div>
 
-              {/* Scientific Conclusion Box */}
-              <div className="bg-paper rounded-2xl p-4 border border-line">
-                <div className="flex items-center gap-2 mb-1.5">
+              {/* Ondorio zintzoa (zalantza-tarteekin) */}
+              <div className="bg-paper rounded-2xl p-4 border border-line space-y-2">
+                <div className="flex items-center gap-2">
                   <Award className="w-4 h-4 text-euskara" />
                   <span className="text-xs font-bold text-ink">
-                    Ondorio zientifikoa (batez bestekoetan oinarritua):
+                    Ondorioa (faseko emaitzetan oinarritua):
                   </span>
                 </div>
 
-                <p className="text-xs text-ink-muted leading-relaxed">
-                  {t2Pct !== null && t0Pct !== null ? (
-                    t2Pct >= t0Pct + currentExp.xede_portzentajea ? (
-                      <span className="text-euskara font-semibold">
-                         <strong>Bikain! Hipotesia egiaztatu da.</strong> Euskararen erabilera %{t0Pct}-tik %{t2Pct}-ra igo da (+%{sustainedGain} igoera egonkorra) saioen batez bestekoetan. Aldaketa hau beste espazioetara zabaltzea gomendatzen da.
-                      </span>
-                    ) : (
-                      <span>
-                        Datuak bilduta daude (+%{sustainedGain} igoera). Baloratu beste saio bat egitea datuak sendotzeko, edo pilotua moldatzea emaitzak are gehiago indartzeko.
-                      </span>
-                    )
-                  ) : t1Pct !== null && t0Pct !== null ? (
-                    <span>
-                      T1 neurketek <strong>+%{immediateGain}</strong> berehalako igoera erakusten dute batez beste. Nahi baduzu, egin beste saio bat T1 fasean edo jarraitu pilotuarekin 14 egunera T2 neurketa egiteko!
-                    </span>
-                  ) : t0Pct !== null ? (
-                    <span>
-                      T0 hasierako oinarria erregistratuta dago (%{t0Pct} euskara, {t0Stats?.count} saiotan). Orain martxan jarri pilotuaren materialak edo dinamikak gunean (edo egin beste T0 saio bat oinarria aberasteko)!
-                    </span>
-                  ) : (
-                    <span>
-                      Esperimentua prest dago. Lehenik eta behin, egin hasierako T0 neurketa zure entitatean.
-                    </span>
-                  )}
-                </p>
+                {t0Stats && (t1Stats || t2Stats) && primaryDiff && primaryOndorioa ? (
+                  <>
+                    <p className="text-xs font-semibold text-ink tabular-nums">
+                      T0: %{formatDecimalEu(t0Stats.pct)} ({t0Stats.totalEuskaraz}/{t0Stats.totalInteractions})
+                      {" · "}
+                      {t2Stats ? (
+                        <>
+                          T2: %{formatDecimalEu(t2Stats.pct)} ({t2Stats.totalEuskaraz}/{t2Stats.totalInteractions})
+                        </>
+                      ) : (
+                        <>
+                          T1: %{formatDecimalEu(t1Stats!.pct)} ({t1Stats!.totalEuskaraz}/{t1Stats!.totalInteractions})
+                        </>
+                      )}
+                      {" · "}
+                      Aldea: {formatSignedPuntu(primaryDiff.d * 100)} puntu ({formatAldeaTarteaEu(primaryDiff)})
+                    </p>
+                    <p
+                      className={`text-xs leading-relaxed ${
+                        primaryOndorioa.kodea === "argia"
+                          ? "text-euskara font-semibold"
+                          : primaryOndorioa.kodea === "jaitsiera"
+                          ? "text-terracotta font-semibold"
+                          : "text-ink-muted"
+                      }`}
+                    >
+                      {primaryOndorioa.testua}
+                    </p>
+                  </>
+                ) : t0Stats ? (
+                  <p className="text-xs text-ink-muted leading-relaxed">
+                    T0: %{formatDecimalEu(t0Stats.pct)} ({t0Stats.totalEuskaraz}/{t0Stats.totalInteractions}, tartea %{formatDecimalEu(t0Stats.wilson.behea * 100)}–%{formatDecimalEu(t0Stats.wilson.goia * 100)}). Egin gutxienez {saioGutxienekoa} saio oso oinarri-lerroa ezagutzeko, esku-hartzea martxan jarri aurretik.
+                  </p>
+                ) : (
+                  <p className="text-xs text-ink-muted leading-relaxed">
+                    Esperimentua prest dago. Lehenik eta behin, egin hasierako T0 neurketak zure entitatean.
+                  </p>
+                )}
               </div>
 
               {/* LATXA B BLOKEA: EMAITZEN ETA OHARREN ANALISI KUALITATIBOA */}
@@ -1500,13 +1598,13 @@ export default function ZentroDashboard() {
               </div>
             </div>
 
-            {/* BATEZ BESTEKOEN LABURPEN KOADROA */}
+            {/* FASEEN EMAITZEN LABURPEN KOADROA */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-line">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Calculator className="w-5 h-5 text-euskara" />
                   <h4 className="font-bold text-ink text-sm">
-                    Faseen batez bestekoen laburpena
+                    Faseko emaitzen laburpena
                   </h4>
                 </div>
                 <span className="text-[11px] text-ink-muted font-medium">
@@ -1524,12 +1622,12 @@ export default function ZentroDashboard() {
                         {t0Stats ? `${t0Stats.count} saio` : "0 saio"}
                       </span>
                     </div>
-                    <div className="text-2xl font-black text-sky-900 my-1">
-                      {t0Stats ? `%{t0Stats.pct}` : "—"}
+                    <div className="text-2xl font-black text-sky-900 my-1 tabular-nums">
+                      {t0Stats ? `%${formatDecimalEu(t0Stats.pct)}` : "—"}
                     </div>
-                    <p className="text-[11px] text-sky-700">
+                    <p className="text-[11px] text-sky-700 tabular-nums">
                       {t0Stats
-                        ? `${t0Stats.totalEuskaraz} euskara / ${t0Stats.totalInteractions} guztira`
+                        ? `${t0Stats.totalEuskaraz}/${t0Stats.totalInteractions} · tartea %${formatDecimalEu(t0Stats.wilson.behea * 100)}–%${formatDecimalEu(t0Stats.wilson.goia * 100)}`
                         : "Oraindik ez dago saiorik"}
                     </p>
                   </div>
@@ -1549,22 +1647,22 @@ export default function ZentroDashboard() {
                 <div className="bg-teal-50/70 rounded-2xl p-4 border border-teal-100 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs font-bold text-teal-950">T1 (berehalakoa)</span>
+                      <span className="text-xs font-bold text-teal-950">T1 (esku-hartzea)</span>
                       <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-teal-200/80 text-teal-800">
                         {t1Stats ? `${t1Stats.count} saio` : "0 saio"}
                       </span>
                     </div>
-                    <div className="text-2xl font-black text-teal-900 my-1">
-                      {t1Stats ? `%{t1Stats.pct}` : "—"}
+                    <div className="text-2xl font-black text-teal-900 my-1 tabular-nums">
+                      {t1Stats ? `%${formatDecimalEu(t1Stats.pct)}` : "—"}
                       {immediateGain !== null && (
                         <span className="text-xs font-bold ml-2 text-teal-600">
-                          ({immediateGain >= 0 ? `+${immediateGain}%` : `${immediateGain}%`})
+                          ({formatSignedPuntu(immediateGain)} p.)
                         </span>
                       )}
                     </div>
-                    <p className="text-[11px] text-teal-700">
+                    <p className="text-[11px] text-teal-700 tabular-nums">
                       {t1Stats
-                        ? `${t1Stats.totalEuskaraz} euskara / ${t1Stats.totalInteractions} guztira`
+                        ? `${t1Stats.totalEuskaraz}/${t1Stats.totalInteractions} · tartea %${formatDecimalEu(t1Stats.wilson.behea * 100)}–%${formatDecimalEu(t1Stats.wilson.goia * 100)}`
                         : "Zain"}
                     </p>
                   </div>
@@ -1590,23 +1688,23 @@ export default function ZentroDashboard() {
                 <div className="bg-euskara/10 rounded-2xl p-4 border border-emerald-100 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-xs font-bold text-emerald-950">T2 (sendotua)</span>
+                      <span className="text-xs font-bold text-emerald-950">T2</span>
                       <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-200/80 text-euskara">
                         {t2Stats ? `${t2Stats.count} saio` : "0 saio"}
                       </span>
                     </div>
-                    <div className="text-2xl font-black text-euskara my-1">
-                      {t2Stats ? `%{t2Stats.pct}` : "—"}
+                    <div className="text-2xl font-black text-euskara my-1 tabular-nums">
+                      {t2Stats ? `%${formatDecimalEu(t2Stats.pct)}` : "—"}
                       {sustainedGain !== null && (
                         <span className="text-xs font-bold ml-2 text-euskara">
-                          ({sustainedGain >= 0 ? `+${sustainedGain}%` : `${sustainedGain}%`})
+                          ({formatSignedPuntu(sustainedGain)} p.)
                         </span>
                       )}
                     </div>
-                    <p className="text-[11px] text-euskara">
+                    <p className="text-[11px] text-euskara tabular-nums">
                       {t2Stats
-                        ? `${t2Stats.totalEuskaraz} euskara / ${t2Stats.totalInteractions} guztira`
-                        : "Zain (14 egunera)"}
+                        ? `${t2Stats.totalEuskaraz}/${t2Stats.totalInteractions} · tartea %${formatDecimalEu(t2Stats.wilson.behea * 100)}–%${formatDecimalEu(t2Stats.wilson.goia * 100)}`
+                        : "Zain"}
                     </p>
                   </div>
                   {t1Stats ? (
@@ -1636,7 +1734,7 @@ export default function ZentroDashboard() {
                   Jasotako saio guztien zerrenda
                 </h4>
                 <span className="text-xs text-ink-muted">
-                  Saio bakoitzak faseko batez bestekoa aberasten du
+                  Saio bakoitzak faseko emaitza osatzen du
                 </span>
               </div>
 
@@ -1654,6 +1752,7 @@ export default function ZentroDashboard() {
                         <th className="pb-2">Erdaraz</th>
                         <th className="pb-2">Elebi</th>
                         <th className="pb-2">Euskara %</th>
+                        <th className="pb-2">Zalantza (±)</th>
                         <th className="pb-2">Iraupena</th>
                         <th className="pb-2">Behatzailea</th>
                         <th className="pb-2">Data</th>
@@ -1665,7 +1764,8 @@ export default function ZentroDashboard() {
                         .sort((a, b) => new Date(b.data_ordu).getTime() - new Date(a.data_ordu).getTime())
                         .map((neu) => {
                           const total = neu.euskaraz_count + neu.erdaraz_count + neu.elebi_count;
-                          const pct = total > 0 ? Math.round((neu.euskaraz_count / total) * 100) : 0;
+                          const pct = total > 0 ? Math.round((neu.euskaraz_count / total) * 1000) / 10 : 0;
+                          const zalantzaPuntu = Math.round(wilsonMarjinaPuntu(neu.euskaraz_count, total));
                           const minutes = Math.max(1, Math.round((neu.iraupena_segundotan || 600) / 60));
 
                           // Determine session number in its phase
@@ -1703,8 +1803,11 @@ export default function ZentroDashboard() {
                               <td className="py-2.5 font-semibold text-amber-600">
                                 {neu.elebi_count}
                               </td>
-                              <td className="py-2.5 font-extrabold text-ink">
-                                %{pct}
+                              <td className="py-2.5 font-extrabold text-ink tabular-nums">
+                                %{formatDecimalEu(pct)}
+                              </td>
+                              <td className="py-2.5 text-ink-muted font-medium tabular-nums">
+                                {total > 0 ? `±${zalantzaPuntu} puntu` : "—"}
                               </td>
                               <td className="py-2.5 text-ink-muted font-medium">
                                 {minutes} min
@@ -1837,7 +1940,7 @@ export default function ZentroDashboard() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-ink mb-1">
-                    Igoera-xedea (+%)
+                    Xede-igoera (puntu)
                   </label>
                   <input
                     type="number"
@@ -2170,7 +2273,7 @@ export default function ZentroDashboard() {
                   Neurketa-saioa ezabatu?
                 </h3>
                 <p className="text-xs text-ink-muted mt-1 leading-relaxed">
-                  Ziur zaude <strong>{neurketaToDeleteConfirm.unea}</strong> faseko <strong>{neurketaToDeleteConfirm.sessionIndex}. saioa</strong> ezabatu nahi duzula? Batez bestekoa birkalkulatuko da.
+                  Ziur zaude <strong>{neurketaToDeleteConfirm.unea}</strong> faseko <strong>{neurketaToDeleteConfirm.sessionIndex}. saioa</strong> ezabatu nahi duzula? Faseko emaitza birkalkulatuko da.
                 </p>
               </div>
             </div>

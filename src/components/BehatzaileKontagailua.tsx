@@ -122,7 +122,7 @@ export default function BehatzaileKontagailua() {
   const [newStandGunea, setNewStandGunea] = useState<string>("Harrera eta arreta-gunea");
   const [newStandTargetPct, setNewStandTargetPct] = useState<number>(25);
   const [newStandHipotesia, setNewStandHipotesia] = useState<string>(
-    "Langileek 'Euskaraz barra-barra' txapa bistan eramanda, harrera-gunean lehen hitza eta elkarrizketak euskaraz %25 ugarituko dira."
+    "Langileek 'Euskaraz barra-barra' txapa bistan eramanda, harrera-gunean euskararen erabilera 25 puntu igoko da (adib. %30etik %55era)."
   );
   const [isCreatingStand, setIsCreatingStand] = useState<boolean>(false);
 
@@ -703,7 +703,7 @@ export default function BehatzaileKontagailua() {
               <span>
                 {existingPhaseCount > 0 ? (
                   <span>
-                    Dagoeneko <strong className="tabular-nums">{existingPhaseCount} saio</strong> jaso dira fase honetan (batez bestekoa: <strong className="tabular-nums">%{currentPhaseAvg}</strong>). Saio berri honek batez bestekoa aberastuko du.
+                    Dagoeneko <strong className="tabular-nums">{existingPhaseCount} saio</strong> jaso dira fase honetan (faseko emaitza: <strong className="tabular-nums">%{currentPhaseAvg}</strong>). Saio berri honek faseko emaitza osatuko du.
                   </span>
                 ) : (
                   <span>
@@ -727,7 +727,7 @@ export default function BehatzaileKontagailua() {
               Gunea: <strong className="text-ink">{currentExp.gunea}</strong>
             </span>
             <span className="shrink-0 font-bold text-euskara tabular-nums">
-              Helburua: +%{currentExp.xede_portzentajea}
+              Xedea: +{currentExp.xede_portzentajea} puntu
             </span>
           </div>
         )}
@@ -1305,7 +1305,7 @@ export default function BehatzaileKontagailua() {
               </span>
               {existingPhaseCount > 0 && (
                 <span className="text-[11px] text-euskara mt-1 block">
-                  Aurreko {existingPhaseCount} saioekin batera kalkulatuko da {phase} faseko batez besteko orokorra.
+                  Aurreko {existingPhaseCount} saioekin batera kalkulatuko da {phase} faseko emaitza.
                 </span>
               )}
             </div>

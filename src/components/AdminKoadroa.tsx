@@ -896,7 +896,7 @@ export default function AdminKoadroa() {
         <div className="civic-card p-5">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">
-              Batez besteko igoera
+              Faseen arteko aldea
             </span>
             <div className="p-2 rounded-lg bg-ochre/10 text-ochre border border-ochre/20">
               <TrendingUp className="w-4 h-4" />
@@ -1253,7 +1253,7 @@ export default function AdminKoadroa() {
 
                 <div className="mt-4 pt-3 border-t border-line flex items-center justify-between">
                   <span className="text-[11px] text-ink-muted font-semibold">
-                    Batez besteko efektua:
+                    Faseko aldea:
                   </span>
                   {pilotAvgGrowth !== null ? (
                     <span className="text-xs font-black text-euskara bg-euskara/15 px-2 py-0.5 rounded-lg">

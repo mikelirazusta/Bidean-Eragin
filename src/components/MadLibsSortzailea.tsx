@@ -118,7 +118,7 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
       const currentText =
         isCustomMode && customHypothesis.trim()
           ? customHypothesis.trim()
-          : `Gure ustez, ${taldea || "..."} ${pertsonak || "..."}, ${gunea || "..."} ${ekintza}, euskararen erabilera %${metrika} igoko da.`;
+          : `Gure ustez, ${taldea || "..."} ${pertsonak || "..."}, ${gunea || "..."} ${ekintza}, euskararen erabilera ${metrika} puntu igoko da (adib. %30etik %${30 + metrika}era).`;
 
       const res = await fetch("/api/ai/latxa", {
         method: "POST",
@@ -161,7 +161,7 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
     );
   }, [pilotu]);
 
-  const generatedHypothesis = `Gure ustez, ${taldea || "..."} ${pertsonak || "..."}, ${gunea || "..."} ${ekintza}, euskararen erabilera %${metrika} igoko da.`;
+  const generatedHypothesis = `Gure ustez, ${taldea || "..."} ${pertsonak || "..."}, ${gunea || "..."} ${ekintza}, euskararen erabilera ${metrika} puntu igoko da (adib. %30etik %${30 + metrika}era).`;
   const fullHypothesis = isCustomMode && customHypothesis.trim() ? customHypothesis.trim() : generatedHypothesis;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -307,7 +307,6 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
 
                 {/* Box 5: Metrika */}
                 <span className="inline-flex items-center mx-1">
-                  <span className="font-bold text-amber-700 mr-0.5">%</span>
                   <input
                     type="number"
                     min="5"
@@ -318,9 +317,10 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
                     onChange={(e) => setMetrika(Number(e.target.value))}
                     className="bg-white font-extrabold text-amber-700 border-2 border-amber-400 rounded-lg px-2 py-1 text-sm focus:ring-2 focus:ring-amber-500 focus:outline-hidden shadow-xs w-16 text-center"
                   />
+                  <span className="font-bold text-amber-700 ml-1">puntu</span>
                 </span>
 
-                <span> igoko da.</span>
+                <span> igoko da (adib. %30etik %{30 + metrika}era).</span>
               </div>
             ) : (
               <div className="space-y-3">
@@ -343,7 +343,7 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold text-ink-muted mb-1">Xede-igoera (%)</label>
+                    <label className="block text-[11px] font-bold text-ink-muted mb-1">Xede-igoera (puntu)</label>
                     <input
                       type="number"
                       min="5"
@@ -395,7 +395,7 @@ export default function MadLibsSortzailea({ pilotu, onClose }: MadLibsProps) {
                     Zure hipotesi zientifikoa:
                   </h4>
                   <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-200 text-euskara">
-                    Xedea: +%{metrika}
+                    Xedea: +{metrika} puntu
                   </span>
                 </div>
                 <button
