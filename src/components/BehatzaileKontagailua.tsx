@@ -22,6 +22,8 @@ import {
   Plus,
   X,
   BadgeCheck,
+  Smartphone,
+  Lock,
 } from "lucide-react";
 import { useApp, parseBehatzaileak } from "@/context/AppContext";
 import { playCounterClick } from "@/lib/audio";
@@ -51,6 +53,12 @@ export default function BehatzaileKontagailua() {
   const [isRefreshingStandList, setIsRefreshingStandList] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(false);
   const [stealthMode, setStealthMode] = useState<boolean>(false);
+  const [pocketMode, setPocketMode] = useState<boolean>(false);
+  const [pocketFlash, setPocketFlash] = useState<"euskaraz" | "aldaketa" | "erdaraz" | "elebi" | "undo" | null>(null);
+  const [isHoldingExit, setIsHoldingExit] = useState<boolean>(false);
+  const lastPocketTapRef = useRef<number>(0);
+  const exitHoldTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const flashTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     try {
@@ -393,7 +401,7 @@ export default function BehatzaileKontagailua() {
       setIsPaused(false);
     }
 
-    playCounterClick(type === "aldaketa" ? "euskaraz" : type, { soundEnabled });
+    playCounterClick(type, { soundEnabled });
 
     if (type === "euskaraz") setEuskarazCount((c) => c + 1);
     if (type === "aldaketa") setAldaketaCount((c) => c + 1);
@@ -403,12 +411,99 @@ export default function BehatzaileKontagailua() {
     setHistory((prev) => [...prev, type]);
   };
 
+  const triggerPocketFlash = (type: "euskaraz" | "aldaketa" | "erdaraz" | "elebi" | "undo") => {
+    setPocketFlash(type);
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    flashTimerRef.current = setTimeout(() => setPocketFlash(null), 180);
+  };
+
+  const handlePocketTap = (type: "euskaraz" | "aldaketa" | "erdaraz" | "elebi" | "undo") => {
+    const nowMs = Date.now();
+    // 220ms debounce poltsikoan ukitu bikoitz okerrak saihesteko
+    if (nowMs - lastPocketTapRef.current < 220) return;
+    lastPocketTapRef.current = nowMs;
+
+    if (type === "undo") {
+      if (history.length > 0) {
+        handleUndo();
+        triggerPocketFlash("undo");
+      }
+      return;
+    }
+    handleCount(type);
+    triggerPocketFlash(type);
+  };
+
+  const handleEnterPocketMode = () => {
+    if (!behatzailea.trim()) {
+      showToast("Aukeratu edo gehitu behatzaile bat poltsiko-modua hasi aurretik.", "error");
+      return;
+    }
+    if (!sessionActive) {
+      setHasieraOrdu(new Date().toISOString());
+      setSessionActive(true);
+      setIsPaused(false);
+    } else if (isPaused) {
+      setIsPaused(false);
+    }
+    setPocketMode(true);
+    try {
+      document.documentElement.requestFullscreen?.().catch(() => {});
+    } catch {}
+  };
+
+  const handleExitPocketMode = () => {
+    if (exitHoldTimerRef.current) {
+      clearTimeout(exitHoldTimerRef.current);
+      exitHoldTimerRef.current = null;
+    }
+    setIsHoldingExit(false);
+    setPocketMode(false);
+    try {
+      if (document.fullscreenElement) {
+        document.exitFullscreen?.().catch(() => {});
+      }
+    } catch {}
+  };
+
+  const handleExitHoldStart = () => {
+    setIsHoldingExit(true);
+    if (exitHoldTimerRef.current) clearTimeout(exitHoldTimerRef.current);
+    exitHoldTimerRef.current = setTimeout(() => {
+      handleExitPocketMode();
+    }, 1500);
+  };
+
+  const handleExitHoldCancel = () => {
+    setIsHoldingExit(false);
+    if (exitHoldTimerRef.current) {
+      clearTimeout(exitHoldTimerRef.current);
+      exitHoldTimerRef.current = null;
+    }
+  };
+
+  // Lock page scroll while pocketMode is active
+  useEffect(() => {
+    if (!pocketMode) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [pocketMode]);
+
   // Hardware Volume / Keyboard shortcut support for discreet counting
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (showSaveModal || showNewStandModal) return;
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+
+      if (e.key === "Escape" && pocketMode) {
+        e.preventDefault();
+        handleExitPocketMode();
+        return;
+      }
 
       if (e.key === "AudioVolumeUp" || e.key === "VolumeUp" || e.key === "ArrowUp" || e.key === "1") {
         e.preventDefault();
@@ -419,6 +514,9 @@ export default function BehatzaileKontagailua() {
       } else if (e.key === "ArrowRight" || e.key === "3") {
         e.preventDefault();
         handleCount("elebi");
+      } else if (isAldaketaTemplate && e.key === "4") {
+        e.preventDefault();
+        handleCount("aldaketa");
       }
     };
     window.addEventListener("keydown", onKeyDown);
@@ -651,6 +749,17 @@ export default function BehatzaileKontagailua() {
             >
               {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
               <span>{soundEnabled ? "Soinua ON" : "Isila (bibrazioa)"}</span>
+            </button>
+
+            {/* Full-screen Pocket Mode Toggle */}
+            <button
+              type="button"
+              onClick={handleEnterPocketMode}
+              className="px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition cursor-pointer bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 hover:bg-emerald-500/30"
+              title="Pantaila osoko poltsiko-modua: pantaila beltza, bi eremu erraldoi eta luze sakatuta irteteko"
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              <span>Poltsiko-modua</span>
             </button>
 
             {/* Stealth / Camouflage Mode Toggle */}
@@ -1214,6 +1323,38 @@ export default function BehatzaileKontagailua() {
               </span>
             </div>
           </div>
+
+          {isAldaketaTemplate && (
+            <div
+              onClick={() => handleCount("aldaketa")}
+              role="button"
+              tabIndex={0}
+              className="w-full h-24 rounded-2xl bg-slate-900/90 hover:bg-slate-900 active:bg-slate-800 border border-slate-800 flex items-center justify-between px-6 cursor-pointer transition"
+            >
+              <div>
+                <span className="text-sm font-bold text-slate-300 block">
+                  1b. eremua — Erdaraz → Euskaraz
+                </span>
+                <span className="text-[11px] text-ink-muted">
+                  Laburra + luzea · 4 tekla
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                {aldaketaCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={(e) => handleDecrement(e, "aldaketa")}
+                    className="px-2.5 py-1 rounded-lg bg-slate-800 text-ink-muted text-xs font-bold border border-slate-700 cursor-pointer"
+                  >
+                    -1
+                  </button>
+                )}
+                <span className="text-2xl font-mono font-bold text-ink-muted">
+                  {aldaketaCount}
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Zone B: Erdaraz (middle, 2 vibrations) */}
           <div
@@ -1933,6 +2074,133 @@ export default function BehatzaileKontagailua() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Full-Screen Pocket Mode Overlay (ukitu okerren kontrakoa, korritzerik gabe, luze sakatuta irteteko) */}
+      {pocketMode && (
+        <div
+          className="fixed inset-0 z-[100] bg-black text-slate-400 select-none touch-none flex flex-col"
+          onTouchMove={(e) => e.preventDefault()}
+        >
+          {/* Goiko egoera-barra minimalista eta luze sakatuta irteteko botoia */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-900 bg-black shrink-0">
+            <div className="flex items-center gap-2.5 text-xs font-mono text-slate-500 tabular-nums">
+              <Lock className="w-3.5 h-3.5 text-emerald-700" />
+              <span>{timeFormatted}</span>
+              <span>·</span>
+              <span>
+                {totalInteractions} elk.
+                {currentMarjinaPuntu !== null ? ` (±${currentMarjinaPuntu})` : ""}
+                {totalInteractions >= nGutxienekoa ? " ✓" : ""}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onPointerDown={handleExitHoldStart}
+              onPointerUp={handleExitHoldCancel}
+              onPointerLeave={handleExitHoldCancel}
+              onPointerCancel={handleExitHoldCancel}
+              className={`relative overflow-hidden px-3 py-1.5 rounded-lg border text-[11px] font-bold transition cursor-pointer ${
+                isHoldingExit
+                  ? "border-emerald-500 text-emerald-300 bg-emerald-950/60"
+                  : "border-slate-800 text-slate-500 bg-slate-950"
+              }`}
+            >
+              <span className="relative z-10">
+                {isHoldingExit ? "Eutsi irteteko..." : "Sakatu luze irteteko (1,5s)"}
+              </span>
+            </button>
+          </div>
+
+          {/* Goiko erdia (~44%): EUSKARAZ (+ aukerako Erdaraz -> Euskaraz) */}
+          <div className="flex-1 flex border-b border-slate-900 min-h-0">
+            <button
+              type="button"
+              onClick={() => handlePocketTap("euskaraz")}
+              className={`flex-1 flex flex-col items-center justify-center p-6 transition-colors duration-150 cursor-pointer active:bg-emerald-950/50 ${
+                pocketFlash === "euskaraz" ? "bg-emerald-950/45" : "bg-black"
+              }`}
+            >
+              <span className="text-lg font-bold tracking-wide text-slate-500 uppercase">
+                {uiTexts.counter_btn_euskaraz || "Euskaraz"}
+              </span>
+              <span className="text-5xl font-mono font-black text-slate-700 mt-2 tabular-nums">
+                {euskarazCount}
+              </span>
+              <span className="text-[11px] text-slate-700 mt-2">
+                Goiko erdia · 1 bibrazio sendo
+              </span>
+            </button>
+
+            {isAldaketaTemplate && (
+              <button
+                type="button"
+                onClick={() => handlePocketTap("aldaketa")}
+                className={`w-[36%] border-l border-slate-900 flex flex-col items-center justify-center p-4 transition-colors duration-150 cursor-pointer active:bg-teal-950/50 ${
+                  pocketFlash === "aldaketa" ? "bg-teal-950/45" : "bg-black"
+                }`}
+              >
+                <span className="text-xs font-bold text-slate-500 text-center leading-tight uppercase">
+                  Erd. → Eusk.
+                </span>
+                <span className="text-4xl font-mono font-black text-slate-700 mt-2 tabular-nums">
+                  {aldaketaCount}
+                </span>
+                <span className="text-[10px] text-slate-700 mt-1 text-center">
+                  Labur + luze
+                </span>
+              </button>
+            )}
+          </div>
+
+          {/* Beheko erdia (~44%): ERDARAZ */}
+          <button
+            type="button"
+            onClick={() => handlePocketTap("erdaraz")}
+            className={`flex-1 flex flex-col items-center justify-center p-6 border-b border-slate-900 transition-colors duration-150 cursor-pointer active:bg-red-950/40 min-h-0 ${
+              pocketFlash === "erdaraz" ? "bg-red-950/35" : "bg-black"
+            }`}
+          >
+            <span className="text-lg font-bold tracking-wide text-slate-500 uppercase">
+              {uiTexts.counter_btn_erdaraz || "Erdaraz"}
+            </span>
+            <span className="text-5xl font-mono font-black text-slate-700 mt-2 tabular-nums">
+              {erdarazCount}
+            </span>
+            <span className="text-[11px] text-slate-700 mt-2">
+              Beheko erdia · 2 bibrazio labur
+            </span>
+          </button>
+
+          {/* Beheko banda txikia: Elebi + Desegin */}
+          <div className="grid grid-cols-2 h-20 shrink-0 pb-safe">
+            <button
+              type="button"
+              onClick={() => handlePocketTap("elebi")}
+              className={`flex flex-col items-center justify-center border-r border-slate-900 transition-colors duration-150 cursor-pointer ${
+                pocketFlash === "elebi" ? "bg-amber-950/40" : "bg-black"
+              }`}
+            >
+              <span className="text-xs font-bold text-slate-500 uppercase">Elebi</span>
+              <span className="text-lg font-mono font-bold text-slate-600 tabular-nums">
+                {elebiCount}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handlePocketTap("undo")}
+              disabled={history.length === 0}
+              className={`flex flex-col items-center justify-center transition-colors duration-150 cursor-pointer disabled:opacity-30 ${
+                pocketFlash === "undo" ? "bg-slate-800/60" : "bg-black"
+              }`}
+            >
+              <span className="text-xs font-bold text-slate-500 uppercase">Desegin</span>
+              <span className="text-[10px] text-slate-700">1 bibrazio luze</span>
+            </button>
           </div>
         </div>
       )}

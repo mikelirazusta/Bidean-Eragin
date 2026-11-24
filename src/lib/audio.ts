@@ -1,6 +1,6 @@
 // Web Audio API sound & distinct haptic vibration generator for blind observation counting
 export function playCounterClick(
-  type: "euskaraz" | "erdaraz" | "elebi" | "undo",
+  type: "euskaraz" | "aldaketa" | "erdaraz" | "elebi" | "undo",
   options?: { soundEnabled?: boolean; vibrateEnabled?: boolean }
 ) {
   if (typeof window === "undefined") return;
@@ -17,13 +17,15 @@ export function playCounterClick(
   try {
     if (vibrateEnabled && typeof navigator !== "undefined" && "vibrate" in navigator) {
       if (type === "euskaraz") {
-        navigator.vibrate([35]); // 1 ukitu sendo
+        navigator.vibrate([40]); // 1 ukitu sendo
+      } else if (type === "aldaketa") {
+        navigator.vibrate([25, 45, 70]); // laburra + luzea (erdaraz -> euskaraz)
       } else if (type === "erdaraz") {
         navigator.vibrate([22, 40, 22]); // 2 ukitu labur
       } else if (type === "elebi") {
         navigator.vibrate([18, 30, 18, 30, 18]); // 3 ukitu labur
       } else {
-        navigator.vibrate([50]);
+        navigator.vibrate([85]); // desegin: 1 luze
       }
     }
   } catch {
@@ -55,6 +57,13 @@ export function playCounterClick(
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
       osc.start(now);
       osc.stop(now + 0.12);
+    } else if (type === "aldaketa") {
+      osc.frequency.setValueAtTime(440, now);
+      osc.frequency.exponentialRampToValueAtTime(987.77, now + 0.12);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+      osc.start(now);
+      osc.stop(now + 0.15);
     } else if (type === "erdaraz") {
       osc.frequency.setValueAtTime(320, now);
       osc.frequency.exponentialRampToValueAtTime(220, now + 0.08);
