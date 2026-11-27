@@ -44,10 +44,13 @@ import type { Eragilea, Esperimentua, Neurketa } from "@/lib/db";
 import {
   wilson,
   aldea,
+  ondorioa,
   parseProtokoloa,
   neurketaEgoera,
   faseSemaforoa,
   formatDecimalEu,
+  formatSignedPuntu,
+  formatAldeaTarteaEu,
 } from "@/lib/estatistika";
 
 const UI_TEXT_FIELDS: Array<{
@@ -648,40 +651,73 @@ export default function AdminKoadroa() {
     }
   };
 
-  // Global KPIs calculation
+  // Global KPIs calculation (benetako neurketetan oinarrituta, aldaketa_count barne)
   const totalEragileak = eragileak.length;
   const totalNeurketak = neurketak.length;
   const totalEsperimentuak = esperimentuak.length;
-  const amaitutakoEsperimentuak = esperimentuak.filter((e) => e.estatusa === "Amaituta").length;
 
-  // Average growth across experiments with T0 and T1/T2 (aggregating all sessions)
-  let totalGrowthSum = 0;
+  const getExpPhaseCounts = (expId: string, phase: "T0" | "T1" | "T2") => {
+    const list = neurketak.filter((n) => n.esperimentu_id === expId && n.unea === phase);
+    const eusk = list.reduce((s, n) => s + (n.euskaraz_count || 0) + (n.aldaketa_count || 0), 0);
+    const tot = list.reduce(
+      (s, n) =>
+        s +
+        (n.euskaraz_count || 0) +
+        (n.aldaketa_count || 0) +
+        (n.erdaraz_count || 0) +
+        (n.elebi_count || 0),
+      0
+    );
+    return { list, eusk, tot };
+  };
+
+  const esperimentuakDatuekin = esperimentuak.filter((e) =>
+    neurketak.some((n) => n.esperimentu_id === e.id)
+  ).length;
+
+  const t2DutenaEsperimentuak = esperimentuak.filter((e) =>
+    neurketak.some((n) => n.esperimentu_id === e.id && n.unea === "T2")
+  ).length;
+
+  // Ziklo osatua: T0, T1 eta T2 hiruretan gutxieneko saio osoak beteta (edo esplizituki Amaituta markatuta T2 saio nahikoekin)
+  const zikloOsatuak = esperimentuak.filter((e) => {
+    const saioMin = e.saio_gutxienekoa || 4;
+    const nMin = e.n_gutxienekoa || 20;
+    const protokoloa = parseProtokoloa(e.protokoloa_json);
+    const expN = neurketak.filter((n) => n.esperimentu_id === e.id);
+    const osoak = (p: "T0" | "T1" | "T2") =>
+      expN.filter((n) => n.unea === p && neurketaEgoera(n, { nGutxienekoa: nMin, protokoloa }).osoa).length;
+    return osoak("T0") >= saioMin && osoak("T1") >= saioMin && osoak("T2") >= saioMin;
+  }).length;
+
+  // Pooled phase difference across experiments with T0 and T1/T2 (respecting t2_mota === "kentzea")
+  let pooledT0X = 0;
+  let pooledT0N = 0;
+  let pooledPostX = 0;
+  let pooledPostN = 0;
   let growthCount = 0;
 
   esperimentuak.forEach((exp) => {
-    const expNeurketak = neurketak.filter((n) => n.esperimentu_id === exp.id);
-    const t0List = expNeurketak.filter((n) => n.unea === "T0");
-    const t2List = expNeurketak.filter((n) => n.unea === "T2");
-    const t1List = expNeurketak.filter((n) => n.unea === "T1");
-    const latestList = t2List.length > 0 ? t2List : t1List;
+    const t0 = getExpPhaseCounts(exp.id, "T0");
+    const t1 = getExpPhaseCounts(exp.id, "T1");
+    const t2 = getExpPhaseCounts(exp.id, "T2");
+    // ABA (kentzea) denean, esku-hartzearen efektua T1 vs T0 da (T2 kentzea baita)
+    const post = exp.t2_mota === "kentzea" ? t1 : t2.tot > 0 ? t2 : t1;
 
-    if (t0List.length > 0 && latestList.length > 0) {
-      const t0Eusk = t0List.reduce((s, n) => s + (n.euskaraz_count || 0), 0);
-      const t0Tot = t0List.reduce((s, n) => s + (n.euskaraz_count || 0) + (n.erdaraz_count || 0) + (n.elebi_count || 0), 0);
-
-      const latEusk = latestList.reduce((s, n) => s + (n.euskaraz_count || 0), 0);
-      const latTot = latestList.reduce((s, n) => s + (n.euskaraz_count || 0) + (n.erdaraz_count || 0) + (n.elebi_count || 0), 0);
-
-      if (t0Tot > 0 && latTot > 0) {
-        const t0Pct = (t0Eusk / t0Tot) * 100;
-        const latPct = (latEusk / latTot) * 100;
-        totalGrowthSum += latPct - t0Pct;
-        growthCount++;
-      }
+    if (t0.tot > 0 && post.tot > 0) {
+      pooledT0X += t0.eusk;
+      pooledT0N += t0.tot;
+      pooledPostX += post.eusk;
+      pooledPostN += post.tot;
+      growthCount++;
     }
   });
 
-  const avgGrowth = growthCount > 0 ? Math.round(totalGrowthSum / growthCount) : 0;
+  const globalAldea =
+    growthCount > 0 && pooledT0N > 0 && pooledPostN > 0
+      ? aldea(pooledT0X, pooledT0N, pooledPostX, pooledPostN)
+      : null;
+  const avgGrowth = globalAldea ? Math.round(globalAldea.d * 1000) / 10 : 0;
 
   // Filtered centers
   const filteredEragileak = eragileak.filter((e) => {
@@ -1060,10 +1096,12 @@ export default function AdminKoadroa() {
             </div>
           </div>
           <div className="text-3xl font-extrabold text-euskara tabular-nums">
-            {growthCount > 0 ? `${avgGrowth >= 0 ? "+" : ""}${avgGrowth}%` : "0%"}
+            {globalAldea ? `${formatSignedPuntu(avgGrowth)} p.` : "—"}
           </div>
-          <p className="text-[11px] text-ink-muted mt-1">
-            {growthCount > 0 ? "Euskararen erabileraren hobekuntza" : "T0 eta T1/T2 neurketen zain"}
+          <p className="text-[11px] text-ink-muted mt-1 tabular-nums">
+            {globalAldea
+              ? `Tartea: ${formatAldeaTarteaEu(globalAldea)} (${growthCount} esp.)`
+              : "T0 eta T1/T2 neurketen zain"}
           </p>
         </div>
 
@@ -1071,14 +1109,21 @@ export default function AdminKoadroa() {
         <div className="civic-card p-5">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-bold text-ink-muted uppercase tracking-wider">
-              Esperimentuak
+              Esperimentuak martxan
             </span>
             <div className="p-2 rounded-lg bg-sand text-sea border border-line">
               <Sparkles className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-3xl font-extrabold text-ink tabular-nums">{totalEsperimentuak}</div>
-          <p className="text-[11px] text-ink-muted mt-1 tabular-nums">{amaitutakoEsperimentuak} ziklo osatu</p>
+          <div className="text-3xl font-extrabold text-ink tabular-nums">
+            {esperimentuakDatuekin}
+            <span className="text-base font-semibold text-ink-muted ml-1.5">
+              / {totalEsperimentuak}
+            </span>
+          </div>
+          <p className="text-[11px] text-ink-muted mt-1 tabular-nums">
+            {t2DutenaEsperimentuak} T2 fasean · {zikloOsatuak} ziklo osatu
+          </p>
         </div>
       </div>
 
@@ -1258,22 +1303,30 @@ export default function AdminKoadroa() {
               const expNeu = neurketak.filter((n) => n.esperimentu_id === exp?.id);
               const calcPct = (phase: "T0" | "T1" | "T2") => {
                 const list = expNeu.filter((n) => n.unea === phase);
-                const eusk = list.reduce((s, n) => s + (n.euskaraz_count || 0), 0);
+                const eusk = list.reduce((s, n) => s + (n.euskaraz_count || 0) + (n.aldaketa_count || 0), 0);
                 const tot = list.reduce(
                   (s, n) =>
                     s +
                     (n.euskaraz_count || 0) +
+                    (n.aldaketa_count || 0) +
                     (n.erdaraz_count || 0) +
                     (n.elebi_count || 0),
                   0
                 );
-                return tot > 0 ? Math.round((eusk / tot) * 100) : null;
+                return tot > 0 ? { eusk, tot, pct: Math.round((eusk / tot) * 1000) / 10 } : null;
               };
-              const p0 = calcPct("T0");
-              const p1 = calcPct("T1");
-              const p2 = calcPct("T2");
-              const latest = p2 !== null ? p2 : p1;
-              const diff = p0 !== null && latest !== null ? latest - p0 : null;
+              const p0Data = calcPct("T0");
+              const p1Data = calcPct("T1");
+              const p2Data = calcPct("T2");
+              const p0 = p0Data ? p0Data.pct : null;
+              const p1 = p1Data ? p1Data.pct : null;
+              const p2 = p2Data ? p2Data.pct : null;
+              const postData = exp?.t2_mota === "kentzea" ? p1Data : p2Data || p1Data;
+              const diffObj =
+                p0Data && postData
+                  ? aldea(p0Data.eusk, p0Data.tot, postData.eusk, postData.tot)
+                  : null;
+              const diff = diffObj ? Math.round(diffObj.d * 1000) / 10 : null;
 
               return (
                 <div
@@ -1302,23 +1355,25 @@ export default function AdminKoadroa() {
                       )}
                       {exp && !isPresentationMode && (
                         <span className="text-xs text-ink-muted">
-                          ({exp.gunea} • Helburua: +%{exp.xede_portzentajea})
+                          ({exp.gunea} • Xedea: +{exp.xede_portzentajea} puntu)
                         </span>
                       )}
                     </div>
-                    {diff !== null ? (
+                    {diff !== null && diffObj ? (
                       <span
                         className={`px-2.5 py-0.5 rounded-md text-xs font-bold tabular-nums ${
-                          diff >= 0
+                          diffObj.behea > 0
                             ? "bg-euskara/10 text-euskara border border-euskara/20"
-                            : "bg-terracotta/10 text-terracotta border border-terracotta/20"
+                            : diffObj.goia < 0
+                            ? "bg-terracotta/10 text-terracotta border border-terracotta/20"
+                            : "bg-sand text-ink-muted border border-line"
                         }`}
                       >
-                        {diff >= 0 ? `+${diff}%` : `${diff}%`} bilakaera
+                        {formatSignedPuntu(diff)} puntu ({formatAldeaTarteaEu(diffObj)})
                       </span>
                     ) : (
                       <span className="text-[11px] font-semibold text-ink-muted tabular-nums">
-                        {p0 !== null ? `T0 neurtuta (%${p0})` : "Lehen neurketaren zain"}
+                        {p0 !== null ? `T0 neurtuta (%${formatDecimalEu(p0)})` : "Lehen neurketaren zain"}
                       </span>
                     )}
                   </div>
@@ -1367,27 +1422,29 @@ export default function AdminKoadroa() {
           {pilotuak.map((pilotu) => {
             const pilotExps = esperimentuak.filter((e) => e.pilotu_id === pilotu.id);
             const pilotExpsCount = pilotExps.length;
+            const pilotExpsWithData = pilotExps.filter((e) =>
+              neurketak.some((n) => n.esperimentu_id === e.id)
+            ).length;
 
-            let pilotGrowthSum = 0;
-            let pilotGrowthCount = 0;
+            let pT0X = 0;
+            let pT0N = 0;
+            let pPostX = 0;
+            let pPostN = 0;
             pilotExps.forEach((exp) => {
-              const expNeurketak = neurketak.filter((n) => n.esperimentu_id === exp.id);
-              const t0List = expNeurketak.filter((n) => n.unea === "T0");
-              const t2List = expNeurketak.filter((n) => n.unea === "T2");
-              const t1List = expNeurketak.filter((n) => n.unea === "T1");
-              const latestList = t2List.length > 0 ? t2List : t1List;
-              if (t0List.length > 0 && latestList.length > 0) {
-                const t0Eusk = t0List.reduce((s, n) => s + (n.euskaraz_count || 0), 0);
-                const t0Tot = t0List.reduce((s, n) => s + (n.euskaraz_count || 0) + (n.erdaraz_count || 0) + (n.elebi_count || 0), 0);
-                const latEusk = latestList.reduce((s, n) => s + (n.euskaraz_count || 0), 0);
-                const latTot = latestList.reduce((s, n) => s + (n.euskaraz_count || 0) + (n.erdaraz_count || 0) + (n.elebi_count || 0), 0);
-                if (t0Tot > 0 && latTot > 0) {
-                  pilotGrowthSum += (latEusk / latTot) * 100 - (t0Eusk / t0Tot) * 100;
-                  pilotGrowthCount++;
-                }
+              const t0 = getExpPhaseCounts(exp.id, "T0");
+              const t1 = getExpPhaseCounts(exp.id, "T1");
+              const t2 = getExpPhaseCounts(exp.id, "T2");
+              const post = exp.t2_mota === "kentzea" ? t1 : t2.tot > 0 ? t2 : t1;
+              if (t0.tot > 0 && post.tot > 0) {
+                pT0X += t0.eusk;
+                pT0N += t0.tot;
+                pPostX += post.eusk;
+                pPostN += post.tot;
               }
             });
-            const pilotAvgGrowth = pilotGrowthCount > 0 ? Math.round(pilotGrowthSum / pilotGrowthCount) : null;
+            const pilotAldea =
+              pT0N > 0 && pPostN > 0 ? aldea(pT0X, pT0N, pPostX, pPostN) : null;
+            const pilotAvgGrowth = pilotAldea ? Math.round(pilotAldea.d * 1000) / 10 : null;
 
             return (
               <div
@@ -1399,8 +1456,8 @@ export default function AdminKoadroa() {
                     <span className="text-xs font-bold text-ink">
                       {pilotu.izena}
                     </span>
-                    <span className="px-2 py-0.5 rounded-full bg-slate-200 text-ink text-[10px] font-bold">
-                      {pilotExpsCount} esperimentu
+                    <span className="px-2 py-0.5 rounded-full bg-slate-200 text-ink text-[10px] font-bold tabular-nums">
+                      {pilotExpsWithData} martxan / {pilotExpsCount}
                     </span>
                   </div>
                   <p className="text-xs text-ink-muted line-clamp-2">
@@ -1408,13 +1465,13 @@ export default function AdminKoadroa() {
                   </p>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-line flex items-center justify-between">
+                <div className="mt-4 pt-3 border-t border-line flex items-center justify-between gap-2">
                   <span className="text-[11px] text-ink-muted font-semibold">
                     Faseko aldea:
                   </span>
-                  {pilotAvgGrowth !== null ? (
-                    <span className="text-xs font-black text-euskara bg-euskara/15 px-2 py-0.5 rounded-lg">
-                      {pilotAvgGrowth >= 0 ? `+${pilotAvgGrowth}%` : `${pilotAvgGrowth}%`} igoera
+                  {pilotAvgGrowth !== null && pilotAldea ? (
+                    <span className="text-xs font-black text-euskara bg-euskara/15 px-2 py-0.5 rounded-lg tabular-nums">
+                      {formatSignedPuntu(pilotAvgGrowth)} p. ({formatAldeaTarteaEu(pilotAldea)})
                     </span>
                   ) : (
                     <span className="text-[11px] font-bold text-ink-muted bg-slate-200/80 px-2 py-0.5 rounded-lg">
@@ -1628,9 +1685,9 @@ export default function AdminKoadroa() {
             const t1List = expNeurketak.filter((n) => n.unea === "T1");
             const t2List = expNeurketak.filter((n) => n.unea === "T2");
             const calcPct = (list: typeof expNeurketak) => {
-              const eusk = list.reduce((s, n) => s + (n.euskaraz_count || 0), 0);
-              const tot = list.reduce((s, n) => s + (n.euskaraz_count || 0) + (n.erdaraz_count || 0) + (n.elebi_count || 0), 0);
-              return tot > 0 ? Math.round((eusk / tot) * 100) : null;
+              const eusk = list.reduce((s, n) => s + (n.euskaraz_count || 0) + (n.aldaketa_count || 0), 0);
+              const tot = list.reduce((s, n) => s + (n.euskaraz_count || 0) + (n.aldaketa_count || 0) + (n.erdaraz_count || 0) + (n.elebi_count || 0), 0);
+              return tot > 0 ? Math.round((eusk / tot) * 1000) / 10 : null;
             };
             const t0Pct = calcPct(t0List);
             const t1Pct = calcPct(t1List);
@@ -1779,9 +1836,9 @@ export default function AdminKoadroa() {
                 const t2List = expNeurketak.filter((n) => n.unea === "T2");
 
                 const calcPhasePct = (list: typeof expNeurketak) => {
-                  const eusk = list.reduce((s, n) => s + (n.euskaraz_count || 0), 0);
-                  const tot = list.reduce((s, n) => s + (n.euskaraz_count || 0) + (n.erdaraz_count || 0) + (n.elebi_count || 0), 0);
-                  return tot > 0 ? Math.round((eusk / tot) * 100) : null;
+                  const eusk = list.reduce((s, n) => s + (n.euskaraz_count || 0) + (n.aldaketa_count || 0), 0);
+                  const tot = list.reduce((s, n) => s + (n.euskaraz_count || 0) + (n.aldaketa_count || 0) + (n.erdaraz_count || 0) + (n.elebi_count || 0), 0);
+                  return tot > 0 ? Math.round((eusk / tot) * 1000) / 10 : null;
                 };
 
                 const t0Pct = calcPhasePct(t0List);

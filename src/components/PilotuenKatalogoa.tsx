@@ -31,9 +31,18 @@ import {
   Bot,
   Lightbulb,
   RotateCcw,
+  Search,
+  TrendingUp,
 } from "lucide-react";
-import { useApp, parsePilotuMaterialak } from "@/context/AppContext";
+import { useApp, parsePilotuMaterialak, getPublicEragileLabel } from "@/context/AppContext";
 import type { Pilotua, PilotuMateriala } from "@/lib/db";
+import {
+  aldea,
+  ondorioa,
+  formatDecimalEu,
+  formatSignedPuntu,
+  formatAldeaTarteaEu,
+} from "@/lib/estatistika";
 import MadLibsSortzailea from "./MadLibsSortzailea";
 
 const AVAILABLE_ICONS = [
@@ -64,7 +73,9 @@ function formatFileSize(bytes?: number): string {
 export default function PilotuenKatalogoa() {
   const {
     pilotuak,
+    eragileak,
     esperimentuak,
+    neurketak,
     activeEragilea,
     currentUser,
     createPilotua,
@@ -77,6 +88,90 @@ export default function PilotuenKatalogoa() {
     uiTexts,
   } = useApp();
   const [selectedPilot, setSelectedPilot] = useState<Pilotua | null>(null);
+
+  // Hipotesien zerrenda iragazgarriaren egoera
+  const [hypoSearch, setHypoSearch] = useState<string>("");
+  const [hypoPilotFilter, setHypoPilotFilter] = useState<string>("all");
+  const [hypoStatusFilter, setHypoStatusFilter] = useState<"all" | "datuekin" | "argia" | "t2">("all");
+  const [hypoSort, setHypoSort] = useState<"eragina" | "lagina" | "berrienak">("eragina");
+
+  const getPhaseTotals = (expId: string, phase: "T0" | "T1" | "T2") => {
+    const list = neurketak.filter((n) => n.esperimentu_id === expId && n.unea === phase);
+    const eusk = list.reduce((s, n) => s + (n.euskaraz_count || 0) + (n.aldaketa_count || 0), 0);
+    const tot = list.reduce(
+      (s, n) =>
+        s +
+        (n.euskaraz_count || 0) +
+        (n.aldaketa_count || 0) +
+        (n.erdaraz_count || 0) +
+        (n.elebi_count || 0),
+      0
+    );
+    return {
+      count: list.length,
+      eusk,
+      tot,
+      pct: tot > 0 ? Math.round((eusk / tot) * 1000) / 10 : null,
+    };
+  };
+
+  const hipotesiAnalisiak = React.useMemo(() => {
+    return esperimentuak.map((exp) => {
+      const eragile = eragileak.find((er) => er.id === exp.eragile_id);
+      const pilotu = pilotuak.find((p) => p.id === exp.pilotu_id);
+      const t0 = getPhaseTotals(exp.id, "T0");
+      const t1 = getPhaseTotals(exp.id, "T1");
+      const t2 = getPhaseTotals(exp.id, "T2");
+      const totalSessions = t0.count + t1.count + t2.count;
+      const totalN = t0.tot + t1.tot + t2.tot;
+      const post = exp.t2_mota === "kentzea" ? t1 : t2.tot > 0 ? t2 : t1;
+      const diff = t0.tot > 0 && post.tot > 0 ? aldea(t0.eusk, t0.tot, post.eusk, post.tot) : null;
+      const ond = diff ? ondorioa(diff, exp.xede_portzentajea || 20) : null;
+      const label = eragile
+        ? getPublicEragileLabel(eragile, currentUser?.role, activeEragilea?.id)
+        : exp.eragile_izena || "Entitatea";
+      return {
+        exp,
+        label,
+        pilotuIzena: pilotu?.izena || exp.pilotu_izena || "Pilotua",
+        t0,
+        t1,
+        t2,
+        totalSessions,
+        totalN,
+        diff,
+        ond,
+      };
+    });
+  }, [esperimentuak, eragileak, pilotuak, neurketak, currentUser?.role, activeEragilea?.id]);
+
+  const filteredHipotesiak = React.useMemo(() => {
+    const q = hypoSearch.trim().toLowerCase();
+    return hipotesiAnalisiak
+      .filter((item) => {
+        if (hypoPilotFilter !== "all" && item.exp.pilotu_id !== hypoPilotFilter) return false;
+        if (hypoStatusFilter === "datuekin" && item.totalSessions === 0) return false;
+        if (hypoStatusFilter === "argia" && item.ond?.kodea !== "argia") return false;
+        if (hypoStatusFilter === "t2" && item.t2.count === 0) return false;
+        if (q) {
+          const hay = `${item.label} ${item.exp.hipotesia} ${item.exp.gunea} ${item.pilotuIzena}`.toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        if (hypoSort === "eragina") {
+          const da = a.diff ? a.diff.d : -999;
+          const db = b.diff ? b.diff.d : -999;
+          if (db !== da) return db - da;
+          return b.totalN - a.totalN;
+        }
+        if (hypoSort === "lagina") {
+          return b.totalN - a.totalN;
+        }
+        return (b.exp.hasiera_data || "").localeCompare(a.exp.hasiera_data || "");
+      });
+  }, [hipotesiAnalisiak, hypoSearch, hypoPilotFilter, hypoStatusFilter, hypoSort]);
 
   // Latxa Copilot state
   const [copilotChallenge, setCopilotChallenge] = useState<string>("");
@@ -1432,9 +1527,32 @@ export default function PilotuenKatalogoa() {
           const Icon = theme.icon;
           const urratsak: string[] = JSON.parse(pilotu.urratsak_json || "[]");
           const pilotuMaterialak = parsePilotuMaterialak(pilotu.materialak_json);
-          const activeExpCount = esperimentuak.filter(
-            (e) => e.pilotu_id === pilotu.id
+          const pilotExps = esperimentuak.filter((e) => e.pilotu_id === pilotu.id);
+          const activeExpCount = pilotExps.length;
+          const activeWithDataCount = pilotExps.filter((e) =>
+            neurketak.some((n) => n.esperimentu_id === e.id)
           ).length;
+
+          let pilotT0X = 0;
+          let pilotT0N = 0;
+          let pilotPostX = 0;
+          let pilotPostN = 0;
+          pilotExps.forEach((e) => {
+            const t0 = getPhaseTotals(e.id, "T0");
+            const t1 = getPhaseTotals(e.id, "T1");
+            const t2 = getPhaseTotals(e.id, "T2");
+            const post = e.t2_mota === "kentzea" ? t1 : t2.tot > 0 ? t2 : t1;
+            if (t0.tot > 0 && post.tot > 0) {
+              pilotT0X += t0.eusk;
+              pilotT0N += t0.tot;
+              pilotPostX += post.eusk;
+              pilotPostN += post.tot;
+            }
+          });
+          const pilotDiff =
+            pilotT0N > 0 && pilotPostN > 0
+              ? aldea(pilotT0X, pilotT0N, pilotPostX, pilotPostN)
+              : null;
 
           return (
             <div
@@ -1456,12 +1574,34 @@ export default function PilotuenKatalogoa() {
                       {pilotu.mota}
                     </span>
                     <span className="text-[10px] font-bold text-ink-muted bg-paper border border-line px-2 py-0.5 rounded-md tabular-nums">
-                      {activeExpCount > 0
-                        ? `${activeExpCount} entitatetan martxan`
+                      {activeWithDataCount > 0
+                        ? `${activeWithDataCount} martxan (${activeExpCount} hipotesi)`
+                        : activeExpCount > 0
+                        ? `${activeExpCount} hipotesi sortuta`
                         : "Prest abiatzeko"}
                     </span>
                   </div>
                 </div>
+
+                {/* Pilotuaren benetako eragina (datuak badaude) */}
+                {pilotDiff && (
+                  <div className="mb-3 px-3 py-2 rounded-xl bg-paper border border-line flex items-center justify-between gap-2 text-[11px] tabular-nums">
+                    <span className="font-semibold text-ink-muted">
+                      Eragin neurtua ({pilotT0N + pilotPostN} elk.):
+                    </span>
+                    <span
+                      className={`font-bold ${
+                        pilotDiff.behea > 0
+                          ? "text-euskara"
+                          : pilotDiff.goia < 0
+                          ? "text-terracotta"
+                          : "text-ink"
+                      }`}
+                    >
+                      {formatSignedPuntu(pilotDiff.d * 100)} p. ({formatAldeaTarteaEu(pilotDiff)})
+                    </span>
+                  </div>
+                )}
 
                 {/* Title & Subtitle */}
                 <div className="flex items-start justify-between gap-2">
@@ -1565,10 +1705,157 @@ export default function PilotuenKatalogoa() {
         })}
       </div>
 
+      {/* Hipotesien emaitzak eta konparaketa (iragazgarria) */}
+      {hipotesiAnalisiak.length > 0 && (
+        <section className="mt-12 bg-white rounded-2xl p-6 sm:p-8 border border-line shadow-xs">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
+            <div>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-euskara" />
+                <h3 className="font-editorial text-xl font-semibold text-ink">
+                  Hipotesien emaitzak eta eragina ({filteredHipotesiak.length})
+                </h3>
+              </div>
+              <p className="text-xs text-ink-muted mt-0.5">
+                Ikusi zein hipotesi dauden martxan eta zenbat eragin duten (zalantza-tarteekin).
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-ink-muted absolute left-2.5 top-2.5" />
+                <input
+                  type="text"
+                  value={hypoSearch}
+                  onChange={(e) => setHypoSearch(e.target.value)}
+                  placeholder="Bilatu hipotesia edo gunea..."
+                  className="pl-8 pr-3 py-1.5 rounded-xl border border-line text-xs text-ink bg-paper/50 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-sea/30 w-48"
+                />
+              </div>
+
+              <select
+                value={hypoPilotFilter}
+                onChange={(e) => setHypoPilotFilter(e.target.value)}
+                className="px-2.5 py-1.5 rounded-xl border border-line text-xs text-ink bg-white"
+              >
+                <option value="all">Pilotu guztiak</option>
+                {pilotuak.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.izena}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={hypoStatusFilter}
+                onChange={(e) =>
+                  setHypoStatusFilter(e.target.value as "all" | "datuekin" | "argia" | "t2")
+                }
+                className="px-2.5 py-1.5 rounded-xl border border-line text-xs text-ink bg-white"
+              >
+                <option value="all">Egoera guztiak</option>
+                <option value="datuekin">Neurketa dutenak</option>
+                <option value="t2">T2 fasean daudenak</option>
+                <option value="argia">Alde argia dutenak</option>
+              </select>
+
+              <select
+                value={hypoSort}
+                onChange={(e) =>
+                  setHypoSort(e.target.value as "eragina" | "lagina" | "berrienak")
+                }
+                className="px-2.5 py-1.5 rounded-xl border border-line text-xs text-ink bg-white"
+              >
+                <option value="eragina">Ordenatu: eragin handiena</option>
+                <option value="lagina">Ordenatu: elkarrizketa gehien</option>
+                <option value="berrienak">Ordenatu: berrienak</option>
+              </select>
+            </div>
+          </div>
+
+          {filteredHipotesiak.length === 0 ? (
+            <p className="text-xs text-ink-muted py-6 text-center bg-paper rounded-xl border border-line">
+              Ez dago iragazki horiekin bat datorren hipotesirik.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {filteredHipotesiak.map((item) => (
+                <div
+                  key={item.exp.id}
+                  className="rounded-xl border border-line bg-paper/50 p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3"
+                >
+                  <div className="space-y-1 flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                      <span className="font-bold text-ink">{item.label}</span>
+                      <span className="px-2 py-0.5 rounded-md bg-white border border-line text-ink-muted font-semibold">
+                        {item.pilotuIzena}
+                      </span>
+                      <span className="text-ink-muted">· {item.exp.gunea}</span>
+                      <span className="text-euskara font-semibold tabular-nums">
+                        · Xedea: +{item.exp.xede_portzentajea} puntu
+                      </span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-ink italic leading-snug">
+                      &ldquo;{item.exp.hipotesia}&rdquo;
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2.5 shrink-0 tabular-nums">
+                    <div className="flex items-center gap-1.5 text-[11px] bg-white border border-line rounded-lg px-2.5 py-1.5">
+                      <span className="text-sea font-bold">
+                        T0: {item.t0.pct !== null ? `%${formatDecimalEu(item.t0.pct)}` : "—"}
+                      </span>
+                      <span className="text-ink-muted">·</span>
+                      <span className="text-ochre font-bold">
+                        T1: {item.t1.pct !== null ? `%${formatDecimalEu(item.t1.pct)}` : "—"}
+                      </span>
+                      <span className="text-ink-muted">·</span>
+                      <span className="text-euskara font-bold">
+                        T2: {item.t2.pct !== null ? `%${formatDecimalEu(item.t2.pct)}` : "—"}
+                      </span>
+                      <span className="text-ink-muted ml-1">({item.totalN} elk.)</span>
+                    </div>
+
+                    {item.diff && item.ond ? (
+                      <div
+                        className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold border ${
+                          item.ond.kodea === "argia"
+                            ? "bg-euskara/10 text-euskara border-euskara/25"
+                            : item.ond.kodea === "txikia"
+                            ? "bg-amber-50 text-amber-900 border-amber-200"
+                            : item.ond.kodea === "jaitsiera"
+                            ? "bg-terracotta/10 text-terracotta border-terracotta/25"
+                            : "bg-sand text-ink-muted border-line"
+                        }`}
+                        title={item.ond.testua}
+                      >
+                        {formatSignedPuntu(item.diff.d * 100)} p. ({formatAldeaTarteaEu(item.diff)})
+                        {" · "}
+                        {item.ond.kodea === "argia"
+                          ? "Aldea argia"
+                          : item.ond.kodea === "txikia"
+                          ? "Igoera txikia"
+                          : item.ond.kodea === "jaitsiera"
+                          ? "Jaitsiera"
+                          : "Zoriz azal daiteke"}
+                      </div>
+                    ) : (
+                      <span className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-sand text-ink-muted border border-line">
+                        {item.totalSessions > 0 ? `${item.totalSessions} saio (alderaketaren zain)` : "Neurketen zain"}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
       {/* Metodologia Info Box */}
-      <div className="mt-12 bg-gradient-to-r from-emerald-50 via-teal-50 to-sky-50 rounded-2xl p-6 sm:p-8 border border-emerald-100 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xs">
+      <div className="mt-12 bg-paper rounded-2xl p-6 sm:p-8 border border-line flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-white shadow-xs flex items-center justify-center text-euskara shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-white border border-line flex items-center justify-center text-euskara shrink-0">
             <Clock className="w-6 h-6" />
           </div>
           <div>
@@ -1576,7 +1863,7 @@ export default function PilotuenKatalogoa() {
               Nola funtzionatzen du hobekuntza-zikloak?
             </h4>
             <p className="text-xs sm:text-sm text-ink-muted mt-0.5">
-              1. Hipotesia definitu → 2. T0 neurtu (aurretik) → 3. Pilotua aktibatu → 4. T1 neurtu (berehala) → 5. T2 neurtu (sendotzea).
+              1. Hipotesia eta protokoloa definitu → 2. T0 neurtu (gutxienez 4 saio) → 3. Pilotua aktibatu → 4. T1 neurtu (gutxienez 4 saio) → 5. T2 neurtu (jarraipena edo kentzea).
             </p>
           </div>
         </div>
