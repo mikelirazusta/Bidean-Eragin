@@ -1700,7 +1700,7 @@ export default function ZentroDashboard() {
                           Latxa: Emaitzen eta Oharren Analisi Kualitatiboa
                         </h4>
                         <span className="px-2 py-0.5 rounded-md bg-sea/10 border border-sea/25 text-sea text-[10px] font-semibold">
-                          Latxa 70B
+                          Latxa 3
                         </span>
                         {latxaAnalysisResult && (
                           <span className="px-2 py-0.5 rounded-md bg-euskara/10 border border-euskara/25 text-euskara text-[10px] font-semibold">

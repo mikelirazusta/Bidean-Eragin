@@ -1095,7 +1095,7 @@ export default function AdminKoadroa() {
                   Latxa: Donostiako Komunitatearen Txosten Soziolinguistiko Bateratua
                 </h3>
                 <span className="px-2 py-0.5 rounded-md bg-sand border border-line text-sea text-[10px] font-bold">
-                  C Blokea • Latxa 70B
+                  C Blokea • Latxa 3
                 </span>
                 {communityReport && (
                   <span className="px-2 py-0.5 rounded-md bg-euskara/10 border border-euskara/20 text-euskara text-[10px] font-bold">

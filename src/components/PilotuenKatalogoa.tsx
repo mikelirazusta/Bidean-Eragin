@@ -842,7 +842,7 @@ export default function PilotuenKatalogoa() {
                     Latxa Kopilotua: Aholkulari Soziolinguistikoa
                   </h2>
                   <span className="px-2 py-0.5 rounded-md bg-sand border border-line text-sea text-[10px] font-bold">
-                    Latxa 70B
+                    Latxa 3
                   </span>
                 </div>
                 <p className="text-xs text-ink-muted mt-0.5">

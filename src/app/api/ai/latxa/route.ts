@@ -55,10 +55,17 @@ interface LatxaRequestBody {
   messages?: Array<{ role: "user" | "assistant"; content: string }>;
 }
 
+function stripThinkingBlocks(rawContent: string): string {
+  return rawContent
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .replace(/<think>[\s\S]*$/gi, "")
+    .trim();
+}
+
 function parseLatxaJsonSafely(rawContent: string): Record<string, any> | null {
   if (!rawContent || !rawContent.trim()) return null;
 
-  const stripped = rawContent
+  const stripped = stripThinkingBlocks(rawContent)
     .replace(/```json\s*/gi, "")
     .replace(/```\s*/gi, "")
     .trim();
@@ -99,7 +106,7 @@ export async function POST(request: Request) {
 
     const apiUrl = process.env.LATXA_API_URL?.replace(/\/+$/, "");
     const apiKey = process.env.LATXA_API_KEY;
-    const model = process.env.LATXA_MODEL || "Latxa-Llama-3.1-70B-Instruct-exp_2_101_v2-FP8";
+    const model = process.env.LATXA_MODEL || "Latxa3";
 
     if (!apiUrl || !apiKey) {
       return NextResponse.json(
@@ -422,7 +429,7 @@ Nork (taldea): "${body.taldea || ""}" | Norekin (pertsonak): "${body.pertsonak |
 
     const endpoint = `${apiUrl}/chat/completions`;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 45000);
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
 
     let res: Response;
     try {
@@ -435,8 +442,9 @@ Nork (taldea): "${body.taldea || ""}" | Norekin (pertsonak): "${body.pertsonak |
         body: JSON.stringify({
           model: model,
           messages: conversationMessages,
-          temperature: 0.3,
-          max_tokens: 1300,
+          temperature: 0.4,
+          top_p: 0.9,
+          max_tokens: 4096,
         }),
         signal: controller.signal,
       });
@@ -458,6 +466,7 @@ Nork (taldea): "${body.taldea || ""}" | Norekin (pertsonak): "${body.pertsonak |
 
     const latxaData = await res.json();
     const rawContent = latxaData.choices?.[0]?.message?.content || "";
+    const cleanContent = stripThinkingBlocks(rawContent);
 
     let parsedData = parseLatxaJsonSafely(rawContent);
 
@@ -465,15 +474,15 @@ Nork (taldea): "${body.taldea || ""}" | Norekin (pertsonak): "${body.pertsonak |
       // Friendly structured fallback so the UI never renders blank
       if (ekintza === "ondorioak_eta_analisia") {
         parsedData = {
-          ondorio_nagusia: rawContent.trim() || "Ezin izan da analisia formatu egituratuan jaso.",
+          ondorio_nagusia: cleanContent || "Ezin izan da analisia formatu egituratuan jaso.",
           oharren_analisia: "Ikus ondorio nagusia.",
           balorazio_kuantitatiboa: "Begiratu goiko grafiko eta taulako portzentajeak.",
           hurrengo_urratsak: ["Jarraitu behaketak egiten eta oharrak jasotzen."],
-          txosten_laburpena: rawContent.trim(),
+          txosten_laburpena: cleanContent,
         };
       } else if (ekintza === "hobetu_hipotesia") {
         parsedData = {
-          hipotesi_hobetua: rawContent.replace(/["{}]/g, "").trim() || uneko_testua,
+          hipotesi_hobetua: cleanContent.replace(/["{}]/g, "").trim() || uneko_testua,
           azalpena: "Latxak proposatutako hobekuntza.",
         };
       } else {
@@ -481,7 +490,7 @@ Nork (taldea): "${body.taldea || ""}" | Norekin (pertsonak): "${body.pertsonak |
           bat_dator: false,
           egoera: "pilotua_prest",
           zintzotasun_mezua: "Hona hemen Latxaren proposamena:",
-          aholkua: rawContent.trim(),
+          aholkua: cleanContent,
           hipotesia: uneko_testua || "",
         };
       }
