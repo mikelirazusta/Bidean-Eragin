@@ -1585,7 +1585,10 @@ export default function PilotuenKatalogoa() {
 
                 {/* Pilotuaren benetako eragina (datuak badaude) */}
                 {pilotDiff && (
-                  <div className="mb-3 px-3 py-2 rounded-xl bg-paper border border-line flex items-center justify-between gap-2 text-[11px] tabular-nums">
+                  <div
+                    className="mb-3 px-3 py-2 rounded-xl bg-paper border border-line flex items-center justify-between gap-2 text-[11px] tabular-nums"
+                    title={`Zalantza-tartea: ${formatAldeaTarteaEu(pilotDiff)}`}
+                  >
                     <span className="font-semibold text-ink-muted">
                       Eragin neurtua ({pilotT0N + pilotPostN} elk.):
                     </span>
@@ -1598,7 +1601,7 @@ export default function PilotuenKatalogoa() {
                           : "text-ink"
                       }`}
                     >
-                      {formatSignedPuntu(pilotDiff.d * 100)} p. ({formatAldeaTarteaEu(pilotDiff)})
+                      {Math.round(pilotDiff.d * 100) >= 0 ? `+${Math.round(pilotDiff.d * 100)}` : Math.round(pilotDiff.d * 100)} puntu
                     </span>
                   </div>
                 )}
@@ -1803,17 +1806,16 @@ export default function PilotuenKatalogoa() {
                   <div className="flex flex-wrap items-center gap-2.5 shrink-0 tabular-nums">
                     <div className="flex items-center gap-1.5 text-[11px] bg-white border border-line rounded-lg px-2.5 py-1.5">
                       <span className="text-sea font-bold">
-                        T0: {item.t0.pct !== null ? `%${formatDecimalEu(item.t0.pct)}` : "—"}
+                        T0: {item.t0.pct !== null ? `%${Math.round(item.t0.pct)}` : "—"}
                       </span>
                       <span className="text-ink-muted">·</span>
                       <span className="text-ochre font-bold">
-                        T1: {item.t1.pct !== null ? `%${formatDecimalEu(item.t1.pct)}` : "—"}
+                        T1: {item.t1.pct !== null ? `%${Math.round(item.t1.pct)}` : "—"}
                       </span>
                       <span className="text-ink-muted">·</span>
                       <span className="text-euskara font-bold">
-                        T2: {item.t2.pct !== null ? `%${formatDecimalEu(item.t2.pct)}` : "—"}
+                        T2: {item.t2.pct !== null ? `%${Math.round(item.t2.pct)}` : "—"}
                       </span>
-                      <span className="text-ink-muted ml-1">({item.totalN} elk.)</span>
                     </div>
 
                     {item.diff && item.ond ? (
@@ -1827,9 +1829,9 @@ export default function PilotuenKatalogoa() {
                             ? "bg-terracotta/10 text-terracotta border-terracotta/25"
                             : "bg-sand text-ink-muted border-line"
                         }`}
-                        title={item.ond.testua}
+                        title={`${item.ond.testua} (Tartea: ${formatAldeaTarteaEu(item.diff)})`}
                       >
-                        {formatSignedPuntu(item.diff.d * 100)} p. ({formatAldeaTarteaEu(item.diff)})
+                        {Math.round(item.diff.d * 100) >= 0 ? `+${Math.round(item.diff.d * 100)}` : Math.round(item.diff.d * 100)} puntu
                         {" · "}
                         {item.ond.kodea === "argia"
                           ? "Aldea argia"
@@ -1837,11 +1839,11 @@ export default function PilotuenKatalogoa() {
                           ? "Igoera txikia"
                           : item.ond.kodea === "jaitsiera"
                           ? "Jaitsiera"
-                          : "Zoriz azal daiteke"}
+                          : "Oraindik ez dakigu"}
                       </div>
                     ) : (
                       <span className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-sand text-ink-muted border border-line">
-                        {item.totalSessions > 0 ? `${item.totalSessions} saio (alderaketaren zain)` : "Neurketen zain"}
+                        {item.totalSessions > 0 ? `${item.totalSessions} saio` : "Neurketen zain"}
                       </span>
                     )}
                   </div>

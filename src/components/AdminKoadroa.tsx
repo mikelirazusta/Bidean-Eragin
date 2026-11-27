@@ -1095,12 +1095,17 @@ export default function AdminKoadroa() {
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-3xl font-extrabold text-euskara tabular-nums">
-            {globalAldea ? `${formatSignedPuntu(avgGrowth)} p.` : "—"}
+          <div
+            className="text-3xl font-extrabold text-euskara tabular-nums"
+            title={globalAldea ? `Tartea: ${formatAldeaTarteaEu(globalAldea)}` : undefined}
+          >
+            {globalAldea ? `${Math.round(avgGrowth) >= 0 ? "+" : ""}${Math.round(avgGrowth)} puntu` : "—"}
           </div>
-          <p className="text-[11px] text-ink-muted mt-1 tabular-nums">
+          <p className="text-[11px] text-ink-muted mt-1">
             {globalAldea
-              ? `Tartea: ${formatAldeaTarteaEu(globalAldea)} (${growthCount} esp.)`
+              ? globalAldea.behea > 0
+                ? `Aldea argia (${growthCount} entitatetan)`
+                : `Oraindik datu gehiago behar dira (${growthCount} entitatetan)`
               : "T0 eta T1/T2 neurketen zain"}
           </p>
         </div>
@@ -1117,9 +1122,6 @@ export default function AdminKoadroa() {
           </div>
           <div className="text-3xl font-extrabold text-ink tabular-nums">
             {esperimentuakDatuekin}
-            <span className="text-base font-semibold text-ink-muted ml-1.5">
-              / {totalEsperimentuak}
-            </span>
           </div>
           <p className="text-[11px] text-ink-muted mt-1 tabular-nums">
             {t2DutenaEsperimentuak} T2 fasean · {zikloOsatuak} ziklo osatu
@@ -1361,6 +1363,7 @@ export default function AdminKoadroa() {
                     </div>
                     {diff !== null && diffObj ? (
                       <span
+                        title={`Zalantza-tartea: ${formatAldeaTarteaEu(diffObj)}`}
                         className={`px-2.5 py-0.5 rounded-md text-xs font-bold tabular-nums ${
                           diffObj.behea > 0
                             ? "bg-euskara/10 text-euskara border border-euskara/20"
@@ -1369,11 +1372,11 @@ export default function AdminKoadroa() {
                             : "bg-sand text-ink-muted border border-line"
                         }`}
                       >
-                        {formatSignedPuntu(diff)} puntu ({formatAldeaTarteaEu(diffObj)})
+                        {Math.round(diff) >= 0 ? `+${Math.round(diff)}` : Math.round(diff)} puntu
                       </span>
                     ) : (
                       <span className="text-[11px] font-semibold text-ink-muted tabular-nums">
-                        {p0 !== null ? `T0 neurtuta (%${formatDecimalEu(p0)})` : "Lehen neurketaren zain"}
+                        {p0 !== null ? `T0 neurtuta (%${Math.round(p0)})` : "Lehen neurketaren zain"}
                       </span>
                     )}
                   </div>
@@ -1470,8 +1473,11 @@ export default function AdminKoadroa() {
                     Faseko aldea:
                   </span>
                   {pilotAvgGrowth !== null && pilotAldea ? (
-                    <span className="text-xs font-black text-euskara bg-euskara/15 px-2 py-0.5 rounded-lg tabular-nums">
-                      {formatSignedPuntu(pilotAvgGrowth)} p. ({formatAldeaTarteaEu(pilotAldea)})
+                    <span
+                      title={`Zalantza-tartea: ${formatAldeaTarteaEu(pilotAldea)}`}
+                      className="text-xs font-black text-euskara bg-euskara/15 px-2 py-0.5 rounded-lg tabular-nums"
+                    >
+                      {Math.round(pilotAvgGrowth) >= 0 ? `+${Math.round(pilotAvgGrowth)}` : Math.round(pilotAvgGrowth)} puntu
                     </span>
                   ) : (
                     <span className="text-[11px] font-bold text-ink-muted bg-slate-200/80 px-2 py-0.5 rounded-lg">
@@ -1534,8 +1540,8 @@ export default function AdminKoadroa() {
                   0
                 );
                 if (n === 0) return null;
-                const w = wilson(x, n);
-                return `${fasea}: %${formatDecimalEu(w.p * 100)} (${formatDecimalEu(w.behea * 100)}–${formatDecimalEu(w.goia * 100)})`;
+                const pctRound = Math.round((x / n) * 100);
+                return `${fasea}: %${pctRound}`;
               };
 
               const phaseSummaries = (["T0", "T1", "T2"] as const)

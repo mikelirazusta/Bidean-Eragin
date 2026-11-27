@@ -1394,14 +1394,12 @@ export default function ZentroDashboard() {
                         : "Oinarrizkoa (aurretik)"}
                     </span>
                     {t0Stats && (
-                      <>
-                        <span className="text-[10px] text-sea font-bold block mt-0.5 tabular-nums">
-                          %{formatDecimalEu(t0Stats.pct)} ({t0Stats.totalEuskaraz}/{t0Stats.totalInteractions})
-                        </span>
-                        <span className="text-[9px] text-ink-muted block tabular-nums">
-                          Tartea: %{formatDecimalEu(t0Stats.wilson.behea * 100)}–%{formatDecimalEu(t0Stats.wilson.goia * 100)}
-                        </span>
-                      </>
+                      <span
+                        className="text-[10px] text-sea font-bold block mt-0.5 tabular-nums"
+                        title={`Zalantza-tartea: %${formatDecimalEu(t0Stats.wilson.behea * 100)}–%${formatDecimalEu(t0Stats.wilson.goia * 100)}`}
+                      >
+                        {t0Stats.totalEuskaraz}/{t0Stats.totalInteractions} elkarrizketa
+                      </span>
                     )}
 
                     <button
@@ -1481,14 +1479,12 @@ export default function ZentroDashboard() {
                         : "Esku-hartzearekin"}
                     </span>
                     {t1Stats && (
-                      <>
-                        <span className="text-[10px] text-ochre font-bold block mt-0.5 tabular-nums">
-                          %{formatDecimalEu(t1Stats.pct)} ({t1Stats.totalEuskaraz}/{t1Stats.totalInteractions})
-                        </span>
-                        <span className="text-[9px] text-ink-muted block tabular-nums">
-                          Tartea: %{formatDecimalEu(t1Stats.wilson.behea * 100)}–%{formatDecimalEu(t1Stats.wilson.goia * 100)}
-                        </span>
-                      </>
+                      <span
+                        className="text-[10px] text-ochre font-bold block mt-0.5 tabular-nums"
+                        title={`Zalantza-tartea: %${formatDecimalEu(t1Stats.wilson.behea * 100)}–%${formatDecimalEu(t1Stats.wilson.goia * 100)}`}
+                      >
+                        {t1Stats.totalEuskaraz}/{t1Stats.totalInteractions} elkarrizketa
+                      </span>
                     )}
 
                     {t0Stats && (
@@ -1570,14 +1566,12 @@ export default function ZentroDashboard() {
                         : "Jarraipena / kentzea"}
                     </span>
                     {t2Stats && (
-                      <>
-                        <span className="text-[10px] text-euskara font-bold block mt-0.5 tabular-nums">
-                          %{formatDecimalEu(t2Stats.pct)} ({t2Stats.totalEuskaraz}/{t2Stats.totalInteractions})
-                        </span>
-                        <span className="text-[9px] text-ink-muted block tabular-nums">
-                          Tartea: %{formatDecimalEu(t2Stats.wilson.behea * 100)}–%{formatDecimalEu(t2Stats.wilson.goia * 100)}
-                        </span>
-                      </>
+                      <span
+                        className="text-[10px] text-euskara font-bold block mt-0.5 tabular-nums"
+                        title={`Zalantza-tartea: %${formatDecimalEu(t2Stats.wilson.behea * 100)}–%${formatDecimalEu(t2Stats.wilson.goia * 100)}`}
+                      >
+                        {t2Stats.totalEuskaraz}/{t2Stats.totalInteractions} elkarrizketa
+                      </span>
                     )}
 
                     {t1Stats && (
@@ -1866,7 +1860,7 @@ export default function ZentroDashboard() {
                     </div>
                     <p className="text-[11px] text-sky-700 tabular-nums">
                       {t0Stats
-                        ? `${t0Stats.totalEuskaraz}/${t0Stats.totalInteractions} · tartea %${formatDecimalEu(t0Stats.wilson.behea * 100)}–%${formatDecimalEu(t0Stats.wilson.goia * 100)}`
+                        ? `${t0Stats.totalEuskaraz}/${t0Stats.totalInteractions} elkarrizketa`
                         : "Oraindik ez dago saiorik"}
                     </p>
                   </div>
@@ -1901,7 +1895,7 @@ export default function ZentroDashboard() {
                     </div>
                     <p className="text-[11px] text-teal-700 tabular-nums">
                       {t1Stats
-                        ? `${t1Stats.totalEuskaraz}/${t1Stats.totalInteractions} · tartea %${formatDecimalEu(t1Stats.wilson.behea * 100)}–%${formatDecimalEu(t1Stats.wilson.goia * 100)}`
+                        ? `${t1Stats.totalEuskaraz}/${t1Stats.totalInteractions} elkarrizketa`
                         : "Zain"}
                     </p>
                   </div>
@@ -1942,7 +1936,7 @@ export default function ZentroDashboard() {
                     </div>
                     <p className="text-[11px] text-euskara tabular-nums">
                       {t2Stats
-                        ? `${t2Stats.totalEuskaraz}/${t2Stats.totalInteractions} · tartea %${formatDecimalEu(t2Stats.wilson.behea * 100)}–%${formatDecimalEu(t2Stats.wilson.goia * 100)}`
+                        ? `${t2Stats.totalEuskaraz}/${t2Stats.totalInteractions} elkarrizketa`
                         : "Zain"}
                     </p>
                   </div>

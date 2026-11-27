@@ -53,12 +53,23 @@ export function getScopedBootstrapData(session: SessionPayload | null): ScopedBo
     .all() as Nudge[];
 
   if (session.role === "admin") {
+    // Iragazi umezurtz geratutako esperimentuak/neurketak (ezabatutako entitateenak)
+    const validEragileIds = new Set(allEragileak.map((er) => er.id));
+    const validEsperimentuak = allEsperimentuak.filter((exp) =>
+      validEragileIds.has(exp.eragile_id)
+    );
+    const validExpIds = new Set(validEsperimentuak.map((exp) => exp.id));
+    const validNeurketak = allNeurketak.filter((neu) =>
+      validExpIds.has(neu.esperimentu_id)
+    );
+    const validNudges = allNudges.filter((nd) => validEragileIds.has(nd.eragile_id));
+
     return {
       pilotuak,
       eragileak: allEragileak,
-      esperimentuak: allEsperimentuak,
-      neurketak: allNeurketak,
-      nudges: allNudges,
+      esperimentuak: validEsperimentuak,
+      neurketak: validNeurketak,
+      nudges: validNudges,
       uiTexts,
     };
   }
